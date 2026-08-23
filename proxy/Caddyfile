@@ -1,3 +1,9 @@
+{
+	# Clientes conectando a um IP podem omitir SNI. Nesse caso, sirva o
+	# certificado público do próprio IP em vez de abortar o handshake TLS.
+	default_sni {$SERVER_IP}
+}
+
 {$SITE_ADDRESS} {
 	encode zstd gzip
 	header {
