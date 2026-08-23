@@ -67,6 +67,34 @@ describe('threeWayMerge', () => {
     expect(result).toEqual({ kind: 'noop' })
   })
 
+  /**
+   * O caso que importa é o MISTO, que é como os dois lados realmente chegam: o
+   * servidor lê "60.00" do driver e o cliente manda 60. Comparado como texto,
+   * o servidor parecia ter mudado o campo sozinho e a edição virava conflito.
+   */
+  it('a escala decimal do numeric não conta como mudança do servidor', () => {
+    const result = threeWayMerge(
+      { weightKg: 60, reps: 10 },
+      { weightKg: '60.00', reps: 10 },
+      { weightKg: 80, reps: 12 },
+    )
+    expect(result).toEqual({ kind: 'apply', row: { weightKg: 80, reps: 12 } })
+  })
+
+  it('valor numérico realmente diferente ainda conflita', () => {
+    const result = threeWayMerge(
+      { weightKg: 60 },
+      { weightKg: '70.00' },
+      { weightKg: 80 },
+    )
+    expect(result).toEqual({ kind: 'conflict', row: {}, conflictingFields: ['weightKg'] })
+  })
+
+  it('string não numérica não vira igualdade por acidente', () => {
+    const result = threeWayMerge({ nota: 60 }, { nota: '' }, { nota: 80 })
+    expect(result).toEqual({ kind: 'conflict', row: {}, conflictingFields: ['nota'] })
+  })
+
   it('compara datas por valor', () => {
     const at = new Date('2026-08-19T10:00:00Z')
     const result = threeWayMerge(

@@ -29,9 +29,22 @@ function sameValue(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
   }
   // numeric do Postgres volta como string; o cliente manda number.
-  if (typeof a === 'number' && typeof b === 'string') return String(a) === b
-  if (typeof a === 'string' && typeof b === 'number') return a === String(b)
+  if (typeof a === 'number' && typeof b === 'string') return sameNumber(a, b)
+  if (typeof a === 'string' && typeof b === 'number') return sameNumber(b, a)
   return false
+}
+
+/**
+ * Compara pelo valor, não pelo texto.
+ *
+ * `numeric(7,2)` volta do driver com a escala escrita — "60.00" — e o cliente
+ * manda 60. Comparar como string diz que mudaram, e o merge então acusa
+ * conflito em campo que ninguém tocou dos dois lados.
+ */
+function sameNumber(value: number, text: string): boolean {
+  if (text.trim() === '') return false
+  const parsed = Number(text)
+  return Number.isFinite(parsed) && parsed === value
 }
 
 function mergeableFields(...rows: Row[]): string[] {
