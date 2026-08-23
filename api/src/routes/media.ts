@@ -10,6 +10,7 @@ import { deleteObject, getObjectStream, putObject } from '../lib/storage.js'
 import { badRequest, notFound } from '../lib/http-error.js'
 import { serializeRow } from '../lib/coerce.js'
 import { param } from '../lib/params.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 export const mediaRouter = Router()
 mediaRouter.use(requireAuth)
@@ -19,7 +20,13 @@ const upload = multer({
   limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
 })
 
-mediaRouter.post('/exercises/:exerciseId', upload.single('file'), async (req, res) => {
+/**
+ * Só o upload tem teto. O GET é o stream da biblioteca — uma tela com dezenas
+ * de fotos faria dezenas de pedidos legítimos de uma vez.
+ */
+const uploadLimit = rateLimit({ windowMs: 60_000, max: 20, code: 'muitos_uploads' })
+
+mediaRouter.post('/exercises/:exerciseId', uploadLimit, upload.single('file'), async (req, res) => {
   const ownerId = req.userId!
   const exerciseId = param(req, 'exerciseId')
   if (!req.file) throw badRequest('arquivo_ausente')

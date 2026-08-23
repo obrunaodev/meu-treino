@@ -12,6 +12,7 @@ import { env, hasGoogleOAuth, isProd } from '../lib/env.js'
 import { logger } from '../lib/logger.js'
 import { badRequest, forbidden, unauthorized } from '../lib/http-error.js'
 import { requireAuth } from '../middleware/auth.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 export const authRouter = Router()
 
@@ -104,7 +105,10 @@ authRouter.get('/google', (_req, res) => {
   res.redirect(buildAuthUrl(state, codeChallenge))
 })
 
-authRouter.get('/google/callback', async (req, res) => {
+/** O callback do OAuth troca código por sessão; não há motivo para repetição. */
+const callbackLimit = rateLimit({ windowMs: 15 * 60_000, max: 30, count: 'falhas' })
+
+authRouter.get('/google/callback', callbackLimit, async (req, res) => {
   const code = typeof req.query.code === 'string' ? req.query.code : null
   const state = typeof req.query.state === 'string' ? req.query.state : null
   const raw = req.cookies?.[PKCE_COOKIE]
@@ -129,6 +133,18 @@ authRouter.get('/google/callback', async (req, res) => {
   res.redirect(`${env.APP_ORIGIN}/auth/callback`)
 })
 
+/**
+ * Teto do bypass: só tentativa ERRADA consome cota.
+ *
+ * Aqui o token é a única barreira e ele deixa entrar como qualquer e-mail. 32
+ * caracteres já tornam a força bruta impraticável — isto é defesa em
+ * profundidade, para o caso de o token um dia encolher. Contar só falha deixa
+ * o uso legítimo (e a suíte, que loga de propósito várias vezes) intocado.
+ */
+const devLoginLimit = rateLimit({
+  windowMs: 10 * 60_000, max: 30, count: 'falhas', code: 'muitas_tentativas',
+})
+
 const devLoginBody = z.object({
   token: z.string(),
   email: z.string().email(),
@@ -146,7 +162,7 @@ const devLoginBody = z.object({
  * Para desligar: DEV_LOGIN_ENABLED=false. Para remover de vez, apague esta
  * rota — nenhuma outra parte do sistema depende dela.
  */
-authRouter.post('/dev-login', async (req, res) => {
+authRouter.post('/dev-login', devLoginLimit, async (req, res) => {
   if (!env.DEV_LOGIN_ENABLED) throw forbidden('login_provisorio_desativado')
 
   const { token, email, name } = devLoginBody.parse(req.body)
