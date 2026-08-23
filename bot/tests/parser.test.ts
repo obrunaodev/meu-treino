@@ -100,3 +100,39 @@ describe('comandos', () => {
     expect(hasLinkOption('')).toBe(false)
   })
 })
+
+/**
+ * `weight_kg` é numeric(7,2). Sem faixa no parser, um zero a mais estourava o
+ * INSERT, a exceção subia até o handler de mensagens — que só loga — e o
+ * usuário ficava sem resposta nenhuma no grupo.
+ */
+describe('faixas de sanidade', () => {
+  it('recusa carga absurda em vez de deixar o banco estourar', () => {
+    const result = parseExerciseEntry('1 999999999kg 3x15 2rir')
+    expect(result).toEqual({ ok: false, reason: 'weight_range' })
+  })
+
+  it('recusa carga logo acima do teto', () => {
+    expect(parseExerciseEntry('1 1000kg 3x15 2rir')).toEqual({ ok: false, reason: 'weight_range' })
+  })
+
+  it('aceita a carga mais pesada plausível', () => {
+    const result = parseExerciseEntry('1 999kg 3x15 2rir')
+    expect(result.ok).toBe(true)
+  })
+
+  it('recusa contagem de séries que viraria dezenas de INSERTs', () => {
+    expect(parseExerciseEntry('1 100kg 99x15 2rir')).toEqual({ ok: false, reason: 'sets_range' })
+  })
+
+  it('converte libras antes de aplicar o teto', () => {
+    // 2000 lb = 907 kg, abaixo do teto: a faixa é sobre o valor gravado.
+    const result = parseExerciseEntry('1 2000lb 3x15 2rir')
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(Math.round(result.value.weightKg)).toBe(907)
+  })
+
+  it('carga de peso corporal continua válida', () => {
+    expect(parseExerciseEntry('1 0kg 3x15 2rir').ok).toBe(true)
+  })
+})

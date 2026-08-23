@@ -161,6 +161,8 @@ export const parserHelp = (reason: string) => {
     weight: 'Não encontrei a carga e a unidade.',
     sets_reps: 'Não encontrei séries × repetições.',
     rir: 'Não encontrei o RIR.',
+    weight_range: 'Essa carga passou de 999 kg — faltou vírgula ou sobrou um zero?',
+    sets_range: 'Séries fora da faixa: registro de 1 a 20 por vez.',
   }
   return `⚠️ ${labels[reason] ?? 'Não entendi o registro'}\nUse algo como: \`1 100kg 3x15 1rir\``
 }

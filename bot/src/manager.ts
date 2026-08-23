@@ -119,7 +119,15 @@ async function handleMessages(ownerId: string, messages: WAMessage[]) {
     // participante do grupo registra treino, encerra a sessão com /end,
     // reescreve carga com /edit e lê o histórico na conta alheia.
     if (!message.key.fromMe) continue
-    await respond(ownerId, socket, selected, text)
+
+    try {
+      await respond(ownerId, socket, selected, text)
+    } catch (error) {
+      // Falhar calado é o pior desfecho: quem digitou não sabe se registrou.
+      console.error(error)
+      await send(ownerId, socket, selected, '⚠️ Não consegui registrar isso. Confira os números e tente de novo.')
+        .catch(() => undefined)
+    }
   }
 }
 

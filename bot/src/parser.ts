@@ -8,7 +8,19 @@ export interface ExerciseEntry {
 
 export type ParseResult =
   | { ok: true; value: ExerciseEntry }
-  | { ok: false; reason: 'exercise' | 'weight' | 'sets_reps' | 'rir' }
+  | { ok: false; reason: 'exercise' | 'weight' | 'sets_reps' | 'rir' | 'weight_range' | 'sets_range' }
+
+/**
+ * Faixas de sanidade do registro.
+ *
+ * `weight_kg` é `numeric(7,2)`: acima de 99999.99 o INSERT estoura e a exceção
+ * sobe até o handler de mensagens, que só loga — o usuário fica sem resposta
+ * nenhuma, que é o pior desfecho possível para um erro de digitação. O teto
+ * aqui é bem menor que o da coluna porque o objetivo é pegar o zero a mais.
+ */
+const MAX_WEIGHT_KG = 999
+/** Cada série vira um INSERT; 20 já é mais do que qualquer treino real pede. */
+const MAX_SETS = 20
 
 export type BotCommand = 'start' | 'edit' | 'end' | 'help' | 'clear' | 'history' | 'today' | 'skip' | 'last'
 
@@ -76,12 +88,19 @@ export function parseExerciseEntry(input: string): ParseResult {
 
   const rawWeight = Number(weight.values[0])
   const unit = weight.values[1]
+  const weightKg = unit.startsWith('lb') ? rawWeight / 2.2046226218 : rawWeight
+  const sets = Number(setReps[1])
+
+  // Faixa antes do banco: um zero a mais aqui virava 500 e silêncio no grupo.
+  if (weightKg > MAX_WEIGHT_KG) return { ok: false, reason: 'weight_range' }
+  if (sets < 1 || sets > MAX_SETS) return { ok: false, reason: 'sets_range' }
+
   return {
     ok: true,
     value: {
       exerciseNumber: Number(exercise[1]),
-      weightKg: unit.startsWith('lb') ? rawWeight / 2.2046226218 : rawWeight,
-      sets: Number(setReps[1]),
+      weightKg,
+      sets,
       reps: Number(setReps[2]),
       rir: Number(rir.values[0]),
     },
