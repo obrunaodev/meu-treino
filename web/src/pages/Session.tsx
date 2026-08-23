@@ -6,6 +6,7 @@ import {
   useSessions, useSetLogs, useSettings, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
+import { apiFetch } from '../lib/api.js'
 import { MediaImage } from '../components/MediaImage.js'
 import {
   CARDIO_SECONDS, PREP_SECONDS, elapsedSeconds, finalStatus, formatClock, nextSlot,
@@ -14,9 +15,9 @@ import {
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
-import { Card, Empty, Select, Stepper } from '../components/ui.js'
+import { Card, Empty, Modal, Select, Stepper } from '../components/ui.js'
 import { PainCapture } from '../components/PainCapture.js'
-import type { SetLog, TemplateItem } from '../lib/types.js'
+import type { CatalogExercise, SetLog, TemplateItem } from '../lib/types.js'
 
 /** Rascunho da série em edição. Vira `set_logs` só quando o usuário confirma. */
 interface Draft {
@@ -31,7 +32,7 @@ interface Draft {
 
 export function Session() {
   const { sessionId } = useParams()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const sessions = useSessions()
@@ -60,6 +61,8 @@ export function Session() {
   const [capturingPain, setCapturingPain] = useState<string | null>(null)
   const [intensity, setIntensity] = useState<'leve' | 'moderado' | 'forte' | null>(null)
   const [cardioOptionId, setCardioOptionId] = useState('')
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [showingImage, setShowingImage] = useState(false)
 
   useEffect(() => {
     if (cardio.length > 0) return
@@ -89,7 +92,26 @@ export function Session() {
   const unilateralAsymmetric = snapshotItem?.unilateralAsymmetric ?? exercise?.unilateralAsymmetric ?? false
   const loadPerSide = snapshotItem?.loadPerSide ?? exercise?.loadPerSide ?? false
   const gear = snapshotItem?.equipment ?? equipment.find((e) => e.id === exercise?.equipmentId) ?? null
-  const thumb = media.find((m) => m.exerciseId === exerciseId) ?? null
+  const exerciseImage = media.find((m) => m.exerciseId === exerciseId) ?? null
+
+  useEffect(() => setShowingImage(false), [exerciseId])
+
+  useEffect(() => {
+    setVideoUrl(null)
+    if (!exercise?.catalogExerciseId) return
+
+    let current = true
+    void apiFetch<CatalogExercise>(`/api/catalog/exercises/${exercise.catalogExerciseId}`)
+      .then((catalog) => {
+        if (!current) return
+        const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
+        setVideoUrl(catalog.video?.[lang] ?? catalog.video?.pt ?? catalog.video?.en ?? null)
+      })
+      .catch(() => {
+        if (current) setVideoUrl(null)
+      })
+    return () => { current = false }
+  }, [exercise?.catalogExerciseId, i18n.language])
 
   // Entrou no cardio: o relógio recomeça daqui, senão herdaria o descanso anterior.
   //
@@ -238,21 +260,35 @@ export function Session() {
       )}
 
       {(phase === 'exercicios' || phase === 'descanso') && item && exercise && draft && (
-        <Card
-          heading={exerciseName}
-          action={
-            <span className="mono muted">
-              {t('session.target', {
-                sets: item.sets,
-                range: item.isTimeBased
-                  ? `${item.repMin ?? 0}–${item.repMax ?? 0}s`
-                  : `${item.repMin ?? 0}–${item.repMax ?? 0}`,
-                rir: item.rirTarget ?? '—',
-              })}
-            </span>
-          }
-        >
-          {thumb && <MediaImage className="session__img" mediaId={thumb.id} variant="thumb" alt="" />}
+        <>
+          <Card
+            heading={exerciseName}
+            action={
+              <span className="mono muted">
+                {t('session.target', {
+                  sets: item.sets,
+                  range: item.isTimeBased
+                    ? `${item.repMin ?? 0}–${item.repMax ?? 0}s`
+                    : `${item.repMin ?? 0}–${item.repMax ?? 0}`,
+                  rir: item.rirTarget ?? '—',
+                })}
+              </span>
+            }
+          >
+          {(exerciseImage || videoUrl) && (
+            <div className="session__resources">
+              {exerciseImage && (
+                <button type="button" className="button button--quiet" onClick={() => setShowingImage(true)}>
+                  {t('session.view_image')}
+                </button>
+              )}
+              {videoUrl && (
+                <a className="button button--quiet" href={videoUrl} target="_blank" rel="noopener noreferrer">
+                  {t('session.watch_video')}
+                </a>
+              )}
+            </div>
+          )}
 
           {(exercise?.cues.length ?? 0) > 0 && (
             <ul className="cues">
@@ -344,7 +380,23 @@ export function Session() {
               </button>
             </div>
           )}
-        </Card>
+          </Card>
+          {showingImage && exerciseImage && (
+            <Modal
+              title={exerciseName}
+              closeLabel={t('common.close')}
+              onClose={() => setShowingImage(false)}
+              wide
+            >
+              <MediaImage
+                className="media-lightbox__image"
+                mediaId={exerciseImage.id}
+                variant="full"
+                alt={exerciseName}
+              />
+            </Modal>
+          )}
+        </>
       )}
 
       {items.length > 0 && (phase === 'cardio' || !slot) && (
