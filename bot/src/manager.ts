@@ -10,6 +10,7 @@ import { previewTodayWorkout, recordExercise, skipExercise, startTodayWorkout } 
 import { editableWorkoutReview, editTargetWorkout, endOpenWorkout, openWorkoutReview } from './workout-history.js'
 import { clearTrackedMessages, trackGroupMessage } from './chat-cleaner.js'
 import { weeklyHistory } from './weekly-history.js'
+import { RECONNECT_MAX_ATTEMPTS, SentMessages, reconnectDelay } from './reconnect.js'
 
 export interface BotStatus {
   state: 'disconnected' | 'connecting' | 'qr' | 'connected'
@@ -22,7 +23,11 @@ export interface BotStatus {
 const sockets = new Map<string, WASocket>()
 const statuses = new Map<string, BotStatus>()
 const intentionalClose = new Set<string>()
-const sentMessageIds = new Set<string>()
+const sentMessages = new SentMessages()
+/** Tentativas seguidas por dono; zera ao conectar. Alimenta o backoff. */
+const reconnectAttempts = new Map<string, number>()
+/** Reconexão agendada, para poder cancelar num disconnect explícito. */
+const reconnectTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export function statusFor(ownerId: string): BotStatus {
   return statuses.get(ownerId) ?? {
@@ -34,6 +39,10 @@ export function statusFor(ownerId: string): BotStatus {
 /** Abre ou reaproveita o socket de um usuário e publica o QR no estado HTTP. */
 export async function connectOwner(ownerId: string) {
   if (sockets.has(ownerId)) return statusFor(ownerId)
+  cancelReconnect(ownerId)
+  // Um `close` que nunca chegou deixaria a marca presa aqui, e a PRÓXIMA queda
+  // — legítima — seria lida como intencional e não reconectaria.
+  intentionalClose.delete(ownerId)
   const { state, saveCreds } = await postgresAuthState(ownerId)
   const selected = await selectedGroup(ownerId)
   statuses.set(ownerId, { state: 'connecting', qrDataUrl: null, phone: null, ...selected })
@@ -69,6 +78,8 @@ export async function chooseGroup(ownerId: string, jid: string, name: string) {
 
 export async function disconnectOwner(ownerId: string) {
   intentionalClose.add(ownerId)
+  cancelReconnect(ownerId)
+  reconnectAttempts.delete(ownerId)
   const socket = sockets.get(ownerId)
   sockets.delete(ownerId)
   if (socket) await socket.logout().catch(() => undefined)
@@ -88,6 +99,8 @@ async function handleConnection(ownerId: string, update: Partial<ConnectionState
     statuses.set(ownerId, { ...statusFor(ownerId), state: 'qr', qrDataUrl })
   }
   if (update.connection === 'open') {
+    // Conectou: a escalada de espera recomeça do zero na próxima queda.
+    reconnectAttempts.delete(ownerId)
     statuses.set(ownerId, { ...statusFor(ownerId), state: 'connected', qrDataUrl: null, phone: sockets.get(ownerId)?.user?.id ?? null })
     await pool.query(`insert into whatsapp_settings (owner_id,connected_at) values ($1,now()) on conflict (owner_id) do update set connected_at=now(),updated_at=now()`, [ownerId])
   }
@@ -96,11 +109,37 @@ async function handleConnection(ownerId: string, update: Partial<ConnectionState
   if (intentionalClose.delete(ownerId)) return
   const code = (update.lastDisconnect?.error as { output?: { statusCode?: number } })?.output?.statusCode
   if (code === DisconnectReason.loggedOut) {
+    reconnectAttempts.delete(ownerId)
     statuses.set(ownerId, { ...statusFor(ownerId), state: 'disconnected', qrDataUrl: null, phone: null })
     return
   }
+
+  const tentativa = (reconnectAttempts.get(ownerId) ?? 0) + 1
+  if (tentativa > RECONNECT_MAX_ATTEMPTS) {
+    // Desistir é melhor que insistir para sempre: numa VPS de 1 GB, um laço de
+    // handshake por dono consome mais que o serviço inteiro em repouso. A tela
+    // mostra desconectado e o usuário reconecta quando quiser.
+    reconnectAttempts.delete(ownerId)
+    console.error(`reconexão desistiu para ${ownerId} após ${RECONNECT_MAX_ATTEMPTS} tentativas`)
+    statuses.set(ownerId, { ...statusFor(ownerId), state: 'disconnected', qrDataUrl: null, phone: null })
+    return
+  }
+
+  reconnectAttempts.set(ownerId, tentativa)
   statuses.set(ownerId, { ...statusFor(ownerId), state: 'connecting', qrDataUrl: null })
-  setTimeout(() => void connectOwner(ownerId), 1500)
+
+  const timer = setTimeout(() => {
+    reconnectTimers.delete(ownerId)
+    void connectOwner(ownerId)
+  }, reconnectDelay(tentativa))
+  reconnectTimers.set(ownerId, timer)
+}
+
+function cancelReconnect(ownerId: string) {
+  const timer = reconnectTimers.get(ownerId)
+  if (!timer) return
+  clearTimeout(timer)
+  reconnectTimers.delete(ownerId)
 }
 
 async function handleMessages(ownerId: string, messages: WAMessage[]) {
@@ -109,7 +148,7 @@ async function handleMessages(ownerId: string, messages: WAMessage[]) {
   if (!socket || !selected) return
   for (const message of messages) {
     const id = message.key.id
-    if (!id || sentMessageIds.delete(id) || message.key.remoteJid !== selected) continue
+    if (!id || sentMessages.consume(id) || message.key.remoteJid !== selected) continue
     const text = messageText(message)
     if (!text) continue
     // Rastreia todo mundo, para o /clear alcançar a conversa inteira...
@@ -205,7 +244,7 @@ async function send(ownerId: string, socket: WASocket, jid: string, text: string
   // metadados do YouTube nem gerar uma segunda miniatura no VPS de 1 GB.
   const sent = await socket.sendMessage(jid, { text, linkPreview: null })
   if (sent?.key.id) {
-    sentMessageIds.add(sent.key.id)
+    sentMessages.remember(sent.key.id)
     await trackGroupMessage(ownerId, sent.key, sent.messageTimestamp)
   }
 }
