@@ -1,0 +1,1 @@
+ALTER TABLE "exercise_media" ADD COLUMN "purged_at" timestamp with time zone;

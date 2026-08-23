@@ -51,7 +51,6 @@ suite('closeStaleSessions', () => {
     await pool.query('delete from templates where owner_id=$1', [ownerId])
     await pool.query('delete from programs where owner_id=$1', [ownerId])
     await pool.query("delete from users where google_sub='vitest-jobs'")
-    await pool.end()
   })
 
   const openSession = async (startedAt: Date) => {
@@ -139,4 +138,106 @@ suite('closeStaleSessions', () => {
     expect(await closeStaleSessions()).toBe(1)
     expect(await closeStaleSessions()).toBe(0)
   })
+})
+
+/**
+ * A linha da mídia fica para sempre (é o soft delete que ensina o cliente
+ * offline que ela sumiu), mas os dois WebP no bucket, não. Sem esta limpeza o
+ * disco da VPS enche com foto que ninguém mais consegue ver.
+ */
+suite('purgeDeletedMedia', () => {
+  let ownerId = ''
+  let exerciseId = ''
+  let purgeDeletedMedia: (now?: Date) => Promise<number>
+  let putObject: (key: string, body: Buffer, contentType: string) => Promise<void>
+  let objectExists: (key: string) => Promise<boolean>
+
+  const DAYS = 24 * HOURS
+
+  const media = async (deletedAgoMs: number | null) => {
+    const id = randomUUID()
+    const prefix = `users/${ownerId}/exercises/${exerciseId}/${id}`
+    await putObject(`${prefix}.webp`, Buffer.from('cheio'), 'image/webp')
+    await putObject(`${prefix}.thumb.webp`, Buffer.from('thumb'), 'image/webp')
+    await pool.query(
+      `insert into exercise_media (id, owner_id, exercise_id, s3_key, thumb_key, mime, bytes, deleted_at)
+       values ($1,$2,$3,$4,$5,'image/webp',5,$6)`,
+      [id, ownerId, exerciseId, `${prefix}.webp`, `${prefix}.thumb.webp`,
+        deletedAgoMs === null ? null : new Date(Date.now() - deletedAgoMs)],
+    )
+    return { id, s3Key: `${prefix}.webp`, thumbKey: `${prefix}.thumb.webp` }
+  }
+
+  beforeEach(async () => {
+    ;({ purgeDeletedMedia } = await import('../../src/jobs/index.js'))
+    const storage = await import('../../src/lib/storage.js')
+    putObject = storage.putObject
+    objectExists = async (key: string) =>
+      storage.getObjectStream(key).then(() => true).catch(() => false)
+
+    const { rows } = await pool.query(
+      `insert into users (google_sub, email, name) values ('vitest-media','media@exemplo.com','Media')
+       on conflict (google_sub) do update set email = excluded.email returning id`,
+    )
+    ownerId = rows[0].id
+    await pool.query('delete from exercise_media where owner_id=$1', [ownerId])
+    await pool.query('delete from exercises where owner_id=$1', [ownerId])
+
+    exerciseId = randomUUID()
+    await pool.query(
+      `insert into exercises (id, owner_id, name) values ($1,$2,'Supino')`, [exerciseId, ownerId],
+    )
+  })
+
+  afterAll(async () => {
+    await pool.query('delete from exercise_media where owner_id=$1', [ownerId])
+    await pool.query('delete from exercises where owner_id=$1', [ownerId])
+    await pool.query("delete from users where google_sub='vitest-media'")
+  })
+
+  it('apaga os dois objetos da mídia removida além da carência', async () => {
+    const alvo = await media(8 * DAYS)
+
+    expect(await purgeDeletedMedia()).toBe(1)
+    expect(await objectExists(alvo.s3Key)).toBe(false)
+    expect(await objectExists(alvo.thumbKey)).toBe(false)
+  })
+
+  it('a linha continua no banco, para o cliente offline saber que sumiu', async () => {
+    const alvo = await media(8 * DAYS)
+    await purgeDeletedMedia()
+
+    const { rows } = await pool.query(
+      'select deleted_at, purged_at from exercise_media where id=$1', [alvo.id],
+    )
+    expect(rows).toHaveLength(1)
+    expect(rows[0].deleted_at).not.toBeNull()
+    expect(rows[0].purged_at).not.toBeNull()
+  })
+
+  it('não toca no que ainda está dentro da carência', async () => {
+    const recente = await media(1 * DAYS)
+
+    expect(await purgeDeletedMedia()).toBe(0)
+    expect(await objectExists(recente.s3Key)).toBe(true)
+  })
+
+  it('não toca no que não foi apagado', async () => {
+    const viva = await media(null)
+
+    expect(await purgeDeletedMedia()).toBe(0)
+    expect(await objectExists(viva.s3Key)).toBe(true)
+  })
+
+  it('rodar de novo não repete trabalho', async () => {
+    await media(8 * DAYS)
+    expect(await purgeDeletedMedia()).toBe(1)
+    expect(await purgeDeletedMedia()).toBe(0)
+  })
+})
+
+// O pool é do módulo inteiro: fechá-lo dentro de uma suíte derruba as
+// seguintes, que ainda vão usá-lo.
+afterAll(async () => {
+  if (reachable) await pool.end()
 })

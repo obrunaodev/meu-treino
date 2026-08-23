@@ -223,6 +223,12 @@ export const exerciseMedia = pgTable('exercise_media', {
   width: integer('width'),
   height: integer('height'),
   position: smallint('position').notNull().default(0),
+  /**
+   * Quando os dois WebP saíram do bucket. A linha continua aqui depois disso:
+   * é o soft delete que ensina o cliente offline que a mídia sumiu, e apagá-la
+   * de vez a tornaria invisível para quem ainda não sincronizou.
+   */
+  purgedAt: timestamp('purged_at', { withTimezone: true }),
 }, (t) => [index('exercise_media_owner_rev_idx').on(t.ownerId, t.rev)])
 
 /** `reason`: 'equipamento' (a academia não tem), 'dor', 'preferencia'. */
