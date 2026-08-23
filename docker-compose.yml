@@ -84,6 +84,12 @@ services:
       S3_REGION: ${S3_REGION}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # Sem estas, o push fica desligado dentro do container mesmo com as
+      # chaves no .env — e o botão em Configurações não faz nada.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@localhost}
+      REMINDER_TIMEZONE: ${REMINDER_TIMEZONE:-America/Sao_Paulo}
       WHATSAPP_BOT_URL: http://whatsapp-bot:3100
       WHATSAPP_INTERNAL_TOKEN: ${WHATSAPP_INTERNAL_TOKEN}
     depends_on:

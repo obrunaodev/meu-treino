@@ -258,6 +258,15 @@ export const programs = pgTable('programs', {
   rirDeltaPerBlock: smallint('rir_delta_per_block').notNull().default(-1),
   defaultRestSeconds: integer('default_rest_seconds').notNull().default(90),
   reminderLeadMinutes: integer('reminder_lead_minutes').notNull().default(60),
+  /**
+   * Hora do treino, 'HH:MM' no fuso do install. É o alvo de que
+   * `reminderLeadMinutes` é subtraído — sem ela, "avisar 60 min antes" não tem
+   * de quê. Tem default para que ligar o lembrete já funcione: silêncio depois
+   * de ligar um botão é pior que um horário que o usuário ainda vai ajustar.
+   */
+  workoutTime: text('workout_time').notNull().default('18:00'),
+  /** Último lembrete enviado, para não repetir a cada tick do mesmo dia. */
+  lastReminderAt: timestamp('last_reminder_at', { withTimezone: true }),
   weekdays: jsonb('weekdays').$type<number[]>().notNull().default([]),
   isActive: boolean('is_active').notNull().default(true),
   startedAt: timestamp('started_at', { withTimezone: true }),

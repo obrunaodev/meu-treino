@@ -112,18 +112,32 @@ export function Settings() {
           {pushState === 'needs-install' && <span className="mono muted">{t('settings.reminders_ios')}</span>}
 
           {settings?.remindersEnabled && (
-            <label className="field">
-              {t('settings.reminders_lead')}
-              <input
-                type="number"
-                min={5}
-                step={5}
-                value={program.reminderLeadMinutes}
-                onChange={(e) =>
-                  void updateProgram(program.id, { reminderLeadMinutes: Math.max(5, Number(e.target.value)) })
-                }
-              />
-            </label>
+            <>
+              <label className="field">
+                {t('settings.reminders_time')}
+                <input
+                  type="time"
+                  value={program.workoutTime}
+                  // O campo devolve '' enquanto está incompleto; gravar isso
+                  // deixaria o programa sem horário e o lembrete sem alvo.
+                  onChange={(e) =>
+                    e.target.value && void updateProgram(program.id, { workoutTime: e.target.value })
+                  }
+                />
+              </label>
+              <label className="field">
+                {t('settings.reminders_lead')}
+                <input
+                  type="number"
+                  min={5}
+                  step={5}
+                  value={program.reminderLeadMinutes}
+                  onChange={(e) =>
+                    void updateProgram(program.id, { reminderLeadMinutes: Math.max(5, Number(e.target.value)) })
+                  }
+                />
+              </label>
+            </>
           )}
         </Card>
       )}

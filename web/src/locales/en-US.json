@@ -440,6 +440,7 @@
     "plates": "Show plate position",
     "rest": "Default rest (seconds)",
     "reminders": "Workout day reminders",
+    "reminders_time": "Workout time",
     "reminders_lead": "Minutes before",
     "reminders_blocked": "Notifications are blocked in this browser.",
     "reminders_ios": "On iPhone you must install the app to your home screen to receive notifications.",

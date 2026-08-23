@@ -13,6 +13,11 @@ const DEFAULTS: Record<string, string> = {
   S3_ACCESS_KEY: 'treino',
   S3_SECRET_KEY: 'change-me-too',
   NODE_ENV: 'test',
+  // Par VAPID descartável, só para os testes. `pushEnabled` é false sem ele e
+  // o job de lembretes sairia na primeira linha, passando por vacuidade.
+  // Nenhuma entrega real acontece: não há inscrição de push no banco de teste.
+  VAPID_PUBLIC_KEY: 'BBRevTCgrzsCwa22sH91htXRYsCwxvJxKda5U6NlGwZ4uyo1mYiSNspLHbTlht3xbmDAfrVew2gmtHuXLYUl8fY',
+  VAPID_PRIVATE_KEY: 'sj7J9LZnQVustwUVxv_KgX9m5Mdux3L_mSz-egXHGYs',
 }
 
 for (const [key, value] of Object.entries(DEFAULTS)) {

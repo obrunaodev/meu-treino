@@ -3,7 +3,7 @@ import { SYNC_TABLES, type SyncEntity } from '../db/sync-tables.js'
 import { badRequest } from './http-error.js'
 
 /** Nunca vêm do cliente: quem escreve é o servidor. */
-const SERVER_OWNED = new Set(['rev', 'ownerId', 'createdAt', 'purgedAt'])
+const SERVER_OWNED = new Set(['rev', 'ownerId', 'createdAt', 'purgedAt', 'lastReminderAt'])
 
 interface ColumnMeta {
   dataType: string

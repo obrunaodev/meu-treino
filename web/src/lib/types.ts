@@ -72,6 +72,8 @@ export interface Program extends Base {
   rirDeltaPerBlock: number
   defaultRestSeconds: number
   reminderLeadMinutes: number
+  /** Hora do treino, 'HH:MM'. É o alvo de que a antecedência é subtraída. */
+  workoutTime: string
   weekdays: number[]
   isActive: boolean
   startedAt: string | null

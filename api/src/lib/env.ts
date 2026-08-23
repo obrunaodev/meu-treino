@@ -38,6 +38,12 @@ const schema = z
     VAPID_PUBLIC_KEY: z.string().default(''),
     VAPID_PRIVATE_KEY: z.string().default(''),
     VAPID_SUBJECT: z.string().default('mailto:admin@localhost'),
+    /**
+     * Fuso do install, não do usuário: o app é de uso pessoal e uma coluna por
+     * usuário seria máquina para um caso que não existe. É daqui que sai o dia
+     * da semana e a hora local do lembrete — em UTC eles saem errados.
+     */
+    REMINDER_TIMEZONE: z.string().default('America/Sao_Paulo'),
 
     WHATSAPP_BOT_URL: z.string().url().default('http://whatsapp-bot:3100'),
     WHATSAPP_INTERNAL_TOKEN: z.string().min(32).default(DEV_WHATSAPP_TOKEN),

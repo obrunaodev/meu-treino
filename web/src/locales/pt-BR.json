@@ -440,6 +440,7 @@
     "plates": "Mostrar posição da placa",
     "rest": "Descanso padrão (segundos)",
     "reminders": "Lembretes dos dias de treino",
+    "reminders_time": "Horário do treino",
     "reminders_lead": "Minutos antes",
     "reminders_blocked": "Notificações bloqueadas no navegador.",
     "reminders_ios": "No iPhone, é preciso instalar o app na tela de início para receber notificações.",

@@ -236,6 +236,142 @@ suite('purgeDeletedMedia', () => {
   })
 })
 
+/**
+ * O lembrete só existe se mirar um horário. Antes ele não era nem agendado —
+ * e, se fosse, mandaria a cada tick do dia, para quem tinha desligado o botão,
+ * no fuso do container.
+ */
+suite('sendWorkoutReminders', () => {
+  const TZ = 'America/Sao_Paulo'
+  let ownerId = ''
+  let programId = ''
+  let sendWorkoutReminders: (now?: Date, timeZone?: string) => Promise<number>
+
+  /** Um instante UTC a partir da hora LOCAL de São Paulo (UTC-3). */
+  const local = (dia: string, hora: string) => new Date(`${dia}T${hora}:00-03:00`)
+  // 2026-08-25 é uma terça-feira.
+  const TERCA = '2026-08-25'
+  const QUARTA = '2026-08-26'
+
+  const programa = async (patch: Record<string, unknown> = {}) => {
+    const campos = {
+      schedule_mode: 'weekly', weekdays: JSON.stringify([2]), workout_time: '19:00',
+      reminder_lead_minutes: 60, is_active: true, ...patch,
+    }
+    await pool.query('delete from programs where owner_id=$1', [ownerId])
+    programId = randomUUID()
+    await pool.query(
+      `insert into programs (id, owner_id, name, schedule_mode, weekdays, workout_time,
+                             reminder_lead_minutes, is_active)
+       values ($1,$2,'Força',$3,$4,$5,$6,$7)`,
+      [programId, ownerId, campos.schedule_mode, campos.weekdays, campos.workout_time,
+        campos.reminder_lead_minutes, campos.is_active],
+    )
+  }
+
+  const lembretesLigados = (on: boolean) =>
+    pool.query(`update user_settings set reminders_enabled=$2 where owner_id=$1`, [ownerId, on])
+
+  const enviadoEm = async () => {
+    const { rows } = await pool.query('select last_reminder_at from programs where id=$1', [programId])
+    return rows[0]?.last_reminder_at as Date | null
+  }
+
+  beforeEach(async () => {
+    ;({ sendWorkoutReminders } = await import('../../src/jobs/index.js'))
+    const { rows } = await pool.query(
+      `insert into users (google_sub, email, name) values ('vitest-rem','rem@exemplo.com','Rem')
+       on conflict (google_sub) do update set email = excluded.email returning id`,
+    )
+    ownerId = rows[0].id
+    await pool.query(
+      `insert into user_settings (id, owner_id, reminders_enabled) values ($1,$2,true)
+       on conflict (owner_id) do update set reminders_enabled=true`,
+      [randomUUID(), ownerId],
+    )
+    await programa()
+  })
+
+  afterAll(async () => {
+    await pool.query('delete from programs where owner_id=$1', [ownerId])
+    await pool.query('delete from user_settings where owner_id=$1', [ownerId])
+    await pool.query("delete from users where google_sub='vitest-rem'")
+  })
+
+  it('marca o envio no horário certo: antecedência antes do treino', async () => {
+    // Treino 19:00, avisar 60 min antes -> 18:00 local.
+    await sendWorkoutReminders(local(TERCA, '18:00'), TZ)
+    expect(await enviadoEm()).not.toBeNull()
+  })
+
+  it('não dispara antes da hora', async () => {
+    await sendWorkoutReminders(local(TERCA, '17:30'), TZ)
+    expect(await enviadoEm()).toBeNull()
+  })
+
+  it('não dispara depois que a janela de tolerância passa', async () => {
+    await sendWorkoutReminders(local(TERCA, '18:45'), TZ)
+    expect(await enviadoEm()).toBeNull()
+  })
+
+  it('um restart em cima da hora ainda alcança dentro da tolerância', async () => {
+    await sendWorkoutReminders(local(TERCA, '18:20'), TZ)
+    expect(await enviadoEm()).not.toBeNull()
+  })
+
+  it('manda uma vez só, mesmo com o tick de 5 min rodando o dia todo', async () => {
+    for (const hora of ['18:00', '18:05', '18:10', '18:15', '18:20']) {
+      await sendWorkoutReminders(local(TERCA, hora), TZ)
+    }
+    const { rows } = await pool.query(
+      'select last_reminder_at from programs where id=$1', [programId],
+    )
+    expect(rows[0].last_reminder_at).toEqual(local(TERCA, '18:00'))
+  })
+
+  it('volta a mandar no próximo dia de treino', async () => {
+    await sendWorkoutReminders(local(TERCA, '18:00'), TZ)
+    const primeiro = await enviadoEm()
+
+    await pool.query(`update programs set weekdays=$2 where id=$1`, [programId, JSON.stringify([2, 3])])
+    await sendWorkoutReminders(local(QUARTA, '18:00'), TZ)
+
+    expect(await enviadoEm()).not.toEqual(primeiro)
+  })
+
+  it('respeita o botão desligado em Configurações', async () => {
+    await lembretesLigados(false)
+    await sendWorkoutReminders(local(TERCA, '18:00'), TZ)
+    expect(await enviadoEm()).toBeNull()
+  })
+
+  it('ignora dia que não é de treino', async () => {
+    await sendWorkoutReminders(local(QUARTA, '18:00'), TZ)
+    expect(await enviadoEm()).toBeNull()
+  })
+
+  it('ignora programa contínuo, que não tem dia para mirar', async () => {
+    await programa({ schedule_mode: 'continuous' })
+    await sendWorkoutReminders(local(TERCA, '18:00'), TZ)
+    expect(await enviadoEm()).toBeNull()
+  })
+
+  it('usa o fuso do usuário, não o do container', async () => {
+    // 18:00 em São Paulo é 21:00 UTC. Lido como UTC, cairia fora da janela.
+    const instante = local(TERCA, '18:00')
+    expect(instante.getUTCHours()).toBe(21)
+
+    await sendWorkoutReminders(instante, TZ)
+    expect(await enviadoEm()).not.toBeNull()
+  })
+
+  it('antecedência maior que a hora do treino não vira aviso na véspera', async () => {
+    await programa({ workout_time: '00:30', reminder_lead_minutes: 60 })
+    await sendWorkoutReminders(local(TERCA, '00:00'), TZ)
+    expect(await enviadoEm()).not.toBeNull()
+  })
+})
+
 // O pool é do módulo inteiro: fechá-lo dentro de uma suíte derruba as
 // seguintes, que ainda vão usá-lo.
 afterAll(async () => {

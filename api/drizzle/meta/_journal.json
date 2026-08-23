@@ -64,6 +64,13 @@
       "when": 1787503332313,
       "tag": "0008_zippy_the_santerians",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787504090008,
+      "tag": "0009_flimsy_jack_power",
+      "breakpoints": true
     }
   ]
 }
