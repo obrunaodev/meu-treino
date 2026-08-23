@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="omelette-owns-print" content="true">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f4f2ee; -webkit-font-smoothing: antialiased; }
+  a { color: #b23a26; }
+  a:hover { color: #7d2617; }
+  @page { size: A4 portrait; margin: 5mm; }
+  @media print {
+    html, body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { zoom: 0.605; }
+    [data-print="root"] { padding: 0 !important; gap: 20px !important; width: 1240px !important; align-items: stretch !important; }
+    [data-print="root"] > * { max-width: none !important; }
+    [data-print="grid"] { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 16px !important; }
+    [data-print="cardio"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 18px !important; }
+    [data-print="break"] { margin-top: 6px !important; }
+    [data-print="root"] > div:not([data-print="grid"]) { break-after: avoid; page-break-after: avoid; }
+    [data-print="root"] > p { break-before: avoid; page-break-before: avoid; }
+    [data-print="hide"] { display: none !important; }
+    article, section { break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
+</helmet>
+<div data-print="root" style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #16150f; background: #f4f2ee; padding: 40px 24px 80px; display: flex; flex-direction: column; align-items: center; gap: 28px;">
+
+  <header style="width: 100%; max-width: 1240px; display: flex; flex-direction: column; gap: 18px; border-bottom: 3px solid #16150f; padding-bottom: 22px;">
+    <div style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto; align-items: center; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #6d685c;">Programa A/B · sessão de 60 min</span>
+        <h1 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 74px; line-height: 0.92; margin: 0; text-transform: uppercase; letter-spacing: -0.01em;">Treinos A e B</h1>
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 500; font-size: 26px; text-transform: uppercase; letter-spacing: 0.04em; color: #b23a26;">Ter · Qui · Sáb — alternando A e B</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.35; letter-spacing: 0.02em; min-width: 0;">
+        <span style="border: 1px solid #16150f; padding: 5px 9px;">RIR alvo: {{ phaseLabel }}</span>
+        <span style="border: 1px solid #16150f; padding: 5px 9px;">Superiores RIR {{ rirUpper }}</span><span style="border: 1px solid #16150f; padding: 5px 9px;">Inferiores RIR {{ rirLower }}</span>
+        
+        <span style="border: 1px solid #16150f; padding: 5px 9px;">Rodízio: faça o que não fez da última vez</span>
+      </div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.9; color: #4a463c; text-align: right; white-space: nowrap;">
+        <div>2 min preparação</div>
+        <div>~40 min musculação</div>
+        <div>20 min cardio contínuo, no fim</div>
+      </div>
+    </div>
+  </header>
+
+  <section data-print="prep" style="width: 100%; max-width: 1240px; display: grid; grid-template-columns: minmax(280px, 0.9fr) 3fr; gap: 0; border: 1px solid #d3cdc0; background: #ece8e0;">
+    <div style="background: #16150f; color: #f2efe8; padding: 26px 24px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #8f8a7d;">Antes de A ou B</span>
+        <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 40px; line-height: 0.95; margin: 0; text-transform: uppercase;">Preparação</h2>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #b23a26;">2 min · aquecimento dinâmico</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #c2bcae;">Depois, 1–2 séries progressivas leves do primeiro exercício do dia — <strong style="color: #f2efe8;">não contam como séries de trabalho</strong>.</p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #c2bcae; border-top: 1px solid #3b382f; padding-top: 12px;">Nenhum movimento aqui deve reproduzir a dor medial do alongamento.</p>
+      <div style="border-top: 1px solid #3b382f; padding-top: 12px; display: flex; flex-direction: column; gap: 4px;">
+        
+        
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));">
+      <div style="border-left: 1px solid #d3cdc0; display: flex; flex-direction: column;">
+        <div style="background: #fff; padding: 8px; flex: 1; display: flex; align-items: center;">
+          <img src="uploads/ChatGPT Image Aug 16, 2026, 06_28_16 PM.png" alt="90/90 de quadril" style="width: 100%; height: auto; display: block;">
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-top: 1px solid #d3cdc0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #34302a;">
+          <span style="color: #b23a26;">01</span><span>5 alternâncias por lado</span>
+        </div>
+      </div>
+      <div style="border-left: 1px solid #d3cdc0; display: flex; flex-direction: column;">
+        <div style="background: #fff; padding: 8px; flex: 1; display: flex; align-items: center;">
+          <img src="uploads/ChatGPT Image Aug 16, 2026, 06_30_33 PM.png" alt="Rock-back de adutor" style="width: 100%; height: auto; display: block;">
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-top: 1px solid #d3cdc0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #34302a;">
+          <span style="color: #b23a26;">02</span><span>5 por lado</span>
+        </div>
+      </div>
+      <div style="border-left: 1px solid #d3cdc0; display: flex; flex-direction: column;">
+        <div style="background: #fff; padding: 8px; flex: 1; display: flex; align-items: center;">
+          <img src="uploads/ChatGPT Image Aug 16, 2026, 06_35_22 PM.png" alt="Joelho na parede" style="width: 100%; height: auto; display: block;">
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-top: 1px solid #d3cdc0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #34302a;">
+          <span style="color: #b23a26;">03</span><span>5 por lado</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-print="cardio" style="width: 100%; max-width: 1240px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px;">
+    <div style="background: #16150f; color: #f2efe8; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; margin: 0; text-transform: uppercase;">Cardio</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.6;">
+        <div><strong style="font-family: 'IBM Plex Mono', monospace;">20 min contínuos</strong>, inteiros no fim da sessão. Nada de cardio na chegada</div>
+        <div>Ritmo moderado — dá para conversar com dificuldade</div>
+        <div>Bicicleta, elíptico ou caminhada inclinada. Remo mais adiante</div>
+        <div>Sem intervalado neste bloco: o jiu-jitsu 3×/semana já dá esse estímulo em abundância; o que falta é base aeróbica contínua</div>
+      </div>
+      
+      <div style="border-top: 1px solid #3b382f; padding-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #b23a26;">Se o tempo estourar — ordem de corte</span>
+        <ol style="margin: 0; padding-left: 20px; font-size: 14.5px; line-height: 1.6; display: flex; flex-direction: column; gap: 4px; color: #d5cfc2;">
+          <li>Tempo procurando máquina — substitua imediatamente pela tabela</li>
+          <li>Intervalos dos acessórios (slots 5 e 6)</li>
+          <li>Uma série de acessório: desenvolvimento 2→1, abdutor 2→1, rotação externa 2→1</li>
+          <li>Cardio final</li>
+        </ol>
+        <span style="font-size: 14.5px; line-height: 1.6; color: #b9b3a5;"><strong style="color: rgb(242, 239, 232);">Nunca corte os slots 1 a 4.</strong></span>
+      </div>
+    </div>
+    <div style="background: #ece8e0; border: 1px solid #d3cdc0; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; margin: 0; text-transform: uppercase;">Progressão</h2>
+      <div style="background: #f7f5f1; border: 1px solid #d3cdc0; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #b23a26;">O que é RIR</span>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #34302a;"><strong>Reps in reserve</strong> — quantas repetições você ainda conseguiria fazer com boa técnica ao encerrar a série. RIR 3 = pararia 3 repetições antes da falha; RIR 0 = falha.</p>
+        <div style="display: flex; flex-direction: column; gap: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #4a463c;">
+          <span>RIR 3 &nbsp;·&nbsp; sobram 3 reps &nbsp;·&nbsp; esforço moderado</span>
+          <span>RIR 2 &nbsp;·&nbsp; sobram 2 reps &nbsp;·&nbsp; últimas reps já lentas</span>
+          <span>RIR 0 &nbsp;·&nbsp; falha técnica &nbsp;·&nbsp; não usar neste bloco</span>
+        </div>
+      </div>
+      <ol style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.65; display: flex; flex-direction: column; gap: 6px; color: #34302a;">
+        <li>Carga em que você fecha o <strong>piso</strong> da faixa com o RIR alvo</li>
+        <li>Mantenha até fechar <strong>todas as séries no topo</strong></li>
+        <li>Suba o menor incremento disponível e volte ao piso</li>
+      </ol>
+      <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: #4a463c; border-top: 1px solid #d3cdc0; padding-top: 12px;"><strong>Membro inferior:</strong> depois de subir carga, não tente subir de novo na exposição seguinte, mesmo que pareça fácil.</p>
+    </div>
+  </section>
+
+  <div style="width: 100%; max-width: 1240px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 2px solid #16150f; padding-bottom: 8px;">
+    <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 1; margin: 0; text-transform: uppercase;">Treino A</h2>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #b23a26;">Quadríceps · glúteo · empurrar</span>
+  </div>
+
+  <div data-print="grid" style="width: 100%; max-width: 1240px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">1</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 8–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirLower }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a1" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 07_50_37 PM.png" alt="Leg press horizontal articulado" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">2</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 10–15 / perna</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirLower }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a2" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_00_06 PM.png" alt="Extensora unilateral" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">3</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 8–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR 2–3</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a3" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 07_52_04 PM.png" alt="Hip thrust na máquina" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">4</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 8–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirUpper }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a4" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_04_21 PM.png" alt="Supino reto máquina articulado" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">5</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">2 × 10–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirUpper }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a5" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_06_58 PM.png" alt="Desenvolvimento no aparelho" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">6</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">2 × 30–45s / lado</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">sem RIR</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="a6" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_08_50 PM.png" alt="Abdominal ponte lateral" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+  </div>
+
+  <p style="width: 100%; max-width: 1240px; margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #4a463c;">Unilaterais: direita → esquerda → descanso. Não descanse entre os lados.</p>
+
+  <div data-print="break" style="width: 100%; max-width: 1240px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 2px solid #16150f; padding-bottom: 8px; margin-top: 18px;">
+    <h2 style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 1; margin: 0; text-transform: uppercase;">Treino B</h2>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #b23a26;">Posterior · quadril · puxar · ombro</span>
+  </div>
+
+  <div data-print="grid" style="width: 100%; max-width: 1240px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">1</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 10–15 / perna</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirLower }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b1" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_10_59 PM.png" alt="Banco flexor unilateral" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">2</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 10–15</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR 2–3</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b2" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_15_43 PM.png" alt="Banco adutor" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">3</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 8–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirUpper }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b3" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_18_48 PM.png" alt="Remada articulada com apoio de peito" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">4</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">3 × 8–12</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR {{ rirUpper }}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b4" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_21_39 PM.png" alt="Pulldown máquina pronado" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">5</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">2 × 12–20</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR 2–3</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b5" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_23_35 PM.png" alt="Abdutor máquina articulado" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+    <article style="background: #fdfcfa; border: 1px solid #ded8cb; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ece8e0; flex-wrap: wrap; min-width: 0;">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 0.8; color: #b23a26;">6</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1 1 auto; min-width: 0;">
+          <span style="background: #16150f; color: #f7f5f1; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">2 × 12–20 / lado</span>
+          <span style="border: 1px solid #16150f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;">RIR 3</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 3px; flex: 0 0 auto; border: 1px dashed #a8a294; background: #fff; padding: 4px 7px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6d685c; white-space: nowrap;"><input type="text" data-carga="b6" placeholder="carga" onInput="{{ onCarga }}" style="width: 34px; border: none; outline: none; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: #16150f;"><span>kg</span></label>
+      </div>
+      <div style="background: #fff; padding: 10px; display: flex; align-items: center; justify-content: center;">
+        <img src="uploads/ChatGPT Image Aug 16, 2026, 06_25_39 PM.png" alt="Rotação externa de ombro no cross over" style="width: 100%; height: auto; display: block;">
+      </div>
+    </article>
+
+  </div>
+
+  <p style="width: 100%; max-width: 1240px; margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #4a463c;">Unilaterais: direita → esquerda → descanso. Não descanse entre os lados.</p>
+
+
+  <sc-if value="{{ showSubs }}" hint-placeholder-val="{{ true }}">
+    
+  </sc-if>
+
+  <sc-if value="{{ showAlerts }}" hint-placeholder-val="{{ true }}">
+    
+  </sc-if>
+
+  <footer data-print="hide" style="width: 100%; max-width: 1240px; border-top: 1px solid #d3cdc0; padding-top: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6d685c; letter-spacing: 0.04em;"><br></footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;rirPhase&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Semanas 1–2&quot;,&quot;Semana 3+&quot;],&quot;default&quot;:&quot;Semanas 1–2&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Programa&quot;},&quot;showSubs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Seções&quot;},&quot;showAlerts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Seções&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem("treinoAB.cargas") || "{}"); } catch (e) {}
+    document.querySelectorAll("[data-carga]").forEach(el => {
+      if (saved[el.dataset.carga]) el.value = saved[el.dataset.carga];
+    });
+  }
+  renderVals() {
+    const phase = this.props.rirPhase ?? "Semanas 1–2";
+    return {
+      phaseLabel: phase,
+      rirLower: phase === "Semanas 1–2" ? "3" : "2–3",
+      rirUpper: "2–3",
+      showSubs: this.props.showSubs ?? true,
+      showAlerts: this.props.showAlerts ?? true,
+      onCarga: (e) => {
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem("treinoAB.cargas") || "{}"); } catch (err) {}
+        saved[e.target.dataset.carga] = e.target.value;
+        localStorage.setItem("treinoAB.cargas", JSON.stringify(saved));
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
