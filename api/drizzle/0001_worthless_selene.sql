@@ -1,0 +1,1 @@
+ALTER TABLE "exercises" ADD COLUMN "load_per_side" boolean DEFAULT false NOT NULL;

@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1787235555672,
+      "tag": "0000_polite_northstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787436739680,
+      "tag": "0001_worthless_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787449247900,
+      "tag": "0002_sparkling_ben_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787449776690,
+      "tag": "0003_big_white_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787455236365,
+      "tag": "0004_illegal_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787494635668,
+      "tag": "0005_cheerful_hairball",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787499151733,
+      "tag": "0006_yielding_centennial",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787499473265,
+      "tag": "0007_dusty_expediter",
+      "breakpoints": true
+    }
+  ]
+}
