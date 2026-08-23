@@ -31,6 +31,12 @@
 	}
 }
 
+# O hostname temporário continua chegando ao app por links já salvos, mas não
+# mantém uma segunda origem/cookie: tudo converge para o endereço canônico.
+{$LEGACY_SITE_ADDRESS} {
+	redir https://{$SITE_ADDRESS}{uri} permanent
+}
+
 # Certificados de IP da Let's Encrypt duram seis dias e exigem explicitamente
 # o perfil shortlived. Caddy renova automaticamente; este bloco existe porque
 # navegadores modernos tentam HTTPS antes de aceitar um redirect HTTP do IP.
