@@ -8,7 +8,7 @@ import { requireAuth } from '../middleware/auth.js'
 import { threeWayMerge, resolveDeleteVsEdit, type Row } from '../lib/merge.js'
 import { badRequest, notFound } from '../lib/http-error.js'
 import { coerceBase, coerceRow, serializeRow } from '../lib/coerce.js'
-import { param } from '../lib/params.js'
+import { uuidParam } from '../lib/params.js'
 
 export const syncRouter = Router()
 syncRouter.use(requireAuth)
@@ -246,7 +246,7 @@ syncRouter.post('/conflicts/:id/resolve', async (req, res) => {
   const [conflict] = await db
     .select()
     .from(syncConflicts)
-    .where(and(eq(syncConflicts.id, param(req, 'id')), eq(syncConflicts.ownerId, req.userId!)))
+    .where(and(eq(syncConflicts.id, uuidParam(req, 'id')), eq(syncConflicts.ownerId, req.userId!)))
     .limit(1)
 
   if (!conflict) throw notFound('conflito_nao_encontrado')

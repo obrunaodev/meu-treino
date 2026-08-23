@@ -31,6 +31,17 @@ function base64url(buf: Buffer) {
   return buf.toString('base64url')
 }
 
+const pkceCookie = z.object({ state: z.string(), codeVerifier: z.string() })
+
+/** `JSON.parse` que devolve null em vez de estourar. */
+function safeJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 interface Identity {
   googleSub: string
   email: string
@@ -114,11 +125,14 @@ authRouter.get('/google/callback', callbackLimit, async (req, res) => {
   const raw = req.cookies?.[PKCE_COOKIE]
   if (!code || !state || !raw) throw badRequest('callback_incompleto')
 
-  const pkce = JSON.parse(raw) as { state: string; codeVerifier: string }
-  if (pkce.state !== state) throw badRequest('state_divergente')
+  // Cookie é entrada externa: truncado ou adulterado, o parse estoura e o
+  // erro do JSON viraria 500. Callback incompleto é 400.
+  const pkce = pkceCookie.safeParse(safeJson(raw))
+  if (!pkce.success) throw badRequest('callback_incompleto')
+  if (pkce.data.state !== state) throw badRequest('state_divergente')
   res.clearCookie(PKCE_COOKIE, { path: '/auth' })
 
-  const { id_token } = await exchangeCode(code, pkce.codeVerifier)
+  const { id_token } = await exchangeCode(code, pkce.data.codeVerifier)
   const identity = await verifyIdToken(id_token)
 
   const user = await upsertUser({

@@ -7,7 +7,7 @@ import {
 } from '../db/schema.js'
 import { requireAuth } from '../middleware/auth.js'
 import { notFound } from '../lib/http-error.js'
-import { param } from '../lib/params.js'
+import { intParam } from '../lib/params.js'
 
 export const catalogRouter = Router()
 catalogRouter.use(requireAuth)
@@ -39,7 +39,7 @@ catalogRouter.get('/exercises', async (req, res) => {
 })
 
 catalogRouter.get('/exercises/:id', async (req, res) => {
-  const id = Number(param(req, 'id'))
+  const id = intParam(req, 'id')
   const [exercise] = await db.select().from(catalogExercises).where(eq(catalogExercises.id, id))
   if (!exercise) throw notFound('exercicio_nao_encontrado')
 

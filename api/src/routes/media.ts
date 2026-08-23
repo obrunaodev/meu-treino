@@ -9,7 +9,7 @@ import { MAX_UPLOAD_BYTES, processUpload } from '../lib/image.js'
 import { deleteObject, getObjectStream, putObject } from '../lib/storage.js'
 import { badRequest, notFound } from '../lib/http-error.js'
 import { serializeRow } from '../lib/coerce.js'
-import { param } from '../lib/params.js'
+import { uuidParam } from '../lib/params.js'
 import { rateLimit } from '../middleware/rate-limit.js'
 
 export const mediaRouter = Router()
@@ -28,7 +28,7 @@ const uploadLimit = rateLimit({ windowMs: 60_000, max: 20, code: 'muitos_uploads
 
 mediaRouter.post('/exercises/:exerciseId', uploadLimit, upload.single('file'), async (req, res) => {
   const ownerId = req.userId!
-  const exerciseId = param(req, 'exerciseId')
+  const exerciseId = uuidParam(req, 'exerciseId')
   if (!req.file) throw badRequest('arquivo_ausente')
 
   const [exercise] = await db
@@ -83,7 +83,7 @@ mediaRouter.get('/:mediaId', async (req, res) => {
   const [media] = await db
     .select()
     .from(exerciseMedia)
-    .where(and(eq(exerciseMedia.id, param(req, 'mediaId')), eq(exerciseMedia.ownerId, req.userId!)))
+    .where(and(eq(exerciseMedia.id, uuidParam(req, 'mediaId')), eq(exerciseMedia.ownerId, req.userId!)))
     .limit(1)
 
   if (!media || media.deletedAt) throw notFound('midia_nao_encontrada')
@@ -113,7 +113,7 @@ mediaRouter.delete('/:mediaId', async (req, res) => {
   const [media] = await db
     .select()
     .from(exerciseMedia)
-    .where(and(eq(exerciseMedia.id, param(req, 'mediaId')), eq(exerciseMedia.ownerId, req.userId!)))
+    .where(and(eq(exerciseMedia.id, uuidParam(req, 'mediaId')), eq(exerciseMedia.ownerId, req.userId!)))
     .limit(1)
 
   if (!media) throw notFound('midia_nao_encontrada')
