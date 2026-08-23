@@ -21,6 +21,11 @@
 	handle /api/* {
 		reverse_proxy api:{$API_PORT}
 	}
+	# Depois que a API cria a sessão, esta rota pertence ao React. Ela precisa
+	# vir antes do wildcard de OAuth ou o Express responde "Cannot GET".
+	handle /auth/callback {
+		reverse_proxy web:80
+	}
 	handle /auth/* {
 		reverse_proxy api:{$API_PORT}
 	}
