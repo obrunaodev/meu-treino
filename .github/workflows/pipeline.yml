@@ -75,6 +75,7 @@ jobs:
       INTERNAL_TOKEN: integration-whatsapp-token-32-characters
       API_URL: http://127.0.0.1:3000
       VITE_API_URL: http://127.0.0.1:3000
+      WEB_URL: http://127.0.0.1:5173
       CATALOG_PATH: ../catalogo-enriquecido.json
     steps:
       - uses: actions/checkout@v6
@@ -116,6 +117,11 @@ jobs:
           for attempt in $(seq 1 40); do
             curl --fail --silent http://127.0.0.1:3000/health && break
             test "$attempt" -lt 40 || { cat /tmp/meu-treino-api.log; exit 1; }
+            sleep 2
+          done
+          for attempt in $(seq 1 40); do
+            curl --fail --silent http://127.0.0.1:5173/ >/dev/null && break
+            test "$attempt" -lt 40 || { cat /tmp/meu-treino-web.log; exit 1; }
             sleep 2
           done
       - run: npm run test:integration --prefix api
