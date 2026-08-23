@@ -1,0 +1,165 @@
+name: meu-treino
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Tuning para caber numa VPS de 1 GB. Em máquina maior, suba shared_buffers.
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=384MB
+      -c work_mem=4MB
+      -c max_connections=40
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PUBLISH}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    deploy:
+      resources:
+        limits: { memory: 320M }
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${MINIO_PUBLISH}"
+      - "${MINIO_CONSOLE_PUBLISH}"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    deploy:
+      resources:
+        limits: { memory: 384M }
+
+  # Cria o bucket uma vez e sai. Bucket privado: nenhuma policy anônima.
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio: { condition: service_healthy }
+    entrypoint: >
+      sh -c "
+      mc alias set local ${S3_ENDPOINT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/${S3_BUCKET} &&
+      mc anonymous set none local/${S3_BUCKET} &&
+      echo 'bucket ${S3_BUCKET} pronto'
+      "
+    restart: "no"
+
+  api:
+    build:
+      context: ./api
+      target: ${BUILD_TARGET}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${API_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      APP_ORIGIN: ${APP_ORIGIN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-false}
+      DEV_LOGIN_TOKEN: ${DEV_LOGIN_TOKEN:-}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_REGION: ${S3_REGION}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      WHATSAPP_BOT_URL: http://whatsapp-bot:3100
+      WHATSAPP_INTERNAL_TOKEN: ${WHATSAPP_INTERNAL_TOKEN}
+    depends_on:
+      db: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    volumes:
+      - ./api/src:/app/src
+      - ./api/scripts:/app/scripts
+      - ./api/tests:/app/tests
+      # Sem isto, uma migração nova só chega ao container com rebuild da imagem
+      # — e o db:migrate roda dizendo que aplicou tudo, sem ter visto o arquivo.
+      - ./api/drizzle:/app/drizzle
+      - ./catalogo-enriquecido.json:/app/catalogo-enriquecido.json:ro
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+  whatsapp-bot:
+    build:
+      context: ./bot
+      target: ${BUILD_TARGET}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: 3100
+      DATABASE_URL: ${DATABASE_URL}
+      INTERNAL_TOKEN: ${WHATSAPP_INTERNAL_TOKEN}
+    depends_on:
+      db: { condition: service_healthy }
+    volumes:
+      - ./bot/src:/app/src
+    deploy:
+      resources:
+        limits: { memory: 192M }
+
+  web:
+    build:
+      context: ./web
+      target: ${BUILD_TARGET}
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web/src:/app/src
+      - ./web/public:/app/public
+      - ./web/index.html:/app/index.html
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+  # Só entra em jogo quando houver domínio. Em dev o Vite serve direto.
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["prod"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+      API_PORT: ${API_PORT}
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on: [api, web]
+    deploy:
+      resources:
+        limits: { memory: 64M }
+
+volumes:
+  db-data:
+  minio-data:
+  caddy-data:
+  caddy-config:

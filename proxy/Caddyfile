@@ -1,0 +1,16 @@
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# API e OAuth. O MinIO nunca é exposto — a API faz o stream da mídia.
+	handle /api/* {
+		reverse_proxy api:{$API_PORT}
+	}
+	handle /auth/* {
+		reverse_proxy api:{$API_PORT}
+	}
+
+	# SPA: tudo o mais cai no build estático servido pelo container web.
+	handle {
+		reverse_proxy web:80
+	}
+}
