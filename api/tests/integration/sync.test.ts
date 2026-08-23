@@ -402,3 +402,112 @@ suite('paginação do pull não pula linhas', () => {
   })
 })
 
+/**
+ * `/historico/:id` corrige série já registrada. Enquanto `set_logs` era
+ * append-only, o servidor respondia `noop` a esses upserts: a UI é local-first
+ * e mostrava o valor novo, a fila esvaziava normalmente, e o banco continuava
+ * com o valor velho. Nenhum erro em lugar nenhum — só divergência no próximo
+ * aparelho.
+ */
+suite('correção de série já registrada', () => {
+  const pool = new pg.Pool({ connectionString: DB })
+  const SET = '99999999-9999-7999-8999-999999999999'
+  const SESSION = '12121212-1212-7121-8121-121212121212'
+  const EXERCISE = '13131313-1313-7131-8131-131313131313'
+  let token = ''
+  let ownerId = ''
+
+  const sync = async (operations: unknown[]): Promise<SyncResponse> => {
+    const res = await fetch(`${API}/api/sync`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        deviceId: 'dddddddd-0000-7000-8000-00000000000d',
+        cursors: {},
+        operations,
+      }),
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    return res.json() as Promise<SyncResponse>
+  }
+
+  const serie = {
+    id: SET,
+    sessionId: SESSION,
+    exerciseId: EXERCISE,
+    setIndex: 1,
+    isWarmup: false,
+    skipped: false,
+    side: 'ambos',
+    weightKg: 60,
+    reps: 10,
+    rir: 2,
+    updatedAt: new Date().toISOString(),
+  }
+
+  beforeAll(async () => {
+    const { rows } = await pool.query(
+      `insert into users (google_sub, email, name) values ('vitest-edit','edit@exemplo.com','Edit')
+       on conflict (google_sub) do update set email = excluded.email returning id`,
+    )
+    ownerId = rows[0].id
+    token = await new SignJWT({ sub: ownerId })
+      .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
+      .sign(new TextEncoder().encode(SECRET))
+    await pool.query('delete from set_logs where owner_id=$1', [ownerId])
+    await pool.query('delete from sync_operations where owner_id=$1', [ownerId])
+  })
+
+  afterAll(async () => {
+    await pool.query('delete from set_logs where owner_id=$1', [ownerId])
+    await pool.query('delete from sync_operations where owner_id=$1', [ownerId])
+    await pool.query("delete from users where google_sub='vitest-edit'")
+    await pool.end()
+  })
+
+  it('a correção de carga e reps chega ao banco', async () => {
+    const criada = await sync([{
+      opId: '00000000-0000-7000-8000-0000000000e1',
+      entity: 'set_logs', entityId: SET, op: 'upsert', base: null, data: serie,
+    }])
+    expect(criada.results[0]?.status).toBe('created')
+
+    const editada = await sync([{
+      opId: '00000000-0000-7000-8000-0000000000e2',
+      entity: 'set_logs', entityId: SET, op: 'upsert', base: serie,
+      data: { ...serie, weightKg: 80, reps: 12, updatedAt: new Date().toISOString() },
+    }])
+    expect(editada.results[0]?.status).toBe('applied')
+
+    const { rows } = await pool.query('select weight_kg, reps from set_logs where id=$1', [SET])
+    expect(Number(rows[0].weight_kg)).toBe(80)
+    expect(rows[0].reps).toBe(12)
+  })
+
+  it('marcar como aquecimento e como pulada também persiste', async () => {
+    const base = { ...serie, weightKg: 80, reps: 12 }
+    const res = await sync([{
+      opId: '00000000-0000-7000-8000-0000000000e3',
+      entity: 'set_logs', entityId: SET, op: 'upsert', base,
+      data: { ...base, isWarmup: true, skipped: true, updatedAt: new Date().toISOString() },
+    }])
+    expect(res.results[0]?.status).toBe('applied')
+
+    const { rows } = await pool.query('select is_warmup, skipped from set_logs where id=$1', [SET])
+    expect(rows[0]).toMatchObject({ is_warmup: true, skipped: true })
+  })
+
+  it('a união entre dispositivos continua correta: séries distintas não colidem', async () => {
+    const outra = '14141414-1414-7141-8141-141414141414'
+    await sync([{
+      opId: '00000000-0000-7000-8000-0000000000e4',
+      entity: 'set_logs', entityId: outra, op: 'upsert', base: null,
+      data: { ...serie, id: outra, setIndex: 2, weightKg: 65 },
+    }])
+
+    const { rows } = await pool.query(
+      'select count(*)::int as n from set_logs where owner_id=$1 and deleted_at is null', [ownerId],
+    )
+    expect(rows[0].n).toBe(2)
+  })
+})

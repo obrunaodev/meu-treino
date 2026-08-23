@@ -7,6 +7,9 @@ import * as s from './schema.js'
  * `mergeStrategy`:
  *   'append-only' — a linha nunca é editada depois de criada, então a união
  *                   entre dispositivos é sempre correta e não gera conflito.
+ *                   Vale só para o que a UI de fato não deixa editar: um
+ *                   upsert numa linha existente é DESCARTADO em silêncio, e
+ *                   marcar aqui algo que a tela edita perde a edição sem erro.
  *   'field-merge' — merge campo a campo contra a base comum; só os campos que
  *                   divergiram dos DOIS lados viram conflito manual.
  *   'lww'         — preferência do usuário, o último a escrever ganha.
@@ -22,7 +25,9 @@ export const SYNC_TABLES = {
   templates: { table: s.templates, mergeStrategy: 'field-merge' },
   template_items: { table: s.templateItems, mergeStrategy: 'field-merge' },
   workout_sessions: { table: s.workoutSessions, mergeStrategy: 'field-merge' },
-  set_logs: { table: s.setLogs, mergeStrategy: 'append-only' },
+  // field-merge, não append-only: /historico/:id corrige carga, reps, RIR,
+  // lado, aquecimento e pulada de uma série já registrada.
+  set_logs: { table: s.setLogs, mergeStrategy: 'field-merge' },
   cardio_logs: { table: s.cardioLogs, mergeStrategy: 'field-merge' },
   pain_events: { table: s.painEvents, mergeStrategy: 'append-only' },
   functional_tests: { table: s.functionalTests, mergeStrategy: 'field-merge' },
