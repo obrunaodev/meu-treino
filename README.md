@@ -120,6 +120,25 @@ recebeu.
 Os testes do login provisório precisam de `DEV_LOGIN_TOKEN` no ambiente e
 pulam sozinhos se `/auth/config` disser que o recurso está desligado.
 
+## Entrega contínua
+
+`.github/workflows/pipeline.yml` executa testes, typecheck e build dos três
+projetos em todo pull request e push. A jornada de integração sobe Postgres e
+MinIO reais, aplica as migrations e percorre o app no Chromium.
+
+Um push aprovado em `main` também produz imagens `linux/amd64` identificadas
+pelo SHA do commit. As imagens são construídas no GitHub Actions e enviadas por
+SSH para a VPS; a máquina de 1 GB nunca compila Node, Sharp ou o bundle web.
+O ambiente `production` contém somente host, usuário, chave dedicada e
+`known_hosts`. Segredos da aplicação permanecem em `/opt/meu-treino/.env` no
+servidor e nunca entram no Actions.
+
+`scripts/deploy.sh` serializa deployments, sobe banco e MinIO primeiro, aplica
+migrations e catálogo, troca os serviços e valida a rota HTTPS `/health`. Se a
+nova versão não ficar saudável, os containers de aplicação voltam para o SHA
+anterior. Migrations devem continuar retrocompatíveis porque rollback de schema
+destrutivo não é automático.
+
 ## Arquitetura
 
 ### Offline-first

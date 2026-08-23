@@ -1,0 +1,184 @@
+name: pipeline
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: ${{ matrix.project }} quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [api, web, bot]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+
+  integration:
+    name: integration and browser journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: treino
+          POSTGRES_PASSWORD: integration-password
+          POSTGRES_DB: treino
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U treino -d treino"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: postgres://treino:integration-password@127.0.0.1:5432/treino
+      SESSION_SECRET: integration-session-secret-32-characters
+      APP_ORIGIN: http://127.0.0.1:5173
+      GOOGLE_CLIENT_ID: ''
+      GOOGLE_CLIENT_SECRET: ''
+      GOOGLE_REDIRECT_URI: http://127.0.0.1:3000/auth/google/callback
+      DEV_LOGIN_ENABLED: 'true'
+      DEV_LOGIN_TOKEN: integration-login-token-32-characters
+      S3_ENDPOINT: http://127.0.0.1:9000
+      S3_BUCKET: treino-media
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: treino
+      S3_SECRET_KEY: integration-minio-password
+      WHATSAPP_BOT_URL: http://127.0.0.1:3100
+      WHATSAPP_INTERNAL_TOKEN: integration-whatsapp-token-32-characters
+      INTERNAL_TOKEN: integration-whatsapp-token-32-characters
+      API_URL: http://127.0.0.1:3000
+      VITE_API_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            api/package-lock.json
+            web/package-lock.json
+            bot/package-lock.json
+      - name: Install dependencies
+        run: |
+          npm ci --prefix api
+          npm ci --prefix web
+          npm ci --prefix bot
+      - name: Start MinIO
+        run: |
+          docker run -d --name treino-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=treino \
+            -e MINIO_ROOT_PASSWORD=integration-minio-password \
+            minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:9000/minio/health/live && break
+            test "$attempt" -lt 30
+            sleep 2
+          done
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            -c 'mc alias set local http://127.0.0.1:9000 treino integration-minio-password && mc mb --ignore-existing local/treino-media'
+      - name: Prepare database and services
+        run: |
+          npm run db:migrate --prefix api
+          npm run catalog:import --prefix api
+          npm run dev --prefix api > /tmp/meu-treino-api.log 2>&1 &
+          PORT=3100 npm run dev --prefix bot > /tmp/meu-treino-bot.log 2>&1 &
+          npm run dev --prefix web > /tmp/meu-treino-web.log 2>&1 &
+          for attempt in $(seq 1 40); do
+            curl --fail --silent http://127.0.0.1:3000/health && break
+            test "$attempt" -lt 40 || { cat /tmp/meu-treino-api.log; exit 1; }
+            sleep 2
+          done
+      - run: npm run test:integration --prefix api
+      - name: Install Chromium
+        run: npx --prefix web playwright install --with-deps chromium
+      - run: npm run test:e2e --prefix web
+      - name: Service logs on failure
+        if: failure()
+        run: |
+          cat /tmp/meu-treino-api.log || true
+          cat /tmp/meu-treino-bot.log || true
+          cat /tmp/meu-treino-web.log || true
+          docker logs treino-minio || true
+
+  deploy:
+    name: build and deploy production
+    if: github.event_name != 'pull_request'
+    needs: [quality, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - name: Build production images
+        run: |
+          docker buildx build --load --platform linux/amd64 --target production \
+            --cache-from type=gha,scope=api --cache-to type=gha,mode=max,scope=api \
+            -t meu-treino-api:${GITHUB_SHA} ./api
+          docker buildx build --load --platform linux/amd64 --target production \
+            --cache-from type=gha,scope=bot --cache-to type=gha,mode=max,scope=bot \
+            -t meu-treino-whatsapp:${GITHUB_SHA} ./bot
+          docker buildx build --load --platform linux/amd64 --target production \
+            --cache-from type=gha,scope=web --cache-to type=gha,mode=max,scope=web \
+            --build-arg VITE_API_URL= \
+            -t meu-treino-web:${GITHUB_SHA} ./web
+          docker save \
+            meu-treino-api:${GITHUB_SHA} \
+            meu-treino-whatsapp:${GITHUB_SHA} \
+            meu-treino-web:${GITHUB_SHA} | gzip -1 > /tmp/meu-treino-release.tgz
+      - name: Configure deployment SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Transfer and activate release
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp /tmp/meu-treino-release.tgz "$DEPLOY_USER@$DEPLOY_HOST:/tmp/meu-treino-release.tgz"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            set -eu
+            gzip -dc /tmp/meu-treino-release.tgz | docker load
+            cd /opt/meu-treino
+            test -z \"\$(git status --porcelain)\"
+            git fetch --quiet origin main
+            git checkout --quiet --detach $GITHUB_SHA
+            ./scripts/deploy.sh $GITHUB_SHA
+            rm -f /tmp/meu-treino-release.tgz
+          "

@@ -64,6 +64,7 @@ services:
     restart: "no"
 
   api:
+    image: meu-treino-api:${IMAGE_TAG:-local}
     build:
       context: ./api
       target: ${BUILD_TARGET}
@@ -78,6 +79,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-false}
+      DEV_LOGIN_ALLOW_IN_PRODUCTION: ${DEV_LOGIN_ALLOW_IN_PRODUCTION:-false}
       DEV_LOGIN_TOKEN: ${DEV_LOGIN_TOKEN:-}
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_BUCKET: ${S3_BUCKET}
@@ -96,7 +98,7 @@ services:
       db: { condition: service_healthy }
       minio: { condition: service_healthy }
     ports:
-      - "${API_PORT}:${API_PORT}"
+      - "${API_PUBLISH:-${API_PORT}:${API_PORT}}"
     volumes:
       - ./api/src:/app/src
       - ./api/scripts:/app/scripts
@@ -108,8 +110,15 @@ services:
     deploy:
       resources:
         limits: { memory: 256M }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:' + process.env.PORT + '/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
 
   whatsapp-bot:
+    image: meu-treino-whatsapp:${IMAGE_TAG:-local}
     build:
       context: ./bot
       target: ${BUILD_TARGET}
@@ -128,6 +137,7 @@ services:
         limits: { memory: 192M }
 
   web:
+    image: meu-treino-web:${IMAGE_TAG:-local}
     build:
       context: ./web
       target: ${BUILD_TARGET}
@@ -142,7 +152,7 @@ services:
     environment:
       VITE_API_URL: ${VITE_API_URL-http://localhost:${API_PORT}}
     ports:
-      - "5173:5173"
+      - "${WEB_PUBLISH:-5173:5173}"
     volumes:
       - ./web/src:/app/src
       - ./web/public:/app/public
@@ -150,6 +160,12 @@ services:
     deploy:
       resources:
         limits: { memory: 256M }
+    healthcheck:
+      test: ["CMD-SHELL", "if command -v node >/dev/null; then node -e \"fetch('http://127.0.0.1:5173').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\"; else wget -q -O /dev/null http://127.0.0.1/; fi"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
 
   # Só entra em jogo quando houver domínio. Em dev o Vite serve direto.
   proxy:
