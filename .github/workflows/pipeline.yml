@@ -75,6 +75,7 @@ jobs:
       INTERNAL_TOKEN: integration-whatsapp-token-32-characters
       API_URL: http://127.0.0.1:3000
       VITE_API_URL: http://127.0.0.1:3000
+      CATALOG_PATH: ../catalogo-enriquecido.json
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v7
