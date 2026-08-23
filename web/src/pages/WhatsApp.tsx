@@ -13,6 +13,12 @@ interface WhatsAppStatus {
 
 interface WhatsAppGroup { jid: string; name: string; size: number }
 
+const commandGroups = [
+  { title: 'whatsapp.commands_plan', commands: ['today', 'start', 'last', 'history'] },
+  { title: 'whatsapp.commands_session', commands: ['log', 'skip', 'end'] },
+  { title: 'whatsapp.commands_manage', commands: ['edit_review', 'edit_value', 'help', 'clear'] },
+] as const
+
 export function WhatsApp() {
   const { t } = useTranslation()
   const [status, setStatus] = useState<WhatsAppStatus | null>(null)
@@ -114,6 +120,12 @@ export function WhatsApp() {
                     <option value="">{t('whatsapp.choose_group')}</option>
                     {groups.map((group) => <option key={group.jid} value={group.jid}>{group.name} · {group.size}</option>)}
                 </Select>
+                {status.selectedGroupName && (
+                  <p className="whatsapp__authorized">
+                    <span>{t('whatsapp.active_group')}</span>
+                    <strong>{status.selectedGroupName}</strong>
+                  </p>
+                )}
                 <button type="button" className="button button--ghost" disabled={busy} onClick={() => void disconnect()}>
                   {t('whatsapp.disconnect')}
                 </button>
@@ -121,19 +133,87 @@ export function WhatsApp() {
             )}
           </Card>
 
-          <Card title={t('whatsapp.commands')}>
-            <div className="whatsapp__example">
-              <span>/start</span>
-              <p>{t('whatsapp.start_help')}</p>
+          <Card title={t('whatsapp.setup_title')}>
+            <ol className="whatsapp__steps">
+              {[1, 2, 3, 4].map((step) => (
+                <li key={step}>
+                  <span>{step}</span>
+                  <p>{t(`whatsapp.setup_${step}`)}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="whatsapp__notice">
+              <strong>{t('whatsapp.private_title')}</strong>
+              <p>{t('whatsapp.restriction')}</p>
             </div>
-            <div className="whatsapp__example">
-              <span>1 100kg 3x15 1rir</span>
-              <p>{t('whatsapp.log_help')}</p>
-            </div>
-            <p className="mono muted">{t('whatsapp.restriction')}</p>
           </Card>
         </div>
       )}
+
+      <section className="whatsapp__guide" aria-labelledby="whatsapp-guide-title">
+        <header className="whatsapp__guide-head">
+          <span className="eyebrow">{t('whatsapp.guide_eyebrow')}</span>
+          <h2 id="whatsapp-guide-title">{t('whatsapp.guide_title')}</h2>
+          <p>{t('whatsapp.guide_intro')}</p>
+        </header>
+
+        <div className="whatsapp__flow" aria-label={t('whatsapp.flow_label')}>
+          {['preview', 'start', 'record', 'complete'].map((stage, index) => (
+            <div className="whatsapp__flow-step" key={stage}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <strong>{t(`whatsapp.flow_${stage}_title`)}</strong>
+              <p>{t(`whatsapp.flow_${stage}_body`)}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="whatsapp__commands">
+          {commandGroups.map((group) => (
+            <Card title={t(group.title)} key={group.title}>
+              <dl className="whatsapp__command-list">
+                {group.commands.map((command) => (
+                  <div key={command}>
+                    <dt><code>{t(`whatsapp.command_${command}_syntax`)}</code></dt>
+                    <dd>
+                      <strong>{t(`whatsapp.command_${command}_title`)}</strong>
+                      <p>{t(`whatsapp.command_${command}_body`)}</p>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </Card>
+          ))}
+        </div>
+
+        <Card title={t('whatsapp.format_title')}>
+          <div className="whatsapp__format">
+            <div>
+              <code>1 100kg 3x15 1rir</code>
+              <p>{t('whatsapp.format_breakdown')}</p>
+            </div>
+            <ul>
+              <li>{t('whatsapp.format_fuzzy')}</li>
+              <li>{t('whatsapp.format_units')}</li>
+              <li>{t('whatsapp.format_order')}</li>
+              <li>{t('whatsapp.format_limits')}</li>
+            </ul>
+          </div>
+        </Card>
+
+        <div className="whatsapp__notes">
+          <Card title={t('whatsapp.rules_title')}>
+            <ul>
+              <li>{t('whatsapp.rule_session')}</li>
+              <li>{t('whatsapp.rule_edit')}</li>
+              <li>{t('whatsapp.rule_skip')}</li>
+              <li>{t('whatsapp.rule_links')}</li>
+            </ul>
+          </Card>
+          <Card title={t('whatsapp.cleanup_title')} tone="quiet">
+            <p>{t('whatsapp.cleanup_body')}</p>
+          </Card>
+        </div>
+      </section>
     </div>
   )
 }
