@@ -112,7 +112,13 @@ async function handleMessages(ownerId: string, messages: WAMessage[]) {
     if (!id || sentMessageIds.delete(id) || message.key.remoteJid !== selected) continue
     const text = messageText(message)
     if (!text) continue
+    // Rastreia todo mundo, para o /clear alcançar a conversa inteira...
     await trackGroupMessage(ownerId, message.key, message.messageTimestamp)
+    // ...mas só o dono comanda. O bot é dispositivo companheiro da conta dele,
+    // então as mensagens dele chegam com `fromMe`. Sem esta linha, qualquer
+    // participante do grupo registra treino, encerra a sessão com /end,
+    // reescreve carga com /edit e lê o histórico na conta alheia.
+    if (!message.key.fromMe) continue
     await respond(ownerId, socket, selected, text)
   }
 }
