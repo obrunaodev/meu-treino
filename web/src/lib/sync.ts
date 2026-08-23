@@ -4,7 +4,8 @@ import { apiFetch } from './api.js'
 import { getMeta, localDb, setMeta, type SyncEntity, type SyncRow } from './db.js'
 
 const DEVICE_KEY = 'deviceId'
-const CURSOR_KEY = 'cursor'
+/** Um rev por entidade. Ver o comentário de `cursors` em api/src/routes/sync.ts. */
+const CURSORS_KEY = 'cursors'
 const BOOTSTRAP_KEY = 'bootstrappedAt'
 const BATCH = 200
 
@@ -37,7 +38,7 @@ async function deviceId(): Promise<string> {
 type SyncResponse = {
   results: Array<{ opId: string; status: string }>
   changes: Partial<Record<SyncEntity, SyncRow[]>>
-  cursor: number
+  cursors: Record<string, number>
   pendingConflicts: number
   hasMore: boolean
 }
@@ -64,7 +65,7 @@ async function execute(): Promise<SyncResult> {
   if (!navigator.onLine) return { pushed: 0, pulled: 0, conflicts: 0 }
 
   const device = await deviceId()
-  let cursor = await getMeta<number>(CURSOR_KEY, 0)
+  let cursors = await getMeta<Record<string, number>>(CURSORS_KEY, {})
   let pushed = 0
   let pulled = 0
   let conflicts = 0
@@ -77,7 +78,7 @@ async function execute(): Promise<SyncResult> {
       method: 'POST',
       body: JSON.stringify({
         deviceId: device,
-        cursor,
+        cursors,
         operations: batch.map((entry) => ({
           opId: entry.opId,
           entity: entry.entity,
@@ -103,9 +104,9 @@ async function execute(): Promise<SyncResult> {
       pulled += rows.length
     }
 
-    cursor = response.cursor
+    cursors = response.cursors
     conflicts = response.pendingConflicts
-    await setMeta(CURSOR_KEY, cursor)
+    await setMeta(CURSORS_KEY, cursors)
 
     hasMore = response.hasMore || (batch.length === BATCH && settled.length > 0)
   }

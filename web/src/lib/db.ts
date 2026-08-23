@@ -82,6 +82,19 @@ class TreinoDB extends Dexie {
 
     // Novo store offline para o catálogo de aparelhos de cardio da academia.
     this.version(3).stores(stores)
+
+    /**
+     * v4 troca o cursor único por um cursor POR ENTIDADE.
+     *
+     * O cursor global avançava até o maior `rev` de todas as entidades, então
+     * bastava uma delas ser truncada no teto de página do pull para as linhas
+     * que sobraram ficarem abaixo do cursor — e elas não voltam sozinhas,
+     * porque o pull só pede o que está acima. Apagar a chave antiga recomeça do
+     * zero no esquema novo, que é também o que recupera o que já se perdeu.
+     */
+    this.version(4).stores(stores).upgrade(async (tx) => {
+      await tx.table('meta').delete('cursor')
+    })
   }
 
   table_(entity: SyncEntity) {

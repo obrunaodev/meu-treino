@@ -28,7 +28,16 @@ const operation = z.object({
 
 const pushBody = z.object({
   deviceId: z.string().uuid(),
-  cursor: z.coerce.number().int().min(0).default(0),
+  /**
+   * Um cursor por entidade, não um só para todas.
+   *
+   * Com cursor global, uma entidade truncada em PULL_LIMIT ficava para trás
+   * enquanto outra, com `rev` mais alto, empurrava o cursor por cima dela — e
+   * as linhas que não couberam na página nunca mais apareciam, porque o pull
+   * seguinte já pedia acima delas. Chaves desconhecidas são ignoradas na
+   * leitura; a resposta devolve só as entidades que existem.
+   */
+  cursors: z.record(z.coerce.number().int().min(0)).default({}),
   operations: z.array(operation).max(1000),
 })
 
@@ -130,7 +139,7 @@ async function applyOperation(tx: Executor, op: Operation, ownerId: string) {
  * e cada round-trip a menos conta.
  */
 syncRouter.post('/', async (req, res) => {
-  const { deviceId, cursor, operations } = pushBody.parse(req.body)
+  const { deviceId, cursors, operations } = pushBody.parse(req.body)
   const ownerId = req.userId!
 
   await db
@@ -175,23 +184,26 @@ syncRouter.post('/', async (req, res) => {
   }
 
   const changes: Record<string, unknown[]> = {}
-  let maxRev = cursor
+  const nextCursors: Record<string, number> = {}
+  for (const entity of SYNC_ENTITIES) nextCursors[entity] = cursors[entity] ?? 0
+  let hasMore = false
 
   for (const entity of SYNC_ENTITIES) {
     const { table } = SYNC_TABLES[entity]
+    const from = nextCursors[entity]!
     const rows = await db
       .select()
       .from(table)
-      .where(and(eq(table.ownerId, ownerId), gt(table.rev, cursor)))
+      .where(and(eq(table.ownerId, ownerId), gt(table.rev, from)))
       .orderBy(asc(table.rev))
       .limit(PULL_LIMIT)
 
     if (rows.length === 0) continue
     changes[entity] = rows.map((row) => serializeRow(entity, row as Record<string, unknown>))
-    for (const row of rows) {
-      const rev = (row as { rev: number }).rev
-      if (rev > maxRev) maxRev = rev
-    }
+    // Avança só sobre o que ESTA entidade entregou: as linhas vêm ordenadas
+    // por rev, então a última é exatamente até onde o cliente está em dia.
+    nextCursors[entity] = (rows.at(-1) as { rev: number }).rev
+    if (rows.length === PULL_LIMIT) hasMore = true
   }
 
   const [pending] = await db
@@ -199,16 +211,18 @@ syncRouter.post('/', async (req, res) => {
     .from(syncConflicts)
     .where(and(eq(syncConflicts.ownerId, ownerId), eq(syncConflicts.status, 'pendente')))
 
+  // Só observabilidade: nada lê esta coluna para decidir o que enviar.
+  const maxRev = Math.max(0, ...Object.values(nextCursors))
   await db.update(syncDevices).set({ lastRev: maxRev }).where(eq(syncDevices.id, deviceId))
 
   res.json({
     results,
     changes,
-    cursor: maxRev,
+    cursors: nextCursors,
     // Alimenta o topbar de conflito: some quando zera.
     pendingConflicts: pending?.count ?? 0,
     // O pull é paginado; o cliente repete enquanto isto for true.
-    hasMore: Object.values(changes).some((rows) => rows.length === PULL_LIMIT),
+    hasMore,
   })
 })
 

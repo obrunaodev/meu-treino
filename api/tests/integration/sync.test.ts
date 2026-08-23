@@ -27,7 +27,8 @@ const suite = up ? describe : describe.skip
 interface SyncResponse {
   results: Array<{ opId: string; status: string; conflictingFields?: string[] }>
   changes: Record<string, Array<Record<string, unknown>>>
-  cursor: number
+  cursors: Record<string, number>
+  hasMore: boolean
   pendingConflicts: number
 }
 
@@ -79,24 +80,24 @@ suite('sync ponta a ponta', () => {
   it('aceita criação offline com timestamp em ISO e id gerado no cliente', async () => {
     const res = await sync({
       deviceId: DEVICE_A,
-      cursor: 0,
+      cursors: {},
       operations: [{ opId: op(1), entity: 'equipment', entityId: EQUIP, op: 'upsert', base: null, data: criacao }],
     })
     expect(res.results[0]?.status).toBe('created')
-    expect(res.cursor).toBeGreaterThan(0)
+    expect(res.cursors.equipment).toBeGreaterThan(0)
   })
 
   it('reenvio do mesmo opId não duplica', async () => {
     const res = await sync({
       deviceId: DEVICE_A,
-      cursor: 0,
+      cursors: {},
       operations: [{ opId: op(1), entity: 'equipment', entityId: EQUIP, op: 'upsert', base: null, data: criacao }],
     })
     expect(res.results[0]?.status).toBe('duplicate')
   })
 
   it('outro dispositivo puxa do zero e recebe rev serializável', async () => {
-    const res = await sync({ deviceId: DEVICE_B, cursor: 0, operations: [] })
+    const res = await sync({ deviceId: DEVICE_B, cursors: {}, operations: [] })
     const row = res.changes.equipment?.[0]
     expect(row).toMatchObject({ name: 'Leg press horizontal', plateTable: [10, 15, 22] })
     expect(typeof row?.rev).toBe('number')
@@ -106,7 +107,7 @@ suite('sync ponta a ponta', () => {
     const base = { ...criacao }
     await sync({
       deviceId: DEVICE_A,
-      cursor: 0,
+      cursors: {},
       operations: [{
         opId: op(2), entity: 'equipment', entityId: EQUIP, op: 'upsert', base,
         data: { ...base, name: 'Leg press 45', updatedAt: new Date().toISOString() },
@@ -114,7 +115,7 @@ suite('sync ponta a ponta', () => {
     })
     const res = await sync({
       deviceId: DEVICE_B,
-      cursor: 0,
+      cursors: {},
       operations: [{
         opId: op(3), entity: 'equipment', entityId: EQUIP, op: 'upsert', base,
         data: { ...base, plateTable: [10, 15, 22, 30], updatedAt: new Date().toISOString() },
@@ -132,7 +133,7 @@ suite('sync ponta a ponta', () => {
     const base = { ...criacao, name: 'Leg press 45', plateTable: [10, 15, 22, 30] }
     await sync({
       deviceId: DEVICE_A,
-      cursor: 0,
+      cursors: {},
       operations: [{
         opId: op(4), entity: 'equipment', entityId: EQUIP, op: 'upsert', base,
         data: { ...base, name: 'Leg press linear', updatedAt: new Date().toISOString() },
@@ -140,7 +141,7 @@ suite('sync ponta a ponta', () => {
     })
     const res = await sync({
       deviceId: DEVICE_B,
-      cursor: 0,
+      cursors: {},
       operations: [{
         opId: op(5), entity: 'equipment', entityId: EQUIP, op: 'upsert', base,
         data: { ...base, name: 'Leg press 90', updatedAt: new Date().toISOString() },
@@ -170,7 +171,7 @@ suite('sync ponta a ponta', () => {
     const { rows } = await pool.query('select name from equipment where id=$1', [EQUIP])
     expect(rows[0].name).toBe('Leg press 90')
 
-    const after = await sync({ deviceId: DEVICE_B, cursor: 0, operations: [] })
+    const after = await sync({ deviceId: DEVICE_B, cursors: {}, operations: [] })
     expect(after.pendingConflicts).toBe(0)
   })
 })
@@ -209,7 +210,7 @@ suite('idempotência sob concorrência', () => {
   it('a mesma operação enviada em paralelo é aplicada uma vez só, sem 500', async () => {
     const body = {
       deviceId: '99999999-0000-7000-8000-000000000099',
-      cursor: 0,
+      cursors: {},
       operations: [{
         opId: OP,
         entity: 'equipment',
@@ -291,7 +292,7 @@ suite('tipos numéricos na volta do sync', () => {
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
       body: JSON.stringify({
         deviceId: '88888888-0000-7000-8000-000000000088',
-        cursor: 0,
+        cursors: {},
         operations: [],
       }),
     })
@@ -306,3 +307,98 @@ suite('tipos numéricos na volta do sync', () => {
     expect(gear?.incrementKg).toBe(2.5)
   })
 })
+
+/**
+ * O pull pagina por entidade, e é isso que o cursor precisa respeitar.
+ *
+ * Com um cursor global — o maior `rev` de todas as entidades — bastava uma
+ * delas encher a página para as linhas que sobraram ficarem ABAIXO do cursor
+ * que o cliente guardava. Elas não voltam sozinhas: o pull só pede o que está
+ * acima. O caso real é o aparelho novo, que começa em zero e tem histórico
+ * maior que uma página.
+ */
+suite('paginação do pull não pula linhas', () => {
+  const pool = new pg.Pool({ connectionString: DB })
+  const PULL_LIMIT = 500
+  const TOTAL = PULL_LIMIT + 100
+  let token = ''
+  let ownerId = ''
+
+  const sync = async (cursors: Record<string, number>): Promise<SyncResponse> => {
+    const res = await fetch(`${API}/api/sync`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        deviceId: 'cccccccc-0000-7000-8000-00000000000c',
+        cursors,
+        operations: [],
+      }),
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    return res.json() as Promise<SyncResponse>
+  }
+
+  beforeAll(async () => {
+    const { rows } = await pool.query(
+      `insert into users (google_sub, email, name) values ('vitest-page','page@exemplo.com','Page')
+       on conflict (google_sub) do update set email = excluded.email returning id`,
+    )
+    ownerId = rows[0].id
+    token = await new SignJWT({ sub: ownerId })
+      .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
+      .sign(new TextEncoder().encode(SECRET))
+    await pool.query('delete from gyms where owner_id=$1', [ownerId])
+
+    // Uma entidade acima do teto de página...
+    await pool.query(
+      `insert into gyms (id, owner_id, name)
+       select gen_random_uuid(), $1, 'academia-' || g from generate_series(1,$2) g`,
+      [ownerId, TOTAL],
+    )
+    // ...e outra com rev MAIOR que todos eles, que é o que empurrava o cursor
+    // global por cima da cauda de gyms.
+    await pool.query(
+      `insert into user_settings (id, owner_id) values (gen_random_uuid(), $1)
+       on conflict (owner_id) do update set theme='dark', updated_at=now()`,
+      [ownerId],
+    )
+  })
+
+  afterAll(async () => {
+    await pool.query('delete from gyms where owner_id=$1', [ownerId])
+    await pool.query("delete from users where google_sub='vitest-page'")
+    await pool.end()
+  })
+
+  it('um aparelho novo recebe todas as linhas, não só a primeira página', async () => {
+    const vistos = new Set<string>()
+    let cursors: Record<string, number> = {}
+    let rodadas = 0
+
+    // Mesmo laço do cliente: repete enquanto o servidor disser que há mais.
+    for (;;) {
+      const res = await sync(cursors)
+      for (const row of res.changes.gyms ?? []) vistos.add(row.id as string)
+      cursors = res.cursors
+      rodadas += 1
+      if (!res.hasMore || rodadas > 10) break
+    }
+
+    expect(rodadas).toBeGreaterThan(1)
+    expect(vistos.size).toBe(TOTAL)
+  })
+
+  it('o rev de uma entidade alta não empurra o cursor de outra truncada', async () => {
+    const primeira = await sync({})
+
+    expect(primeira.changes.gyms).toHaveLength(PULL_LIMIT)
+    expect(primeira.hasMore).toBe(true)
+    // O cursor de gyms para na última linha entregue por gyms — não no rev de
+    // user_settings, que é mais alto e não diz nada sobre o que gyms deve.
+    expect(primeira.cursors.gyms).toBeLessThan(primeira.cursors.user_settings!)
+
+    const segunda = await sync(primeira.cursors)
+    expect(segunda.changes.gyms).toHaveLength(TOTAL - PULL_LIMIT)
+  })
+})
+
