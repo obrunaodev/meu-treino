@@ -27,8 +27,15 @@ export async function mutate(entity: SyncEntity, patch: Partial<SyncRow> & { id?
       entity,
       entityId: id,
       op: 'upsert',
-      // A base é o que veio do servidor no último pull, não o estado local
-      // corrente — é ela que distingue "eu mudei" de "eu só reenviei".
+      /**
+       * A base é a linha local como está AGORA — que numa segunda edição
+       * offline já inclui a primeira, não o que veio do último pull.
+       *
+       * Serve mesmo assim porque as operações sobem em ordem: quando a segunda
+       * chega, a primeira já moveu o servidor para o mesmo valor, e o campo sai
+       * do diff por estar igual dos dois lados. `rev` ausente significa que o
+       * servidor nunca viu esta linha — aí não há base, e é criação.
+       */
       base: existing?.rev ? (existing as SyncRow) : null,
       data: row,
       queuedAt: new Date().toISOString(),

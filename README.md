@@ -78,6 +78,10 @@ usuário. As defesas são:
 
 - desligado por padrão (`DEV_LOGIN_ENABLED=false`);
 - a API **se recusa a subir** com `ENABLED=true` e token menor que 32 caracteres;
+- a API **se recusa a subir** em produção com o bypass ligado, a menos que
+  `DEV_LOGIN_ALLOW_IN_PRODUCTION=true` assuma a escolha por escrito;
+- limite de taxa na rota, contando só tentativa errada — quem acerta o token
+  não é atacante, e contar acerto quebraria a própria suíte;
 - comparação do token em tempo constante;
 - aviso em `WARN` a cada boot, e a cada sessão emitida;
 - o formulário só aparece se `/auth/config` declarar o recurso ativo.
@@ -103,8 +107,8 @@ cd web && npm run test:e2e           # jornada completa no navegador (Playwright
 cd bot && npm test                    # parser tolerante dos comandos do WhatsApp
 ```
 
-**188 testes**: 19 unitários na API, 21 de integração contra Postgres real, 116
-no web, 8 do bot e 24 de jornada no navegador.
+**269 testes**: 35 unitários na API, 47 de integração contra Postgres real, 126
+no web, 37 do bot e 24 de jornada no navegador.
 
 O e2e roda contra o stack do compose já no ar e precisa de `DEV_LOGIN_TOKEN` no
 ambiente. Ele percorre login → onboarding → catálogo → editor de treino →
@@ -128,7 +132,9 @@ a operação na mesma transação.
   identidade ao subir, então referências feitas sem rede sobrevivem ao sync.
 - **Cursor por `rev`**, uma sequence global no Postgres reatribuída por trigger
   em todo UPDATE. O pull é "me dê tudo acima deste rev" — sem depender de
-  relógio, que entre dispositivos não é confiável.
+  relógio, que entre dispositivos não é confiável. O cursor é **por entidade**:
+  o pull pagina cada tabela em separado, e um cursor único avançaria por cima
+  do que ficou fora da página de uma delas.
 - **Soft delete** obrigatório: hard delete é invisível para um cliente offline,
   a linha só some do pull e ele nunca sabe que sumiu.
 
@@ -140,9 +146,11 @@ resto é aplicado, então o usuário nunca perde trabalho enquanto decide.
 
 Por entidade (`api/src/db/sync-tables.ts`):
 
-- `append-only` — séries, mídia, eventos de dor, resultados de teste. A linha
-  nunca é editada depois de criada, a união entre dispositivos é sempre correta.
-- `field-merge` — equipamentos, exercícios, templates, sessões.
+- `append-only` — mídia, eventos de dor, resultados de teste. A linha nunca é
+  editada depois de criada, a união entre dispositivos é sempre correta. Só vale
+  para o que a UI de fato não deixa editar: um upsert em linha existente é
+  descartado em silêncio, e marcar aqui algo editável perde a edição sem erro.
+- `field-merge` — equipamentos, exercícios, templates, sessões e séries.
 - `lww` — configurações do usuário.
 
 Delete de um lado, edit do outro: **o edit ressuscita**. Apagar é barato de
@@ -155,10 +163,18 @@ O que sobra aparece em um toast vermelho persistente
 
 Upload passa pela API, que valida o tipo pelos **magic bytes** (o content-type
 do multipart vem do cliente e não vale nada), reencoda para WebP e gera thumb de
-256px com `sharp`. O bucket é privado e sem rota pública: o browser nunca fala
+640px com `sharp` — resolução alta o bastante para a biblioteca não ficar
+borrada no desktop. O bucket é privado e sem rota pública: o browser nunca fala
 com o MinIO. O custo é o stream pelo Node, então `ETag` + `Cache-Control:
 immutable` + `Range` fazem o trabalho pesado, e o service worker cacheia para a
-academia sem sinal.
+academia sem sinal — em runtime (`CacheFirst` em `/api/media/*`), não no
+precache do build, que só cobre js, css, fontes e ícones. O teto de 5 MB não protege a memória — quem aloca é o raster
+decodificado —, então há um limite separado de 40 MP: um PNG uniforme de
+16000×16000 cabe em 0,74 MB e viraria ~0,95 GB ao abrir.
+
+Apagar a mídia é soft delete, para o cliente offline aprender que ela sumiu. Os
+dois WebP saem do bucket sete dias depois, por `purgeDeletedMedia`; sem isso o
+disco enche com foto que ninguém mais consegue ver.
 
 ### Catálogo
 
@@ -271,9 +287,16 @@ alternativa em tabela, e o modo escuro tem passos próprios, não uma inversão.
 
 - Curadoria das substituições de joelho e quadril (30 inválidas, 2 pendentes).
 - Lembretes por push só existem no modo semanal — no contínuo não há dia
-  agendado para mirar. O envio depende de chaves VAPID (`VAPID_PUBLIC_KEY` /
-  `VAPID_PRIVATE_KEY`, geradas com `npx web-push generate-vapid-keys`) e, no
-  iPhone, do app instalado na tela de início.
+  agendado para mirar. Saem `reminderLeadMinutes` antes de `workoutTime`, nos
+  dias marcados, e só para quem ligou o aviso em Configurações. O fuso é o do
+  install (`REMINDER_TIMEZONE`), não por usuário: o app é de uso pessoal. O
+  envio depende de chaves VAPID (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`,
+  geradas com `npx web-push generate-vapid-keys`) e, no iPhone, do app
+  instalado na tela de início.
 - Substituição automática por dor (avisar e oferecer troca quando o usuário
   marca dor numa região contraindicada) usa só o catálogo com `status = 'ok'`.
 - Sem CI: build e deploy são manuais.
+- O `start` do `package.json` da API aponta para `dist/server.js`, mas o
+  Dockerfile roda `dist/src/server.js`. Só o Dockerfile é usado hoje.
+- O compose publica `5173:5173` para o `web`; no alvo de produção o container é
+  nginx na 80, então esse mapeamento fica morto (o Caddy fala com `web:80`).
