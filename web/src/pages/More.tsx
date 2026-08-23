@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 /**
- * Só existe no mobile. O mockup resolve a navegação de 8 destinos em quatro
+ * Só existe no mobile. O sistema resolve a navegação de 8 destinos em quatro
  * abas — Hoje, Progresso, Treinos e Mais — e joga o resto para cá. No desktop
  * a barra lateral cabe inteira e esta rota nunca aparece.
  */

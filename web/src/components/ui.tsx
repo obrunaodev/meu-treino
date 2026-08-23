@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 /**
- * `title` é o rótulo de seção do mockup: mono, versalete, discreto.
+ * `title` é o rótulo de seção: mono, versalete, discreto.
  * `heading` é o nome de uma entidade — exercício, treino, equipamento — e no
- * mockup esses aparecem em sans 600, não no estilo de rótulo.
+ * sistema esses aparecem em sans 600, não no estilo de rótulo.
  *
  * Um dos dois vira o <h2>: cada Card é uma <section> e sem nome acessível o
  * leitor de tela anuncia "seção" e mais nada.

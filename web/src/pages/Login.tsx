@@ -4,7 +4,7 @@ import { ApiError, devLogin, fetchAuthConfig, loginUrl, type AuthConfig } from '
 import { useAuth } from '../lib/auth.js'
 
 /**
- * Duas colunas no desktop, como o frame de 1280 do mockup: o argumento à
+ * Duas colunas no desktop: o argumento à
  * esquerda com a manchete em Barlow Condensed, o cartão de entrada à direita.
  */
 export function Login() {

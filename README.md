@@ -227,10 +227,10 @@ Duas decisões de domínio sustentam isso:
 
 ### Sistema visual
 
-A paleta, os raios, a escala tipográfica e os espaçamentos saíram dos estilos
-inline de `mockup/Webapp de Treino.dc.html` — são os valores do mockup, não
-aproximações. O webapp é **tema escuro**; o claro existe como variante em
-Configurações.
+O contrato visual está em `docs/design-system.md`. Para agentes e pessoas, o
+`AGENTS.md` define como localizar e validar esse contrato; `web/src/styles.css`
+e `web/src/components/ui.tsx` são sua implementação executável. O webapp é
+**tema escuro**; o claro existe como variante em Configurações.
 
 | Papel | Valor |
 |---|---|
@@ -247,20 +247,20 @@ no frame de 420px. Botão primário é pílula (`999px`, 11×22, 14px/600), cart
 tem raio 14px e padding 20px, rótulo de seção em IBM Plex Mono 11px com
 `letter-spacing: 0.16em`.
 
-As três fontes do mockup (Barlow Condensed, IBM Plex Sans, IBM Plex Mono) são
+As três fontes do sistema (Barlow Condensed, IBM Plex Sans, IBM Plex Mono) são
 empacotadas via `@fontsource`, só nos pesos usados e só nos subconjuntos
 latinos — o pacote completo traz cirílico, grego e vietnamita e triplicaria o
 precache de um app que fala pt-BR e en-US.
 
 Os nomes do catálogo chegam em caixa alta na origem (`LEG PRESS HORIZONTAL`) e
-o importador os converte para sentença, como o mockup mostra.
+o importador os converte para sentença, conforme o padrão visual.
 
 ### Gráficos
 
 SVG inline, sem biblioteca. Todos de série única, então não há legenda — o
-título já diz o que está plotado. Barras seguem a **ênfase** do mockup: contexto
+título já diz o que está plotado. Barras seguem a **ênfase** do sistema: contexto
 em `#3b382f`, a última em `#b23a26`. Esse acento fica em 2.92:1 sobre o cartão,
-logo abaixo do piso de 3:1 para marcas — mantido por fidelidade ao mockup, com
+logo abaixo do piso de 3:1 para marcas — mantido como acento de marca, com
 o canal de alívio que a regra exige: rótulo direto no valor em destaque e
 alternativa em tabela em todo gráfico. A rampa sequencial da dor foi validada com
 `validate_palette.js --ordinal` nos dois modos (L monotônica, ΔL adjacente

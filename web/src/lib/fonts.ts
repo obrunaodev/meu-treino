@@ -1,5 +1,5 @@
 /**
- * Fontes do mockup, empacotadas em vez de vindas do Google Fonts: o app é
+ * Fontes do sistema, empacotadas em vez de vindas do Google Fonts: o app é
  * offline-first e uma requisição externa deixaria a tipografia quebrada
  * justamente na academia sem sinal.
  *

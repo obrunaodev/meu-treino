@@ -1,9 +1,6 @@
 /**
- * Sistema visual extraído de mockup/Webapp de Treino.dc.html.
- *
- * Os valores aqui são os do mockup, não aproximações: paleta, raios, escala
- * tipográfica e espaçamentos saíram dos estilos inline daquele arquivo. O
- * webapp é tema escuro; o claro existe como variante em Configurações.
+ * Especificação executável do sistema visual descrito em docs/design-system.md.
+ * O webapp é tema escuro; o claro existe como variante em Configurações.
  */
 
 :root,
@@ -110,7 +107,7 @@ p { margin: 0; line-height: 1.55; }
 }
 
 /* ── botões ───────────────────────────────────────────────────────────────
-   O primário do mockup é pílula: border-radius 999px, 11px/22px, 14px/600. */
+   O primário é pílula: border-radius 999px, 11px/22px, 14px/600. */
 .button {
   display: inline-flex;
   align-items: center;
@@ -141,7 +138,7 @@ p { margin: 0; line-height: 1.55; }
 }
 .button--ghost:hover { color: var(--ink-2); }
 .button:disabled { opacity: 0.45; cursor: not-allowed; }
-/* Pílula não estica: no mockup o primário fica ancorado à esquerda do cartão. */
+/* Pílula não estica: o primário fica ancorado à esquerda do cartão. */
 .card > .button, .page > .button, .stack > .button { align-self: flex-start; }
 .button--block { width: 100%; align-self: stretch; }
 
@@ -149,7 +146,7 @@ p { margin: 0; line-height: 1.55; }
 .shell { min-height: 100dvh; display: flex; flex-direction: column; background: var(--shell); }
 .shell__body { flex: 1; display: flex; min-height: 0; }
 
-/* Barra lateral de 232px, exatamente como no frame de 1280 do mockup. */
+/* A barra lateral ocupa 232px no shell desktop. */
 .shell__side {
   display: none;
   width: 232px;
@@ -290,7 +287,7 @@ p { margin: 0; line-height: 1.55; }
   .grid--3 { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); }
 }
 
-/* Número grande em Barlow Condensed, como todos os destaques do mockup. */
+/* Números de destaque usam a fonte display Barlow Condensed. */
 .stat { display: flex; flex-direction: column; gap: 6px; }
 .stat__value { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1; }
 .stat__row { display: flex; align-items: baseline; gap: 10px; }
@@ -469,7 +466,7 @@ p { margin: 0; line-height: 1.55; }
 .login__pitch .eyebrow { letter-spacing: 0.2em; }
 .login__headline {
   font-family: var(--font-display); font-weight: 700;
-  /* 64px é a medida do frame de 1280; no de 420 o mockup usa ~40px. */
+  /* A escala fluida mantém 40px no mobile e alcança 64px no desktop. */
   font-size: clamp(40px, 5vw, 64px);
   line-height: 0.95; text-transform: uppercase;
 }
@@ -824,7 +821,7 @@ p { margin: 0; line-height: 1.55; }
 }
 
 /* ── visualização ─────────────────────────────────────────────────────────
-   O mockup usa ênfase: barras de contexto em --line-strong e a última em
+   O sistema usa ênfase: barras de contexto em --line-strong e a última em
    --accent. Rampa sequencial da dor validada com validate_palette --ordinal. */
 :root, :root[data-theme='dark'] {
   --viz-surface: #1c1a15;

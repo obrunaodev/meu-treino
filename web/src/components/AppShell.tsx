@@ -6,7 +6,7 @@ import { SyncBar } from './SyncBar.js'
 /**
  * Desktop: coluna de 232px com a navegação inteira e a identidade do usuário
  * ancorada no rodapé da barra. Mobile: cabeçalho enxuto e quatro abas embaixo,
- * como nos dois frames do mockup. Mesma árvore, só CSS decide — manter duas
+ * conforme o sistema responsivo. Mesma árvore, só CSS decide — manter duas
  * navegações em sincronia é como elas divergem.
  */
 const LINKS = [
@@ -22,7 +22,7 @@ const LINKS = [
 ]
 
 /**
- * Quatro abas no mobile, com rótulos curtos, como no frame de 420 do mockup.
+ * Quatro abas no mobile, com rótulos curtos para o viewport de 420px.
  * O que não cabe vai para /mais — oito abas numa barra de 420px viram texto
  * quebrado em duas linhas e alvo de toque pequeno demais.
  */
