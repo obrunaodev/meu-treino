@@ -38,6 +38,18 @@ export function AppShell() {
   const { user, logout } = useAuth()
   const initial = user?.name?.trim().charAt(0).toUpperCase() ?? '·'
 
+  /**
+   * Sair apaga o banco local. Se ainda há coisa na fila, ela é a única cópia
+   * do treino que o servidor não viu — perguntar antes é o mínimo.
+   */
+  async function sairDaConta() {
+    const resultado = await logout()
+    if (resultado.ok) return
+    if (window.confirm(t('logout_pendente', { count: resultado.pendente }))) {
+      await logout(true)
+    }
+  }
+
   return (
     <div className="shell">
       <SyncBar />
@@ -71,7 +83,7 @@ export function AppShell() {
                 <span className="shell__mail">{user?.email}</span>
               </span>
             </div>
-            <button type="button" className="shell__signout" onClick={() => void logout()}>
+            <button type="button" className="shell__signout" onClick={() => void sairDaConta()}>
               {t('logout')}
             </button>
           </div>

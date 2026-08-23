@@ -112,6 +112,7 @@
     "whatsapp_indisponivel": "O serviço do WhatsApp está indisponível. Tente novamente em instantes.",
     "whatsapp_erro": "Não foi possível concluir a ação no WhatsApp."
   },
+  "logout_pendente": "Você tem {{count}} alteração(ões) ainda não sincronizada(s). Sair agora apaga esse registro deste aparelho, e ele não chegou ao servidor. Sair mesmo assim?",
   "logout": "Sair da conta",
   "common": {
     "back": "voltar",

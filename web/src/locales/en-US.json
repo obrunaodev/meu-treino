@@ -112,6 +112,7 @@
     "whatsapp_indisponivel": "The WhatsApp service is unavailable. Try again shortly.",
     "whatsapp_erro": "The WhatsApp action could not be completed."
   },
+  "logout_pendente": "You have {{count}} change(s) that haven't synced. Signing out now erases them from this device, and the server never received them. Sign out anyway?",
   "logout": "Sign out",
   "common": {
     "back": "back",
