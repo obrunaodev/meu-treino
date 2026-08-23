@@ -29,6 +29,22 @@ const schema = z
       .transform((v) => v === 'true'),
     DEV_LOGIN_TOKEN: z.string().default(''),
 
+    /**
+     * Escape explícito para rodar o bypass EM PRODUÇÃO.
+     *
+     * Sem ele a API se recusa a subir com `NODE_ENV=production` e o login
+     * provisório ligado. O aviso no boot já existia, mas aviso em log vira
+     * paisagem — é exatamente assim que uma porta aberta é esquecida.
+     *
+     * Não é proibição: quem precisa do bypass antes do OAuth do Google digita
+     * esta variável e segue. A diferença é que passa a ser uma decisão tomada,
+     * e não um default herdado sem ninguém notar.
+     */
+    DEV_LOGIN_ALLOW_IN_PRODUCTION: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+
     S3_ENDPOINT: z.string().url(),
     S3_BUCKET: z.string().min(1),
     S3_REGION: z.string().default('us-east-1'),
@@ -58,6 +74,19 @@ const schema = z
     path: ['WHATSAPP_INTERNAL_TOKEN'],
     message: 'troque o segredo interno padrão em produção',
   })
+  // Bypass em produção só com consentimento escrito. Ver DEV_LOGIN_ALLOW_IN_PRODUCTION.
+  .refine(
+    (e) => !e.DEV_LOGIN_ENABLED
+      || e.NODE_ENV !== 'production'
+      || e.DEV_LOGIN_ALLOW_IN_PRODUCTION,
+    {
+      path: ['DEV_LOGIN_ENABLED'],
+      message:
+        'login provisório ligado em produção. É um bypass de autenticação: quem tem o token '
+        + 'entra como qualquer usuário. Desligue com DEV_LOGIN_ENABLED=false, ou assuma a '
+        + 'escolha com DEV_LOGIN_ALLOW_IN_PRODUCTION=true.',
+    },
+  )
 
 const parsed = schema.safeParse(process.env)
 if (!parsed.success) {

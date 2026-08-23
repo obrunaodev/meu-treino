@@ -8,7 +8,7 @@ import { startJobs } from './jobs/index.js'
 // O aviso sai a cada boot justamente para não virar paisagem.
 if (env.DEV_LOGIN_ENABLED) {
   logger.warn(
-    { google: hasGoogleOAuth, producao: isProd },
+    { google: hasGoogleOAuth, producao: isProd, consentido: env.DEV_LOGIN_ALLOW_IN_PRODUCTION },
     'LOGIN PROVISÓRIO ATIVO — qualquer um com DEV_LOGIN_TOKEN entra como qualquer usuário. ' +
       'Desligue com DEV_LOGIN_ENABLED=false assim que o OAuth do Google estiver configurado.',
   )
