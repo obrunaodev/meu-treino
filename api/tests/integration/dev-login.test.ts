@@ -15,7 +15,13 @@ const config = up
   ? ((await fetch(`${API}/auth/config`).then((r) => r.json())) as { google: boolean; devLogin: boolean })
   : { google: false, devLogin: false }
 
-const suite = up && config.devLogin ? describe : describe.skip
+/**
+ * O token vive no .env que o compose injeta no container, não no shell de quem
+ * roda a suíte. Sem exigi-lo aqui, `npm run test:integration` — exatamente como
+ * o README manda — rodava com token vazio e quebrava três testes.
+ */
+const TOKEN = process.env.DEV_LOGIN_TOKEN ?? ''
+const suite = up && config.devLogin && TOKEN.length > 0 ? describe : describe.skip
 const EMAIL = 'provisorio@exemplo.com'
 
 const post = (body: unknown) =>
@@ -27,7 +33,7 @@ const post = (body: unknown) =>
 
 suite('login provisório', () => {
   const pool = new pg.Pool({ connectionString: DB })
-  const token = process.env.DEV_LOGIN_TOKEN ?? ''
+  const token = TOKEN
 
   beforeAll(async () => {
     await pool.query("delete from users where google_sub = $1", [`dev:${EMAIL}`])
