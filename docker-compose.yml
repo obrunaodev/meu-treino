@@ -125,9 +125,16 @@ services:
     build:
       context: ./web
       target: ${BUILD_TARGET}
+      # Precisa ser build arg: o Vite grava a URL no bundle ao compilar.
+      # A forma `-` (sem dois-pontos) só usa o padrão quando a variável não
+      # existe, então `VITE_API_URL=` vazio no .env continua valendo vazio —
+      # que é o valor de produção, com o Caddy servindo API e SPA na mesma
+      # origem.
+      args:
+        VITE_API_URL: ${VITE_API_URL-http://localhost:${API_PORT}}
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:${API_PORT}
+      VITE_API_URL: ${VITE_API_URL-http://localhost:${API_PORT}}
     ports:
       - "5173:5173"
     volumes:

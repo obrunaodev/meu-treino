@@ -11,6 +11,12 @@ CMD ["npm", "run", "dev"]
 FROM base AS build
 RUN npm ci
 COPY . .
+# O Vite substitui `import.meta.env.VITE_*` em tempo de BUILD. A variável do
+# compose é de runtime e não chega aqui — sem este ARG o bundle sai com o
+# fallback de dev (http://localhost:3000) e o SPA publicado chama a máquina de
+# quem está visitando. Vazio = mesma origem, que é o que o Caddy serve.
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 FROM nginx:alpine AS production
