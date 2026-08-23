@@ -25,8 +25,14 @@
 	}
 }
 
-# Um certificado para o domínio não valida o endereço IP. Redirecionar ainda
-# em HTTP evita que o navegador tente abrir https://IP e rejeite o certificado.
-http://{$SERVER_IP} {
+# Certificados de IP da Let's Encrypt duram seis dias e exigem explicitamente
+# o perfil shortlived. Caddy renova automaticamente; este bloco existe porque
+# navegadores modernos tentam HTTPS antes de aceitar um redirect HTTP do IP.
+{$SERVER_IP} {
+	tls {
+		issuer acme https://acme-v02.api.letsencrypt.org/directory {
+			profile shortlived
+		}
+	}
 	redir https://{$SITE_ADDRESS}{uri} permanent
 }
