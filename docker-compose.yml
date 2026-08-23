@@ -174,6 +174,7 @@ services:
     profiles: ["prod"]
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS}
+      SERVER_IP: ${SERVER_IP:-127.0.0.1}
       API_PORT: ${API_PORT}
     volumes:
       - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro

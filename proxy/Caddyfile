@@ -24,3 +24,9 @@
 		reverse_proxy web:80
 	}
 }
+
+# Um certificado para o domínio não valida o endereço IP. Redirecionar ainda
+# em HTTP evita que o navegador tente abrir https://IP e rejeite o certificado.
+http://{$SERVER_IP} {
+	redir https://{$SITE_ADDRESS}{uri} permanent
+}
