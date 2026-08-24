@@ -76,7 +76,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="page">
+    <div className="page dashboard">
       <header className="dashboard__head">
         <div className="page__title">
           <span className="eyebrow">

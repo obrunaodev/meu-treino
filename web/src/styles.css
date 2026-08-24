@@ -227,9 +227,18 @@ p { margin: 0; line-height: 1.55; }
 .shell__tab.active { color: var(--ink); }
 
 @media (min-width: 56rem) {
+  .shell { height: 100dvh; overflow: hidden; }
   .shell__side { display: flex; }
   .shell__tabs, .shell__top { display: none; }
   .shell__main { padding: 28px 30px 34px; }
+
+  /* O dashboard usa o viewport disponível; páginas longas continuam rolando
+     dentro de shell__main, mas ele não cria rolagem só pelo gráfico. */
+  .dashboard { height: 100%; gap: clamp(10px, 1.8dvh, 16px); }
+  .dashboard__data { flex: 1; min-height: 0; }
+  .dashboard__data > .card { min-height: 0; overflow: auto; padding: 16px 18px; gap: 10px; }
+  .dashboard__data .viz { min-height: 0; }
+  .dashboard__data .viz__svg { height: min(22dvh, 180px); }
 }
 @media (max-width: 56rem) {
   .shell__main { padding: 18px 20px 28px; }

@@ -139,6 +139,10 @@ test.describe('jornada completa', () => {
     expect(columns).toBe(4)
     await expect(page.locator('.dashboard__data')).toHaveCSS('grid-template-columns', /.+ .+/)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280)
+    const dashboardFitsViewport = await page.locator('.shell__main').evaluate(
+      (main) => main.scrollHeight <= main.clientHeight,
+    )
+    expect(dashboardFitsViewport).toBe(true)
   })
 
   test('configuração do WhatsApp funciona em mobile e desktop', async () => {
