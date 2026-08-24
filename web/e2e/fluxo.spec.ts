@@ -89,6 +89,7 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByRole('heading', { name: /sessão ao vivo/i })).toBeVisible()
     await page.getByRole('button', { name: /começar exercícios/i }).click()
+    await page.locator('.stepper').first().getByRole('button', { name: '+' }).click()
     await page.getByRole('button', { name: /registrar série/i }).click()
 
     await expect(page.getByText(/1 de 3 séries/i)).toBeVisible()
@@ -124,6 +125,10 @@ test.describe('jornada completa', () => {
 
   test('dashboard mantém a hierarquia no mobile e no desktop', async () => {
     await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('heading', { name: /frequência de treino/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /evolução de carga/i })).toBeVisible()
+    await expect(page.locator('.dashboard__data svg')).toHaveCount(2)
+    await expect(page.getByLabel(/^exercício$/i)).toBeVisible()
     await expect(page.locator('.dashboard__stats')).toHaveCSS('grid-template-columns', /.+ .+/)
     const mobileActionFillsRow = await page.locator('.dashboard__next').evaluate((section) => {
       const button = section.querySelector<HTMLElement>('.button')!

@@ -7,14 +7,14 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { blockJustClosed, currentStreak, cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
-import { recentLoadTrends, workingSetsByCycle } from '../lib/domain/dashboard.js'
+import { recentLoadTrends, sessionsByWeek } from '../lib/domain/dashboard.js'
 import { formatLoad } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
-import { Card, Empty } from '../components/ui.js'
-import { ColumnChart } from '../components/charts.js'
+import { Card, Empty, Select } from '../components/ui.js'
+import { ColumnChart, LineChart } from '../components/charts.js'
 
 export function Dashboard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const program = useActiveProgram()
   const templates = useTemplates(program?.id)
@@ -26,6 +26,7 @@ export function Dashboard() {
   const { startSession } = useActions()
 
   const [dismissedBlock, setDismissedBlock] = useState<number | null>(null)
+  const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const finished = sessions.filter((s) => s.status !== 'em_andamento')
   const upcoming = nextTemplate(templates, sessions)
   const currentItems = useTemplateItems(upcoming?.id)
@@ -36,10 +37,17 @@ export function Dashboard() {
     finished.length,
   )
 
-  const volumePerCycle = workingSetsByCycle(
-    sessions, allSets, program?.sessionsPerCycle ?? 1, program?.cyclesPerBlock ?? 1,
-  )
   const loadTrends = recentLoadTrends(exercises, sessions, allSets)
+  const selectedTrend = loadTrends.find((trend) => trend.exerciseId === selectedExerciseId) ?? loadTrends[0]
+  const dateLabel = new Intl.DateTimeFormat(i18n.language, { day: '2-digit', month: '2-digit' })
+  const weeklySessions = sessionsByWeek(sessions).map((week) => ({
+    label: dateLabel.format(new Date(`${week.weekStart}T12:00:00Z`)),
+    value: week.value,
+  }))
+  const loadPoints = selectedTrend?.points.map((point) => ({
+    label: dateLabel.format(new Date(point.at)),
+    value: point.value,
+  })) ?? []
   const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]))
   const completed = finished.filter((session) => session.status === 'concluida').length
   const adherence = finished.length === 0 ? 0 : Math.round((completed / finished.length) * 100)
@@ -143,29 +151,38 @@ export function Dashboard() {
           </div>
 
           <div className="dashboard__data">
-            <Card title={t('dashboard.volume')}>
-              <ColumnChart points={volumePerCycle} unit={t('dashboard.volume_unit')} height={180} />
+            <Card title={t('dashboard.frequency')}>
+              <p className="dashboard__chart-copy">{t('dashboard.frequency_hint')}</p>
+              <ColumnChart points={weeklySessions} unit={t('dashboard.sessions_unit')} height={180} />
             </Card>
-            <Card title={t('dashboard.load_recent')}>
-              {loadTrends.length === 0 ? <p className="muted">{t('dashboard.load_empty')}</p> : (
-                <ul className="dashboard__loads">
-                  {loadTrends.map((trend) => (
-                    <li key={trend.exerciseId}>
-                      <span>{trend.name}</span>
-                      <span className="mono muted">{trend.values.map((value) => formatLoad(
-                        value,
+            <Card title={t('dashboard.load')}>
+              {selectedTrend ? (
+                <>
+                  <div className="dashboard__chart-head">
+                    <Select
+                      label={t('dashboard.exercise')}
+                      value={selectedTrend.exerciseId}
+                      onChange={setSelectedExerciseId}
+                    >
+                      {loadTrends.map((trend) => (
+                        <option key={trend.exerciseId} value={trend.exerciseId}>{trend.name}</option>
+                      ))}
+                    </Select>
+                    <strong className={`dashboard__delta dashboard__delta--${selectedTrend.direction}`}>
+                      {selectedTrend.direction === 'up' ? '↑' : selectedTrend.direction === 'down' ? '↓' : '='}
+                      {' '}
+                      {formatLoad(
+                        selectedTrend.points.at(-1)!.value - selectedTrend.points[0]!.value,
                         null,
                         settings?.unit ?? 'kg',
                         false,
-                        sideLabel(exerciseById.get(trend.exerciseId), t),
-                      )).join(' → ')}</span>
-                      <span className={`dashboard__trend dashboard__trend--${trend.direction}`} aria-label={t(`dashboard.trend_${trend.direction}`)}>
-                        {trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '='}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        sideLabel(exerciseById.get(selectedTrend.exerciseId), t),
+                      )}
+                    </strong>
+                  </div>
+                  <LineChart points={loadPoints} unit={settings?.unit ?? 'kg'} height={180} />
+                </>
+              ) : <p className="muted">{t('dashboard.load_empty')}</p>}
             </Card>
           </div>
         </>

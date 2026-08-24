@@ -143,6 +143,10 @@
     "streak_value_other": "{{count}} sessions in a row",
     "volume": "Volume per cycle",
     "volume_unit": "working sets",
+    "frequency": "Training frequency",
+    "frequency_hint": "Finished sessions per week over the last 8 weeks.",
+    "sessions_unit": "sessions",
+    "exercise": "Exercise",
     "sessions": "Sessions",
     "adherence": "Adherence",
     "adherence_value": "{{value}}% adherence",
@@ -539,6 +543,7 @@
     "entity": "Record"
   },
   "viz": {
+    "period": "Period",
     "show_table": "view table",
     "show_chart": "view chart"
   }

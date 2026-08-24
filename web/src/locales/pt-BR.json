@@ -143,6 +143,10 @@
     "streak_value_other": "{{count}} sessões seguidas",
     "volume": "Volume por ciclo",
     "volume_unit": "séries de trabalho",
+    "frequency": "Frequência de treino",
+    "frequency_hint": "Sessões encerradas por semana nas últimas 8 semanas.",
+    "sessions_unit": "sessões",
+    "exercise": "Exercício",
     "sessions": "Sessões",
     "adherence": "Aderência",
     "adherence_value": "{{value}}% de aderência",
@@ -539,6 +543,7 @@
     "entity": "Registro"
   },
   "viz": {
+    "period": "Período",
     "show_table": "ver tabela",
     "show_chart": "ver gráfico"
   }

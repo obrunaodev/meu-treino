@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 /**
@@ -16,6 +16,23 @@ interface Point {
   label: string
   value: number
   hint?: string
+}
+
+function useChartWidth() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(320)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const measure = () => setWidth(Math.max(280, Math.floor(element.clientWidth)))
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, width }
 }
 
 /** Ticks em números redondos: eles carregam os valores que não rotulamos. */
@@ -36,7 +53,7 @@ function TableView({ points, unit }: { points: Point[]; unit: string }) {
       <caption className="sr-only">{unit}</caption>
       <thead>
         <tr>
-          <th scope="col">{t('common.search')}</th>
+          <th scope="col">{t('viz.period')}</th>
           <th scope="col">{unit}</th>
         </tr>
       </thead>
@@ -65,11 +82,12 @@ export function ColumnChart({ points, unit, height = 150 }: {
   const [table, setTable] = useState(false)
   const { t } = useTranslation()
   const titleId = useId()
+  const chart = useChartWidth()
 
   if (points.length === 0) return null
   if (table) {
     return (
-      <div className="viz">
+      <div className="viz" ref={chart.ref}>
         <TableView points={points} unit={unit} />
         <button type="button" className="viz__toggle" onClick={() => setTable(false)}>
           {t('viz.show_chart')}
@@ -78,7 +96,7 @@ export function ColumnChart({ points, unit, height = 150 }: {
     )
   }
 
-  const width = 320
+  const width = chart.width
   const plotW = width - PAD.left - PAD.right
   const plotH = height - PAD.top - PAD.bottom
   const max = Math.max(...points.map((p) => p.value), 1)
@@ -90,9 +108,10 @@ export function ColumnChart({ points, unit, height = 150 }: {
   const y = (value: number) => PAD.top + plotH - (value / top) * plotH
 
   return (
-    <div className="viz">
+    <div className="viz" ref={chart.ref}>
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
         className="viz__svg"
         role="img"
         aria-labelledby={titleId}
@@ -191,11 +210,12 @@ export function LineChart({ points, unit, height = 150 }: {
   const { t } = useTranslation()
   const titleId = useId()
   const fillId = useId()
+  const chart = useChartWidth()
 
   if (points.length === 0) return null
   if (table) {
     return (
-      <div className="viz">
+      <div className="viz" ref={chart.ref}>
         <TableView points={points} unit={unit} />
         <button type="button" className="viz__toggle" onClick={() => setTable(false)}>
           {t('viz.show_chart')}
@@ -204,14 +224,21 @@ export function LineChart({ points, unit, height = 150 }: {
     )
   }
 
-  const width = 320
+  const width = chart.width
   const plotW = width - PAD.left - PAD.right
   const plotH = height - PAD.top - PAD.bottom
   const values = points.map((p) => p.value)
-  const max = Math.max(...values, 1)
-  const min = Math.min(...values, 0)
-  const ticks = niceTicks(max)
-  const top = ticks[ticks.length - 1] ?? max
+  const dataMax = Math.max(...values)
+  const dataMin = Math.min(...values)
+  const spread = dataMax - dataMin
+  // Uma linha de carga precisa mostrar a variação entre sessões; começar
+  // sempre em zero achata uma progressão real de 100 para 105 kg.
+  const padding = spread > 0 ? Math.max(spread * 0.2, dataMax * 0.02) : Math.max(dataMax * 0.08, 1)
+  const min = Math.max(0, dataMin - padding)
+  const top = Math.max(dataMax + padding, min + 1)
+  const ticks = Array.from({ length: 4 }, (_, index) =>
+    Number((min + ((top - min) * index) / 3).toFixed(1)),
+  )
 
   const x = (index: number) =>
     PAD.left + (points.length === 1 ? plotW / 2 : (plotW * index) / (points.length - 1))
@@ -222,9 +249,10 @@ export function LineChart({ points, unit, height = 150 }: {
   const last = points[points.length - 1]!
 
   return (
-    <div className="viz">
+    <div className="viz" ref={chart.ref}>
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
         className="viz__svg"
         role="img"
         aria-labelledby={titleId}

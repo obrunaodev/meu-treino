@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Exercise, SetLog, WorkoutSession } from '../src/lib/types'
-import { recentLoadTrends, workingSetsByCycle } from '../src/lib/domain/dashboard'
+import { recentLoadTrends, sessionsByWeek, workingSetsByCycle } from '../src/lib/domain/dashboard'
 
 const session = (id: string, startedAt: string, status = 'concluida') => ({
   id, templateId: id, startedAt, status,
@@ -27,7 +27,7 @@ describe('workingSetsByCycle', () => {
 })
 
 describe('recentLoadTrends', () => {
-  it('usa a maior carga da sessão e só as três últimas exposições', () => {
+  it('usa a maior carga da sessão e mantém a data das exposições', () => {
     const sessions = [1, 2, 3, 4].map((day) => session(`s${day}`, `2026-08-0${day}`))
     const sets = [
       set('s1', 'leg', 40), set('s2', 'leg', 50), set('s2', 'leg', 45),
@@ -35,7 +35,14 @@ describe('recentLoadTrends', () => {
     ]
 
     expect(recentLoadTrends([exercise('leg', 'Leg press')], sessions, sets)).toEqual([{
-      exerciseId: 'leg', name: 'Leg press', values: [50, 55, 60], direction: 'up',
+      exerciseId: 'leg', name: 'Leg press',
+      points: [
+        { at: '2026-08-01', value: 40 },
+        { at: '2026-08-02', value: 50 },
+        { at: '2026-08-03', value: 55 },
+        { at: '2026-08-04', value: 60 },
+      ],
+      direction: 'up',
     }])
   })
 
@@ -44,7 +51,24 @@ describe('recentLoadTrends', () => {
     const sets = [set('s1', 'leg', 40), set('s2', 'leg', 80)]
 
     expect(recentLoadTrends([exercise('leg', 'Leg press')], sessions, sets)[0]).toMatchObject({
-      values: [40], direction: 'flat',
+      points: [{ at: '2026-08-01', value: 40 }], direction: 'flat',
     })
+  })
+})
+
+describe('sessionsByWeek', () => {
+  it('inclui semanas vazias e ignora sessão aberta', () => {
+    const sessions = [
+      session('s1', '2026-08-10T12:00:00Z'),
+      session('s2', '2026-08-16T12:00:00Z'),
+      session('s3', '2026-08-17T12:00:00Z', 'em_andamento'),
+      session('s4', '2026-08-24T12:00:00Z'),
+    ]
+
+    expect(sessionsByWeek(sessions, 3, new Date('2026-08-24T12:00:00Z'))).toEqual([
+      { weekStart: '2026-08-10', value: 2 },
+      { weekStart: '2026-08-17', value: 0 },
+      { weekStart: '2026-08-24', value: 1 },
+    ])
   })
 })

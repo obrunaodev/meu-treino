@@ -4,8 +4,13 @@ import { assignCycleNumbers } from './cycle.js'
 export interface LoadTrend {
   exerciseId: string
   name: string
-  values: number[]
+  points: Array<{ at: string; value: number }>
   direction: 'up' | 'flat' | 'down'
+}
+
+export interface WeeklySessions {
+  weekStart: string
+  value: number
 }
 
 /** Agrupa séries de trabalho pelo ciclo derivado do histórico atual. */
@@ -32,7 +37,41 @@ export function workingSetsByCycle(
     .map(([cycle, value]) => ({ label: `C${cycle}`, value }))
 }
 
-/** Resume as três últimas exposições de carga de cada exercício. */
+/** Conta sessões encerradas nas últimas semanas civis, incluindo semanas vazias. */
+export function sessionsByWeek(
+  sessions: WorkoutSession[],
+  weeks = 8,
+  today = new Date(),
+): WeeklySessions[] {
+  const currentMonday = startOfWeek(today)
+  const firstMonday = new Date(currentMonday)
+  firstMonday.setUTCDate(firstMonday.getUTCDate() - (weeks - 1) * 7)
+
+  const result = Array.from({ length: weeks }, (_, index) => {
+    const date = new Date(firstMonday)
+    date.setUTCDate(date.getUTCDate() + index * 7)
+    return { weekStart: date.toISOString().slice(0, 10), value: 0 }
+  })
+  const byWeek = new Map(result.map((entry) => [entry.weekStart, entry]))
+
+  for (const session of sessions) {
+    if (session.status === 'em_andamento') continue
+    const weekStart = startOfWeek(new Date(session.startedAt)).toISOString().slice(0, 10)
+    const bucket = byWeek.get(weekStart)
+    if (bucket) bucket.value += 1
+  }
+
+  return result
+}
+
+function startOfWeek(date: Date) {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  const dayFromMonday = (start.getUTCDay() + 6) % 7
+  start.setUTCDate(start.getUTCDate() - dayFromMonday)
+  return start
+}
+
+/** Resume as oito últimas exposições de carga de cada exercício. */
 export function recentLoadTrends(
   exercises: Exercise[],
   sessions: WorkoutSession[],
@@ -63,12 +102,12 @@ export function recentLoadTrends(
   return exercises.flatMap((exercise) => {
     const history = valuesByExercise.get(exercise.id)
     if (!history?.length) return []
-    const values = history.sort((a, b) => a.at.localeCompare(b.at)).slice(-3).map((entry) => entry.value)
-    const delta = values.at(-1)! - values[0]!
+    const points = history.sort((a, b) => a.at.localeCompare(b.at)).slice(-8)
+    const delta = points.at(-1)!.value - points[0]!.value
     return [{
       exerciseId: exercise.id,
       name: exercise.name,
-      values,
+      points,
       direction: delta > 0 ? 'up' as const : delta < 0 ? 'down' as const : 'flat' as const,
     }]
   }).sort((a, b) => {
