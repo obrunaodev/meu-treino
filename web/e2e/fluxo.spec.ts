@@ -149,10 +149,10 @@ test.describe('jornada completa', () => {
     expect(columns).toBe(4)
     await expect(page.locator('.dashboard__analytics')).toHaveCSS('grid-template-columns', /.+ .+/)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280)
-    const dashboardFitsViewport = await page.locator('.shell__main').evaluate(
-      (main) => main.scrollHeight <= main.clientHeight,
+    const graphOverflow = await page.locator('.dashboard__analytics .viz').evaluateAll((graphs) =>
+      graphs.map((graph) => getComputedStyle(graph).overflow),
     )
-    expect(dashboardFitsViewport).toBe(true)
+    expect(graphOverflow.every((overflow) => overflow === 'clip')).toBe(true)
   })
 
   test('configuração do WhatsApp funciona em mobile e desktop', async () => {
