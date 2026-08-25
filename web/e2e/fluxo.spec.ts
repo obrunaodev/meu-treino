@@ -120,15 +120,20 @@ test.describe('jornada completa', () => {
     await page.getByRole('button', { name: /encerrar sessão/i }).click()
 
     await expect(page.getByRole('heading', { name: /progresso/i })).toBeVisible()
-    await expect(page.getByText('1/1')).toBeVisible()
+    await expect(page.locator('.dashboard__metric').filter({ hasText: /treinos na semana/i }).locator('strong')).toHaveText('1')
   })
 
   test('dashboard mantém a hierarquia no mobile e no desktop', async () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(page.getByRole('heading', { name: /frequência de treino/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /evolução de carga/i })).toBeVisible()
-    await expect(page.locator('.dashboard__data svg')).toHaveCount(2)
+    await expect(page.getByRole('heading', { name: /grupos musculares/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /histórico de dor/i })).toBeVisible()
+    await expect(page.locator('.dashboard__analytics svg')).toHaveCount(3)
     await expect(page.getByLabel(/^exercício$/i)).toBeVisible()
+    const volumeMetric = page.getByRole('button', { name: /^volume$/i })
+    await volumeMetric.click()
+    await expect(volumeMetric).toHaveClass(/pill--on/)
     await expect(page.locator('.dashboard__stats')).toHaveCSS('grid-template-columns', /.+ .+/)
     const mobileActionFillsRow = await page.locator('.dashboard__next').evaluate((section) => {
       const button = section.querySelector<HTMLElement>('.button')!
@@ -142,7 +147,7 @@ test.describe('jornada completa', () => {
       getComputedStyle(element).gridTemplateColumns.split(' ').length
     ))
     expect(columns).toBe(4)
-    await expect(page.locator('.dashboard__data')).toHaveCSS('grid-template-columns', /.+ .+/)
+    await expect(page.locator('.dashboard__analytics')).toHaveCSS('grid-template-columns', /.+ .+/)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280)
     const dashboardFitsViewport = await page.locator('.shell__main').evaluate(
       (main) => main.scrollHeight <= main.clientHeight,

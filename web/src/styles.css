@@ -235,9 +235,9 @@ p { margin: 0; line-height: 1.55; }
   /* O dashboard usa o viewport disponível; páginas longas continuam rolando
      dentro de shell__main, mas ele não cria rolagem só pelo gráfico. */
   .dashboard { height: 100%; gap: clamp(10px, 1.8dvh, 16px); }
-  .dashboard__data { flex: 1; min-height: 0; }
-  .dashboard__data > .card { min-height: 0; overflow: auto; padding: 16px 18px; gap: 10px; }
-  .dashboard__data .viz { min-height: 0; }
+  .dashboard__analytics { flex: 1; min-height: 0; }
+  .dashboard__analytics > .card { min-height: 0; overflow: auto; padding: 14px 16px; gap: 8px; }
+  .dashboard__analytics .viz { min-height: 0; }
 }
 @media (max-width: 56rem) {
   .shell__main { padding: 18px 20px 28px; }
@@ -334,8 +334,10 @@ p { margin: 0; line-height: 1.55; }
 .dashboard__metric span { font-size: 11.5px; color: var(--muted); }
 .dashboard__metric--good span { color: var(--good); }
 .dashboard__metric--quiet { background: var(--surface-hot); }
+.dashboard__metric-progress { height: 3px; margin-top: 4px; overflow: hidden; border-radius: var(--r-chip); background: var(--line); }
+.dashboard__metric-progress span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
 
-.dashboard__data { display: grid; gap: 12px; }
+.dashboard__analytics { display: grid; gap: 12px; }
 .dashboard__chart-copy { color: var(--muted); font-size: 11.5px; }
 .dashboard__chart-head {
   display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
@@ -349,17 +351,24 @@ p { margin: 0; line-height: 1.55; }
 .dashboard__delta--up { color: var(--good); }
 .dashboard__delta--flat { color: var(--muted); }
 .dashboard__delta--down { color: var(--accent); }
-.dashboard__loads { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.dashboard__loads li {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto 14px; align-items: center; gap: 9px;
-  min-width: 0; padding: 9px 0; border-bottom: 1px solid var(--line);
+.dashboard__metric-switch { margin-top: 2px; }
+.dashboard__metric-switch .pill { padding: 5px 10px; font-size: 10px; }
+.dashboard__week-detail { display: grid; gap: 5px; padding-top: 7px; border-top: 1px solid var(--line); }
+.dashboard__week-detail ul { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; overflow-x: auto; }
+.dashboard__week-detail li {
+  display: flex; gap: 7px; flex-shrink: 0; padding: 5px 8px;
+  border-radius: var(--r-chip); background: var(--shell); font-size: 11px;
 }
-.dashboard__loads li:last-child { border-bottom: 0; }
-.dashboard__loads li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dashboard__loads .mono { font-size: 10.5px; white-space: nowrap; }
-.dashboard__trend { font-family: var(--font-mono); text-align: center; color: var(--muted); }
-.dashboard__trend--up { color: var(--good); }
-.dashboard__trend--down { color: var(--accent); }
+.dashboard__week-detail time { font-family: var(--font-mono); color: var(--dim); }
+.dashboard__pain-summary { display: flex; align-items: baseline; justify-content: space-between; color: var(--muted); font-size: 11.5px; }
+.dashboard__pain-summary strong { font-family: var(--font-display); font-size: 24px; color: var(--ink); }
+
+.hbars { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.hbars__label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-size: 11.5px; }
+.hbars__label strong { font-family: var(--font-mono); font-size: 10.5px; }
+.hbars__track { height: 6px; overflow: hidden; border-radius: var(--r-chip); background: var(--viz-grid); }
+.hbars__fill { height: 100%; border-radius: inherit; background: var(--viz-context); }
+.hbars__fill--lead { background: var(--viz-series); }
 
 .whatsapp__layout { display: grid; gap: 12px; }
 .whatsapp__state { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
@@ -423,7 +432,7 @@ p { margin: 0; line-height: 1.55; }
   .dashboard__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .dashboard__metric { padding: 15px; }
   .dashboard__metric strong { font-size: 26px; }
-  .dashboard__data { grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 1fr); gap: 16px; }
+  .dashboard__analytics { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .whatsapp__layout { grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr); gap: 16px; }
   .whatsapp__flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .whatsapp__flow-step { border-right: 1px solid var(--line); border-bottom: 0; }

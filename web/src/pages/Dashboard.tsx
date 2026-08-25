@@ -2,31 +2,24 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  useActiveProgram, useExercises, useOpenSession, useSessions,
-  useSetLogs, useSettings, useTemplateItems, useTemplates,
+  useActiveProgram, useOpenSession, useSessions, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { blockJustClosed, currentStreak, cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
-import { recentLoadTrends, sessionsByWeek } from '../lib/domain/dashboard.js'
-import { formatLoad } from '../lib/domain/load.js'
-import { sideLabel } from '../lib/labels.js'
-import { Card, Empty, Select } from '../components/ui.js'
-import { ColumnChart, LineChart } from '../components/charts.js'
+import { sessionsByWeek, weeksToBlockEnd } from '../lib/domain/dashboard.js'
+import { Card, Empty } from '../components/ui.js'
+import { DashboardAnalytics } from '../components/DashboardAnalytics.js'
 
 export function Dashboard() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const program = useActiveProgram()
   const templates = useTemplates(program?.id)
   const sessions = useSessions()
   const openSession = useOpenSession()
-  const settings = useSettings()
-  const exercises = useExercises()
-  const allSets = useSetLogs()
   const { startSession } = useActions()
 
   const [dismissedBlock, setDismissedBlock] = useState<number | null>(null)
-  const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const finished = sessions.filter((s) => s.status !== 'em_andamento')
   const upcoming = nextTemplate(templates, sessions)
   const currentItems = useTemplateItems(upcoming?.id)
@@ -37,22 +30,14 @@ export function Dashboard() {
     finished.length,
   )
 
-  const loadTrends = recentLoadTrends(exercises, sessions, allSets)
-  const selectedTrend = loadTrends.find((trend) => trend.exerciseId === selectedExerciseId) ?? loadTrends[0]
-  const dateLabel = new Intl.DateTimeFormat(i18n.language, { day: '2-digit', month: '2-digit' })
-  const weeklySessions = sessionsByWeek(sessions).map((week) => ({
-    label: dateLabel.format(new Date(`${week.weekStart}T12:00:00Z`)),
-    value: week.value,
-  }))
-  const loadPoints = selectedTrend?.points.map((point) => ({
-    label: dateLabel.format(new Date(point.at)),
-    value: point.value,
-  })) ?? []
-  const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]))
   const completed = finished.filter((session) => session.status === 'concluida').length
   const adherence = finished.length === 0 ? 0 : Math.round((completed / finished.length) * 100)
   const streak = currentStreak(sessions)
   const sessionsInCycle = finished.length % (program?.sessionsPerCycle ?? 1)
+  const blockWeeks = weeksToBlockEnd(position.sessionsToBlockEnd, sessions)
+  const sessionsPerBlock = (program?.sessionsPerCycle ?? 1) * (program?.cyclesPerBlock ?? 1)
+  const blockDone = sessionsPerBlock - position.sessionsToBlockEnd
+  const currentWeekSessions = sessionsByWeek(sessions).at(-1)?.value ?? 0
 
   const blockClosed =
     program &&
@@ -144,64 +129,44 @@ export function Dashboard() {
       ) : (
         <>
           <div className="dashboard__stats">
-            <DashboardMetric label={t('dashboard.sessions')} value={`${completed}/${finished.length}`} hint={t('dashboard.adherence_value', { value: adherence })} tone="good" />
-            <DashboardMetric label={t('dashboard.streak')} value={streak} hint={t('dashboard.streak_value', { count: streak })} />
+            <DashboardMetric label={t('dashboard.week_sessions')} value={currentWeekSessions} hint={t('dashboard.current_week')} tone="good" />
+            <DashboardMetric label={t('dashboard.streak')} value={streak} hint={t('dashboard.adherence_value', { value: adherence })} />
             <DashboardMetric label={t('dashboard.cycle_progress')} value={`${sessionsInCycle}/${program.sessionsPerCycle}`} hint={t('dashboard.cycle_progress_hint')} />
-            <DashboardMetric label={t('dashboard.block_progress')} value={position.sessionsToBlockEnd} hint={t('dashboard.block_remaining', { count: position.sessionsToBlockEnd })} tone="quiet" />
+            <DashboardMetric
+              label={t('dashboard.block_review')}
+              value={blockWeeks === null ? '—' : t('dashboard.weeks_value', { count: blockWeeks })}
+              hint={blockWeeks === null
+                ? t('dashboard.block_no_pace')
+                : t('dashboard.block_remaining', { count: position.sessionsToBlockEnd })}
+              tone="quiet"
+              progress={{ value: blockDone, max: sessionsPerBlock }}
+            />
           </div>
 
-          <div className="dashboard__data">
-            <Card title={t('dashboard.frequency')}>
-              <p className="dashboard__chart-copy">{t('dashboard.frequency_hint')}</p>
-              <ColumnChart points={weeklySessions} unit={t('dashboard.sessions_unit')} height={180} />
-            </Card>
-            <Card title={t('dashboard.load')}>
-              {selectedTrend ? (
-                <>
-                  <div className="dashboard__chart-head">
-                    <Select
-                      label={t('dashboard.exercise')}
-                      value={selectedTrend.exerciseId}
-                      onChange={setSelectedExerciseId}
-                    >
-                      {loadTrends.map((trend) => (
-                        <option key={trend.exerciseId} value={trend.exerciseId}>{trend.name}</option>
-                      ))}
-                    </Select>
-                    <strong className={`dashboard__delta dashboard__delta--${selectedTrend.direction}`}>
-                      {selectedTrend.direction === 'up' ? '↑' : selectedTrend.direction === 'down' ? '↓' : '='}
-                      {' '}
-                      {formatLoad(
-                        selectedTrend.points.at(-1)!.value - selectedTrend.points[0]!.value,
-                        null,
-                        settings?.unit ?? 'kg',
-                        false,
-                        sideLabel(exerciseById.get(selectedTrend.exerciseId), t),
-                      )}
-                    </strong>
-                  </div>
-                  <LineChart points={loadPoints} unit={settings?.unit ?? 'kg'} height={180} />
-                </>
-              ) : <p className="muted">{t('dashboard.load_empty')}</p>}
-            </Card>
-          </div>
+          <DashboardAnalytics />
         </>
       )}
     </div>
   )
 }
 
-function DashboardMetric({ label, value, hint, tone }: {
+function DashboardMetric({ label, value, hint, tone, progress }: {
   label: string
   value: string | number
   hint: string
   tone?: 'good' | 'quiet'
+  progress?: { value: number; max: number }
 }) {
   return (
     <section className={`dashboard__metric${tone ? ` dashboard__metric--${tone}` : ''}`}>
       <h2>{label}</h2>
       <strong>{value}</strong>
       <span>{hint}</span>
+      {progress && (
+        <div className="dashboard__metric-progress" aria-hidden="true">
+          <span style={{ width: `${(progress.value / progress.max) * 100}%` }} />
+        </div>
+      )}
     </section>
   )
 }

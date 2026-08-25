@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import type { Exercise, SetLog, WorkoutSession } from '../src/lib/types'
-import { recentLoadTrends, sessionsByWeek, workingSetsByCycle } from '../src/lib/domain/dashboard'
+import type { Exercise, PainEvent, SetLog, WorkoutSession } from '../src/lib/types'
+import {
+  muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek,
+  workingSetsByCycle, weeksToBlockEnd,
+} from '../src/lib/domain/dashboard'
 
 const session = (id: string, startedAt: string, status = 'concluida') => ({
   id, templateId: id, startedAt, status,
 }) as WorkoutSession
 
 const set = (sessionId: string, exerciseId: string, weightKg: number, extras = {}) => ({
-  sessionId, exerciseId, weightKg, isWarmup: false, skipped: false, ...extras,
+  sessionId, exerciseId, weightKg, reps: 10, isWarmup: false, skipped: false, ...extras,
 }) as SetLog
 
-const exercise = (id: string, name: string) => ({ id, name }) as Exercise
+const exercise = (id: string, name: string, extras = {}) => ({
+  id, name, catalogExerciseId: null, loadPerSide: false, ...extras,
+}) as Exercise
 
 describe('workingSetsByCycle', () => {
   it('exclui aquecimento, série pulada e sessão ainda aberta', () => {
@@ -37,10 +42,10 @@ describe('recentLoadTrends', () => {
     expect(recentLoadTrends([exercise('leg', 'Leg press')], sessions, sets)).toEqual([{
       exerciseId: 'leg', name: 'Leg press',
       points: [
-        { at: '2026-08-01', value: 40 },
-        { at: '2026-08-02', value: 50 },
-        { at: '2026-08-03', value: 55 },
-        { at: '2026-08-04', value: 60 },
+        { at: '2026-08-01', weight: 40, volume: 400 },
+        { at: '2026-08-02', weight: 50, volume: 950 },
+        { at: '2026-08-03', weight: 55, volume: 550 },
+        { at: '2026-08-04', weight: 60, volume: 600 },
       ],
       direction: 'up',
     }])
@@ -51,8 +56,63 @@ describe('recentLoadTrends', () => {
     const sets = [set('s1', 'leg', 40), set('s2', 'leg', 80)]
 
     expect(recentLoadTrends([exercise('leg', 'Leg press')], sessions, sets)[0]).toMatchObject({
-      points: [{ at: '2026-08-01', value: 40 }], direction: 'flat',
+      points: [{ at: '2026-08-01', weight: 40, volume: 400 }], direction: 'flat',
     })
+  })
+
+  it('dobra o volume de máquina com carga registrada por lado', () => {
+    const result = recentLoadTrends(
+      [exercise('chest', 'Supino articulado', { loadPerSide: true })],
+      [session('s1', '2026-08-01')],
+      [set('s1', 'chest', 20, { reps: 12 })],
+    )
+
+    expect(result[0]?.points[0]?.volume).toBe(480)
+  })
+})
+
+describe('painByWeek', () => {
+  it('mostra a pior intensidade e mantém semana sem dor em zero', () => {
+    const events = [
+      { occurredAt: '2026-08-18T12:00:00Z', level: 3 },
+      { occurredAt: '2026-08-20T12:00:00Z', level: 6 },
+    ] as PainEvent[]
+
+    expect(painByWeek(events, 2, new Date('2026-08-24T12:00:00Z'))).toEqual([
+      { weekStart: '2026-08-17', value: 6 },
+      { weekStart: '2026-08-24', value: 0 },
+    ])
+  })
+})
+
+describe('muscleGroupsForWeek', () => {
+  it('conta só séries de trabalho e agrupa exercício sem catálogo', () => {
+    const sessions = [session('s1', '2026-08-24')]
+    const exercises = [
+      exercise('leg', 'Leg press', { catalogExerciseId: 10 }),
+      exercise('custom', 'Livre'),
+    ]
+    const sets = [
+      set('s1', 'leg', 100),
+      set('s1', 'leg', 100, { isWarmup: true }),
+      set('s1', 'custom', 20),
+    ]
+
+    expect(muscleGroupsForWeek(sessions, sets, exercises, new Map([[10, 'Quadríceps']]), 'Outro')).toEqual([
+      { label: 'Outro', value: 1 },
+      { label: 'Quadríceps', value: 1 },
+    ])
+  })
+})
+
+describe('weeksToBlockEnd', () => {
+  it('estima pelo intervalo real e não inventa ritmo com uma sessão', () => {
+    expect(weeksToBlockEnd(4, [session('s1', '2026-08-01')])).toBeNull()
+    expect(weeksToBlockEnd(4, [
+      session('s1', '2026-08-01'),
+      session('s2', '2026-08-04'),
+      session('s3', '2026-08-07'),
+    ])).toBe(2)
   })
 })
 

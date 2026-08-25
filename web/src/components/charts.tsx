@@ -73,10 +73,12 @@ function TableView({ points, unit }: { points: Point[]; unit: string }) {
  * Colunas para magnitude. Barra fina com topo arredondado e base quadrada,
  * separada da vizinha por um vão na cor da superfície — nunca por contorno.
  */
-export function ColumnChart({ points, unit, height = 150 }: {
+export function ColumnChart({ points, unit, height = 150, selectedIndex, onSelect }: {
   points: Point[]
   unit: string
   height?: number
+  selectedIndex?: number
+  onSelect?: (index: number) => void
 }) {
   const [hover, setHover] = useState<number | null>(null)
   const [table, setTable] = useState(false)
@@ -137,9 +139,19 @@ export function ColumnChart({ points, unit, height = 150 }: {
         {points.map((point, index) => {
           const x = PAD.left + band * index + (band - barWidth) / 2
           const barHeight = Math.max(0, PAD.top + plotH - y(point.value))
-          const isLast = index === points.length - 1
+          const isSelected = index === (selectedIndex ?? points.length - 1)
           return (
-            <g key={point.label} onPointerEnter={() => setHover(index)}>
+            <g
+              key={point.label}
+              onPointerEnter={() => setHover(index)}
+              onClick={() => onSelect?.(index)}
+              onKeyDown={(event) => {
+                if (onSelect && (event.key === 'Enter' || event.key === ' ')) onSelect(index)
+              }}
+              role={onSelect ? 'button' : undefined}
+              tabIndex={onSelect ? 0 : undefined}
+              aria-label={onSelect ? `${point.label}: ${point.value} ${unit}` : undefined}
+            >
               {/* Alvo de hover maior que a marca: barra fina é difícil de acertar. */}
               <rect
                 x={PAD.left + band * index}
@@ -152,7 +164,7 @@ export function ColumnChart({ points, unit, height = 150 }: {
                 d={roundedTopBar(x, y(point.value), barWidth, barHeight)}
                 className={[
                   'viz__bar',
-                  isLast ? 'viz__bar--last' : '',
+                  isSelected ? 'viz__bar--last' : '',
                   hover === index ? 'viz__bar--hot' : '',
                 ].filter(Boolean).join(' ')}
               />
@@ -160,7 +172,7 @@ export function ColumnChart({ points, unit, height = 150 }: {
                 {point.label}
               </text>
               {/* Rótulo direto só no último: valor em toda coluna vira ruído. */}
-              {isLast && point.value > 0 && (
+              {isSelected && point.value > 0 && (
                 <text x={x + barWidth / 2} y={y(point.value) - 6} className="viz__value" textAnchor="middle">
                   {point.value}
                 </text>
@@ -177,6 +189,49 @@ export function ColumnChart({ points, unit, height = 150 }: {
         </div>
       )}
 
+      <button type="button" className="viz__toggle" onClick={() => setTable(true)}>
+        {t('viz.show_table')}
+      </button>
+    </div>
+  )
+}
+
+/** Barras horizontais para comparar categorias com rótulos longos. */
+export function HorizontalBarChart({ points, unit }: { points: Point[]; unit: string }) {
+  const [table, setTable] = useState(false)
+  const { t } = useTranslation()
+  const max = Math.max(...points.map((point) => point.value), 1)
+
+  if (points.length === 0) return null
+  if (table) {
+    return (
+      <div className="viz">
+        <TableView points={points} unit={unit} />
+        <button type="button" className="viz__toggle" onClick={() => setTable(false)}>
+          {t('viz.show_chart')}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="viz">
+      <ul className="hbars">
+        {points.map((point, index) => (
+          <li key={point.label}>
+            <div className="hbars__label">
+              <span>{point.label}</span>
+              <strong>{point.value}</strong>
+            </div>
+            <div className="hbars__track">
+              <div
+                className={`hbars__fill${index === 0 ? ' hbars__fill--lead' : ''}`}
+                style={{ width: `${(point.value / max) * 100}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
       <button type="button" className="viz__toggle" onClick={() => setTable(true)}>
         {t('viz.show_table')}
       </button>
