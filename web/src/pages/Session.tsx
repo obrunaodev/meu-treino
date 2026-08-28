@@ -8,7 +8,7 @@ import {
 import { useActions } from '../lib/actions.js'
 import {
   CARDIO_SECONDS, PREP_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
-  nextSlot, remainingSeconds,
+  groupByExercise, nextSlot, remainingSeconds,
 } from '../lib/domain/session.js'
 import { formatLoad } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
@@ -205,30 +205,41 @@ function SetHistory({ logs, items, unit, showPlates }: {
   const exercises = useExercises()
   if (logs.length === 0) return null
 
-  const byItem = new Map(items.map((i) => [i.id, i]))
   const byExercise = new Map(exercises.map((e) => [e.id, e]))
-  const nameOf = (id: string) => byExercise.get(id)?.name ?? t('library.gone')
+  const snapshotNames = new Map(items.flatMap((item) => (
+    'exerciseName' in item && typeof item.exerciseName === 'string'
+      ? [[item.exerciseId, item.exerciseName] as const]
+      : []
+  )))
+  const nameOf = (id: string) => snapshotNames.get(id) ?? byExercise.get(id)?.name ?? t('library.gone')
+  const groups = groupByExercise(logs)
 
   return (
     <Card title={t('history.sets', { count: logs.filter((l) => !l.isWarmup).length })}>
-      <ul className="loglist">
-        {logs.map((log) => (
-          <li key={log.id} className={log.skipped ? 'loglist__row loglist__row--skip' : 'loglist__row'}>
-            <span>{nameOf(log.exerciseId)}</span>
-            <span className="mono muted">
-              {log.skipped
-                ? t('common.skip')
-                : [
-                    formatLoad(log.weightKg, log.plateCount, unit, showPlates, sideLabel(byExercise.get(log.exerciseId), t)),
-                    log.reps !== null ? `${log.reps} ${t('session.reps')}` : `${log.seconds}s`,
-                    log.rir !== null ? `RIR ${log.rir}` : null,
-                    log.isWarmup ? t('session.warmup') : null,
-                    log.hadPain ? t('session.pain') : null,
-                  ].filter(Boolean).join(' · ')}
-            </span>
-          </li>
+      <div className="session-loggroups">
+        {groups.map((group) => (
+          <section key={group.exerciseId} className="session-loggroup">
+            <h3>{nameOf(group.exerciseId)}</h3>
+            <ol className="loglist">
+              {group.logs.map((log) => (
+                <li key={log.id} className={log.skipped ? 'loglist__row loglist__row--skip' : 'loglist__row'}>
+                  <span className="mono muted">{log.isWarmup ? t('session.warmup') : t('session.set', { n: log.setIndex + 1 })}</span>
+                  <span className="mono muted">
+                    {log.skipped
+                      ? t('common.skip')
+                      : [
+                          formatLoad(log.weightKg, log.plateCount, unit, showPlates, sideLabel(byExercise.get(log.exerciseId), t)),
+                          log.reps !== null ? `${log.reps} ${t('session.reps')}` : `${log.seconds}s`,
+                          log.rir !== null ? `RIR ${log.rir}` : null,
+                          log.hadPain ? t('session.pain') : null,
+                        ].filter(Boolean).join(' · ')}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
         ))}
-      </ul>
+      </div>
     </Card>
   )
 }

@@ -184,6 +184,16 @@ describe('groupByExercise', () => {
     expect(groups.map((g) => g.exerciseId)).toEqual(['remada', 'supino'])
   })
 
+  it('ordena pelo check de trabalho, não por um aquecimento anterior', () => {
+    const groups = groupByExercise([
+      log('supino', 0, '2026-08-20T10:00:00Z', { isWarmup: true }),
+      log('remada', 0, '2026-08-20T10:05:00Z'),
+      log('supino', 0, '2026-08-20T10:10:00Z'),
+    ])
+
+    expect(groups.map((group) => group.exerciseId)).toEqual(['remada', 'supino'])
+  })
+
   it('ordena as séries dentro do grupo por setIndex', () => {
     const groups = groupByExercise([
       log('supino', 2, '2026-08-20T10:06:00Z'),

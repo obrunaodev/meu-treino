@@ -147,11 +147,13 @@ export function groupByExercise<T extends ReviewedSet>(logs: T[]): Array<{ exerc
       exerciseId,
       logs: [...rows].sort((a, b) => a.setIndex - b.setIndex),
     }))
-    .sort((a, b) => startedAt(a.logs).localeCompare(startedAt(b.logs)))
+    .sort((a, b) => checkedAt(a.logs).localeCompare(checkedAt(b.logs)))
 }
 
-function startedAt(logs: ReviewedSet[]): string {
-  return logs.reduce((earliest, log) => {
+function checkedAt(logs: ReviewedSet[]): string {
+  const working = logs.filter((log) => !log.isWarmup)
+  const candidates = working.length > 0 ? working : logs
+  return candidates.reduce((earliest, log) => {
     const at = log.completedAt ?? log.createdAt ?? ''
     if (at === '') return earliest
     return earliest === '' || at < earliest ? at : earliest

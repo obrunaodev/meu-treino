@@ -766,6 +766,10 @@ p { margin: 0; line-height: 1.55; }
 .cues button { border: 0; background: none; color: var(--dim); font-size: 15px; cursor: pointer; }
 
 .loglist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.session-loggroups { display: flex; flex-direction: column; gap: 12px; }
+.session-loggroup { display: flex; flex-direction: column; gap: 6px; }
+.session-loggroup + .session-loggroup { padding-top: 12px; border-top: 1px solid var(--line); }
+.session-loggroup h3 { font-size: 14px; font-weight: 600; }
 .loglist__row {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 9px 12px; border-radius: var(--r-tile);
