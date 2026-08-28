@@ -716,6 +716,21 @@ p { margin: 0; line-height: 1.55; }
 /* ── sessão ───────────────────────────────────────────────────────────────*/
 .clock { font-family: var(--font-mono); font-size: 40px; line-height: 1; font-weight: 500; }
 .session__resources { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.session-preview { max-width: 52rem; margin-inline: auto; }
+.session-preview__exercises { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.session-preview__exercises li {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px;
+  align-items: center; padding: 10px 8px; border-bottom: 1px solid var(--line);
+}
+.session-preview__exercises li:last-child { border-bottom: 0; }
+.session-preview__exercises li > span:last-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.session-preview__exercises strong { font-size: 14px; }
+.session-preview__exercises small { color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
+.session-preview__actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 32rem) {
+  .session-preview__actions { position: sticky; bottom: 72px; padding: 10px; margin-inline: -10px; background: var(--shell); }
+  .session-preview__actions .button { flex: 1; }
+}
 .session-checklist { display: flex; flex-direction: column; gap: 12px; }
 .session-checklist__head { display: flex; flex-direction: column; gap: 4px; }
 .session-checklist__head h2 { font-size: 18px; }

@@ -353,6 +353,9 @@
     "swap_offer": "Swap for {{name}}",
     "per_side_short": "side",
     "choose_title": "Which workout today?",
+    "today_preview": "Today's expected workout",
+    "choose_other": "Choose another workout",
+    "start_selected": "Start {{name}}",
     "suggested": "next",
     "exercise_count": "{{count}} exercise",
     "exercise_count_other": "{{count}} exercises"

@@ -353,6 +353,9 @@
     "swap_offer": "Trocar por {{name}}",
     "per_side_short": "lado",
     "choose_title": "Qual treino hoje?",
+    "today_preview": "Treino previsto para hoje",
+    "choose_other": "Escolher outro treino",
+    "start_selected": "Iniciar {{name}}",
     "suggested": "próximo",
     "exercise_count": "{{count}} exercício",
     "exercise_count_other": "{{count}} exercícios"

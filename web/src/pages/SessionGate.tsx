@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
-  useActiveProgram, useAllTemplateItems, useOpenSession, useSessions, useTemplates,
+  useActiveProgram, useAllTemplateItems, useExercises, useOpenSession, useSessions, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
-import { Empty, Modal } from '../components/ui.js'
+import { Card, Empty } from '../components/ui.js'
 
 /**
  * `/sessao` sem id: retoma a sessão aberta, ou abre a próxima do ciclo. Existe
@@ -20,14 +20,26 @@ export function SessionGate() {
   const templates = useTemplates(program?.id)
   const sessions = useSessions()
   const items = useAllTemplateItems()
+  const exercises = useExercises()
   const open = useOpenSession()
   const { startSession } = useActions()
   const [choosing, setChoosing] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const upcomingPosition = nextTemplate(templates, sessions)
+  const upcoming = templates.find((template) => template.id === upcomingPosition?.id) ?? null
+  useEffect(() => {
+    if (!selectedId && upcoming) setSelectedId(upcoming.id)
+  }, [selectedId, upcoming?.id])
 
   if (open) return <Navigate to={`/sessao/${open.id}`} replace />
   if (!program) return <Empty message={t('dashboard.no_program')} />
 
-  const upcoming = nextTemplate(templates, sessions)
+  const selected = templates.find((template) => template.id === selectedId) ?? upcoming ?? templates[0] ?? null
+  const selectedItems = items
+    .filter((item) => item.templateId === selected?.id)
+    .sort((a, b) => a.position - b.position)
+  const exerciseNames = new Map(exercises.map((exercise) => [exercise.id, exercise.name]))
   const finished = sessions.filter((s) => s.status !== 'em_andamento')
   const position = cyclePosition(program.sessionsPerCycle, program.cyclesPerBlock, finished.length)
 
@@ -38,55 +50,74 @@ export function SessionGate() {
     navigate(`/sessao/${session.id}`, { replace: true })
   }
 
+  if (!selected) return <Empty message={t('templates.empty')} />
+
   return (
-    <>
-      <Empty
-        message={t('session.no_open')}
-        action={
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={templates.length === 0}
-            onClick={() => setChoosing(true)}
-          >
-            {t('session.start_now')}
-          </button>
-        }
-      />
+    <div className="page session-preview">
+      <header className="stack stack--tight">
+        <span className="eyebrow">{t('session.today_preview')}</span>
+        <div className="row-between">
+          <h1>{selected.name}</h1>
+          {selected.id === upcoming?.id && <span className="badge">{t('session.suggested')}</span>}
+        </div>
+        {selected.focus && <p className="muted">{selected.focus}</p>}
+        <p className="mono muted">
+          {t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })}
+        </p>
+      </header>
+
+      <Card title={t('session.exercise_list')}>
+        <ol className="session-preview__exercises">
+          {selectedItems.map((item, index) => {
+            const range = item.repMin === item.repMax || item.repMax === null
+              ? `${item.repMin ?? '—'}`
+              : `${item.repMin ?? 0}–${item.repMax}`
+            return (
+              <li key={item.id}>
+                <span className="mono muted">{String(index + 1).padStart(2, '0')}</span>
+                <span>
+                  <strong>{exerciseNames.get(item.exerciseId) ?? t('library.gone')}</strong>
+                  <small>{t('session.target', {
+                    sets: item.sets,
+                    range: item.isTimeBased ? `${range}s` : range,
+                    rir: item.rirTarget ?? '—',
+                  })}</small>
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </Card>
 
       {choosing && (
-        <Modal
-          title={t('session.choose_title')}
-          closeLabel={t('common.close')}
-          onClose={() => setChoosing(false)}
-        >
-          <p className="mono muted">
-            {t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })}
-          </p>
-
+        <Card title={t('session.choose_title')}>
           <div className="checklist">
             {templates.map((template) => {
-              const count = items.filter((i) => i.templateId === template.id).length
+              const count = items.filter((item) => item.templateId === template.id).length
               return (
                 <button
                   key={template.id}
                   type="button"
-                  className="checkitem"
-                  onClick={() => void begin(template.id)}
+                  className={`checkitem${template.id === selected.id ? ' checkitem--on' : ''}`}
+                  onClick={() => { setSelectedId(template.id); setChoosing(false) }}
                 >
-                  <span>
-                    {template.name}
-                    {template.id === upcoming?.id && (
-                      <span className="badge">{t('session.suggested')}</span>
-                    )}
-                  </span>
+                  <span>{template.name}</span>
                   <span className="mono muted">{t('session.exercise_count', { count })}</span>
                 </button>
               )
             })}
           </div>
-        </Modal>
+        </Card>
       )}
-    </>
+
+      <div className="session-preview__actions">
+        <button type="button" className="button button--ghost" onClick={() => setChoosing(!choosing)}>
+          {t('session.choose_other')}
+        </button>
+        <button type="button" className="button button--primary" onClick={() => void begin(selected.id)}>
+          {t('session.start_selected', { name: selected.name })}
+        </button>
+      </div>
+    </div>
   )
 }
