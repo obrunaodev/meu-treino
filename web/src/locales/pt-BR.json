@@ -22,19 +22,38 @@
     "fact_cardio": "20 min cardio"
   },
   "nav": {
-    "dashboard": "Progresso",
-    "session": "Sessão de hoje",
-    "templates": "Gerenciar treinos",
-    "library": "Biblioteca",
-    "pain": "Histórico de dor",
-    "tests": "Marcador funcional",
-    "history": "Histórico de sessões",
+    "dashboard": "Dashboard",
+    "session": "Treino de Hoje",
+    "templates": "Gerenciar Treinos",
+    "library": "Catálogo de Exercícios",
+    "academy": "Academia",
+    "pain": "Histórico de Dor",
+    "tests": "Testes Funcionais",
+    "history": "Histórico de Treinos",
     "whatsapp": "WhatsApp",
     "settings": "Configurações",
     "today": "Hoje",
-    "progress": "Progresso",
+    "dashboard_short": "Dashboard",
+    "history_short": "Histórico",
     "workouts": "Treinos",
-    "more": "Mais"
+    "more": "Mais",
+    "groups": {
+      "training": "Treino",
+      "resources": "Recursos",
+      "system": "Sistema"
+    }
+  },
+  "pages": {
+    "dashboard": "Acompanhe sua semana, evolução, ciclo, volume e sinais de dor.",
+    "session": "Consulte o treino previsto, registre sua execução e acompanhe o progresso de hoje.",
+    "templates": "Monte os treinos do seu ciclo e defina como cada exercício será executado.",
+    "library": "Gerencie os exercícios disponíveis, imagens, equipamentos e instruções de execução.",
+    "academy": "Cadastre os equipamentos e aparelhos de cardio disponíveis na sua academia.",
+    "history": "Revise sessões anteriores, cargas, séries, cardio e observações.",
+    "tests": "Registre avaliações periódicas para acompanhar capacidade, mobilidade e desempenho.",
+    "pain": "Acompanhe desconfortos registrados e identifique regiões que exigem atenção.",
+    "settings": "Ajuste preferências, integrações, lembretes e dados da sua conta.",
+    "more": "Acesse recursos complementares e configurações do aplicativo."
   },
   "sync": {
     "offline": "Offline — as alterações sobem quando a rede voltar",
@@ -132,7 +151,7 @@
     "cleanup_body": "O WhatsApp pode impedir a remoção de mensagens antigas. O bot apaga apenas mensagens que conseguiu rastrear desde que ficou conectado e informa quando alguma não pôde ser removida."
   },
   "dashboard": {
-    "title": "Progresso",
+    "title": "Dashboard",
     "cycle": "Ciclo {{cycle}} · bloco {{block}}",
     "empty": "Nenhuma sessão registrada. Os gráficos ficam vazios até o primeiro treino.",
     "start_first": "Fazer o primeiro treino",
@@ -297,7 +316,7 @@
     }
   },
   "session": {
-    "title": "Sessão ao vivo",
+    "title": "Treino de Hoje",
     "prep": "Preparação",
     "prep_desc": "Aquecimento dinâmico. Depois, 1–2 séries leves do primeiro exercício — não contam como trabalho.",
     "start_exercises": "Começar exercícios",
@@ -362,7 +381,7 @@
     "exercise_count_other": "{{count}} exercícios"
   },
   "templates": {
-    "title": "Gerenciar treinos",
+    "title": "Gerenciar Treinos",
     "empty": "Nenhum treino no ciclo.",
     "items": "{{count}} exercício",
     "items_other": "{{count}} exercícios",
@@ -408,7 +427,7 @@
     "delete_last": "o ciclo precisa de pelo menos um treino"
   },
   "library": {
-    "title": "Biblioteca",
+    "title": "Catálogo de Exercícios",
     "empty": "Nenhum exercício cadastrado ainda.",
     "add": "Novo exercício",
     "from_catalog": "Importar do catálogo",
@@ -446,7 +465,7 @@
     "gone": "Exercício removido"
   },
   "equipment": {
-    "title": "Equipamentos",
+    "title": "Academia",
     "empty": "Nenhum equipamento cadastrado.",
     "add": "Novo equipamento",
     "load_type": "Tipo de carga",
@@ -475,8 +494,9 @@
     "air_bike": "Air bike"
   },
   "pain": {
-    "title": "Histórico de dor",
+    "title": "Histórico de Dor",
     "empty": "Nenhum registro de dor.",
+    "healthy_empty": "Parabéns — você está sem registros de dor. Continue cuidando do corpo e registre qualquer desconforto caso ele apareça.",
     "list": "Lista",
     "by_region": "Por região",
     "level": "Nível",
@@ -491,7 +511,7 @@
     "affected": "Exercícios contraindicados para esta região"
   },
   "tests": {
-    "title": "Marcador funcional",
+    "title": "Testes Funcionais",
     "empty": "Nenhum teste cadastrado.",
     "add": "Novo teste",
     "name": "Nome do teste",
@@ -507,7 +527,7 @@
     "no_results": "Sem resultados ainda."
   },
   "history": {
-    "title": "Histórico de sessões",
+    "title": "Histórico de Treinos",
     "empty": "Nenhuma sessão ainda.",
     "done": "feita",
     "missed": "incompleta",
@@ -556,6 +576,8 @@
     "export_hint": "Uma linha por série, com sessão, exercício, carga e dor.",
     "redo_onboarding": "Refazer configuração",
     "equipment": "Equipamentos",
+    "integrations": "Integrações",
+    "whatsapp_hint": "Configure o bot pessoal e consulte o manual de comandos.",
     "danger": "Zona de risco",
     "clear": "Apagar histórico",
     "clear_hint": "Apaga sessões, séries, dor e resultados de teste. Programa e exercícios ficam.",

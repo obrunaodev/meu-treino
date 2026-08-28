@@ -34,7 +34,10 @@ export function Settings() {
 
   return (
     <div className="page">
-      <h1>{t('settings.title')}</h1>
+      <header className="page__title">
+        <h1>{t('settings.title')}</h1>
+        <p className="page__description">{t('pages.settings')}</p>
+      </header>
 
       <Card title={t('settings.title')}>
         <Select
@@ -146,6 +149,11 @@ export function Settings() {
         <span className="mono muted">{equipment.length}</span>
       }>
         <Link className="button button--quiet" to="/equipamentos">{t('settings.equipment')}</Link>
+      </Card>
+
+      <Card title={t('settings.integrations')}>
+        <span className="mono muted">{t('settings.whatsapp_hint')}</span>
+        <Link className="button button--quiet" to="/whatsapp">WhatsApp</Link>
       </Card>
 
       <Card title={t('settings.export')}>

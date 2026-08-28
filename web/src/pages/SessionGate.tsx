@@ -56,8 +56,10 @@ export function SessionGate() {
     <div className="page session-preview">
       <header className="stack stack--tight">
         <span className="eyebrow">{t('session.today_preview')}</span>
+        <h1>{t('session.title')}</h1>
+        <p className="page__description">{t('pages.session')}</p>
         <div className="row-between">
-          <h1>{selected.name}</h1>
+          <h2>{selected.name}</h2>
           {selected.id === upcoming?.id && <span className="badge">{t('session.suggested')}</span>}
         </div>
         {selected.focus && <p className="muted">{selected.focus}</p>}

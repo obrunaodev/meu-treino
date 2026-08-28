@@ -22,19 +22,38 @@
     "fact_cardio": "20 min cardio"
   },
   "nav": {
-    "dashboard": "Progress",
-    "session": "Today's session",
-    "templates": "Manage workouts",
-    "library": "Library",
-    "pain": "Pain history",
-    "tests": "Functional marker",
-    "history": "Session history",
+    "dashboard": "Dashboard",
+    "session": "Today's Workout",
+    "templates": "Manage Workouts",
+    "library": "Exercise Catalog",
+    "academy": "My Gym",
+    "pain": "Pain History",
+    "tests": "Functional Tests",
+    "history": "Workout History",
     "whatsapp": "WhatsApp",
     "settings": "Settings",
     "today": "Today",
-    "progress": "Progress",
+    "dashboard_short": "Dashboard",
+    "history_short": "History",
     "workouts": "Workouts",
-    "more": "More"
+    "more": "More",
+    "groups": {
+      "training": "Training",
+      "resources": "Resources",
+      "system": "System"
+    }
+  },
+  "pages": {
+    "dashboard": "See your week, progression, cycle, training volume, and pain signals at a glance.",
+    "session": "Preview the expected workout, log your execution, and follow today's progress.",
+    "templates": "Build the workouts in your cycle and decide how every exercise should be performed.",
+    "library": "Manage available exercises, images, equipment, and execution guidance.",
+    "academy": "Register the strength and cardio equipment available at your gym.",
+    "history": "Review past workouts, loads, sets, cardio, and session notes.",
+    "tests": "Track recurring assessments for capacity, mobility, and performance.",
+    "pain": "Review discomfort records and spot body regions that may need attention.",
+    "settings": "Manage preferences, integrations, reminders, and account data.",
+    "more": "Open supporting tools and application settings."
   },
   "sync": {
     "offline": "Offline — changes upload when the network returns",
@@ -132,7 +151,7 @@
     "cleanup_body": "WhatsApp may prevent old messages from being removed. The bot can only delete messages tracked since it connected and reports any message it could not remove."
   },
   "dashboard": {
-    "title": "Progress",
+    "title": "Dashboard",
     "cycle": "Cycle {{cycle}} · block {{block}}",
     "empty": "No sessions recorded. Charts stay empty until your first workout.",
     "start_first": "Do the first workout",
@@ -297,7 +316,7 @@
     }
   },
   "session": {
-    "title": "Live session",
+    "title": "Today's Workout",
     "prep": "Prep",
     "prep_desc": "Dynamic warm-up. Then 1–2 light sets of the first exercise — they don't count as working sets.",
     "start_exercises": "Start exercises",
@@ -362,7 +381,7 @@
     "exercise_count_other": "{{count}} exercises"
   },
   "templates": {
-    "title": "Manage workouts",
+    "title": "Manage Workouts",
     "empty": "No workouts in the cycle.",
     "items": "{{count}} exercise",
     "items_other": "{{count}} exercises",
@@ -408,7 +427,7 @@
     "delete_last": "the cycle needs at least one workout"
   },
   "library": {
-    "title": "Library",
+    "title": "Exercise Catalog",
     "empty": "No exercises yet.",
     "add": "New exercise",
     "from_catalog": "Import from catalog",
@@ -446,7 +465,7 @@
     "gone": "Exercise removed"
   },
   "equipment": {
-    "title": "Equipment",
+    "title": "My Gym",
     "empty": "No equipment registered.",
     "add": "New equipment",
     "load_type": "Load type",
@@ -475,8 +494,9 @@
     "air_bike": "Air bike"
   },
   "pain": {
-    "title": "Pain history",
+    "title": "Pain History",
     "empty": "No pain recorded.",
+    "healthy_empty": "Great work — you have no pain records. Keep taking care of your body and log any discomfort if it appears.",
     "list": "List",
     "by_region": "By region",
     "level": "Level",
@@ -491,7 +511,7 @@
     "affected": "Exercises contraindicated for this area"
   },
   "tests": {
-    "title": "Functional marker",
+    "title": "Functional Tests",
     "empty": "No tests registered.",
     "add": "New test",
     "name": "Test name",
@@ -507,7 +527,7 @@
     "no_results": "No results yet."
   },
   "history": {
-    "title": "Session history",
+    "title": "Workout History",
     "empty": "No sessions yet.",
     "done": "done",
     "missed": "incomplete",
@@ -556,6 +576,8 @@
     "export_hint": "One row per set, with session, exercise, load and pain.",
     "redo_onboarding": "Redo setup",
     "equipment": "Equipment",
+    "integrations": "Integrations",
+    "whatsapp_hint": "Configure the personal bot and open its command guide.",
     "danger": "Danger zone",
     "clear": "Delete history",
     "clear_hint": "Deletes sessions, sets, pain and test results. Program and exercises stay.",

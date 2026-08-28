@@ -18,7 +18,10 @@ export function Equipment() {
   return (
     <div className="page">
       <div className="page__head">
-        <h1>{t('equipment.title')}</h1>
+        <div className="page__title">
+          <h1>{t('equipment.title')}</h1>
+          <p className="page__description">{t('pages.academy')}</p>
+        </div>
         <button
           type="button"
           className="button button--primary"

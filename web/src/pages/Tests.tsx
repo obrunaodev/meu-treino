@@ -16,7 +16,10 @@ export function Tests() {
   return (
     <div className="page">
       <div className="page__head">
-        <h1>{t('tests.title')}</h1>
+        <div className="page__title">
+          <h1>{t('tests.title')}</h1>
+          <p className="page__description">{t('pages.tests')}</p>
+        </div>
         <button type="button" className="button button--primary" onClick={() => setCreating((v) => !v)}>
           {t('tests.add')}
         </button>

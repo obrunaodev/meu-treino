@@ -33,7 +33,10 @@ export function Library() {
   return (
     <div className="page">
       <div className="page__head">
-        <h1>{t('library.title')}</h1>
+        <div className="page__title">
+          <h1>{t('library.title')}</h1>
+          <p className="page__description">{t('pages.library')}</p>
+        </div>
         <button type="button" className="button button--primary" onClick={() => setImporting(true)}>
           {t('library.from_catalog')}
         </button>

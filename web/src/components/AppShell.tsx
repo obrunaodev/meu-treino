@@ -4,32 +4,35 @@ import { useAuth } from '../lib/auth.js'
 import { SyncBar } from './SyncBar.js'
 
 /**
- * Desktop: coluna de 232px com a navegação inteira e a identidade do usuário
- * ancorada no rodapé da barra. Mobile: cabeçalho enxuto e quatro abas embaixo,
- * conforme o sistema responsivo. Mesma árvore, só CSS decide — manter duas
- * navegações em sincronia é como elas divergem.
+ * Desktop: navegação completa agrupada e identidade no rodapé. Mobile: quatro
+ * destinos de treino e a porta “Mais” para recursos secundários.
  */
-const LINKS = [
-  { to: '/', key: 'dashboard', end: true },
-  { to: '/sessao', key: 'session' },
-  { to: '/treinos', key: 'templates' },
-  { to: '/biblioteca', key: 'library' },
-  { to: '/dor', key: 'pain' },
-  { to: '/marcador', key: 'tests' },
-  { to: '/historico', key: 'history' },
-  { to: '/whatsapp', key: 'whatsapp' },
-  { to: '/configuracoes', key: 'settings' },
+const GROUPS = [
+  { key: 'training', links: [
+    { to: '/', key: 'dashboard', end: true },
+    { to: '/sessao', key: 'session' },
+    { to: '/historico', key: 'history' },
+    { to: '/treinos', key: 'templates' },
+  ] },
+  { key: 'resources', links: [
+    { to: '/biblioteca', key: 'library' },
+    { to: '/equipamentos', key: 'academy' },
+    { to: '/marcador', key: 'tests' },
+    { to: '/dor', key: 'pain' },
+  ] },
+  { key: 'system', links: [
+    { to: '/configuracoes', key: 'settings' },
+  ] },
 ]
 
 /**
- * Quatro abas no mobile, com rótulos curtos para o viewport de 420px.
- * O que não cabe vai para /mais — oito abas numa barra de 420px viram texto
- * quebrado em duas linhas e alvo de toque pequeno demais.
+ * Os quatro destinos centrais ficam fixos; “Mais” concentra recursos e sistema.
  */
 const TABS = [
+  { to: '/', key: 'dashboard_short', end: true },
   { to: '/sessao', key: 'today' },
-  { to: '/', key: 'progress', end: true },
   { to: '/treinos', key: 'workouts' },
+  { to: '/historico', key: 'history_short' },
   { to: '/mais', key: 'more' },
 ]
 
@@ -66,10 +69,15 @@ export function AppShell() {
           <span className="shell__brand">{t('app.name')}</span>
 
           <div className="shell__nav">
-            {LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} end={link.end} className="shell__link">
-                {t(`nav.${link.key}`)}
-              </NavLink>
+            {GROUPS.map((group) => (
+              <section key={group.key} className="shell__nav-group">
+                <span className="shell__nav-label">{t(`nav.groups.${group.key}`)}</span>
+                {group.links.map((link) => (
+                  <NavLink key={link.to} to={link.to} end={link.end} className="shell__link">
+                    {t(`nav.${link.key}`)}
+                  </NavLink>
+                ))}
+              </section>
             ))}
           </div>
 

@@ -76,6 +76,7 @@ export function Dashboard() {
             {t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })}
           </span>
           <h1>{t('dashboard.title')}</h1>
+          <p className="page__description">{t('pages.dashboard')}</p>
         </div>
         <Link className="button button--quiet dashboard__history" to="/historico">
           {t('dashboard.view_history')}

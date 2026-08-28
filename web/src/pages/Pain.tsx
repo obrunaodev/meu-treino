@@ -44,10 +44,13 @@ export function Pain() {
   return (
     <div className="page">
       <div className="page__head">
-        <h1>{t('pain.title')}</h1>
-        <button type="button" className="button button--primary" onClick={() => setAdding((v) => !v)}>
+        <div className="page__title">
+          <h1>{t('pain.title')}</h1>
+          <p className="page__description">{t('pages.pain')}</p>
+        </div>
+        {events.length > 0 && <button type="button" className="button button--primary" onClick={() => setAdding((v) => !v)}>
           {t('pain.add')}
-        </button>
+        </button>}
       </div>
 
       {adding && (
@@ -62,26 +65,30 @@ export function Pain() {
         </Card>
       )}
 
-      <Card title={t('pain.scale')}>
-        <BodyMap levels={worstByRegion} />
-      </Card>
-
-      <div className="pills">
-        {(['lista', 'regiao'] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            className={`pill${view === mode ? ' pill--on' : ''}`}
-            onClick={() => setView(mode)}
-          >
-            {t(mode === 'lista' ? 'pain.list' : 'pain.by_region')}
-          </button>
-        ))}
-      </div>
-
       {events.length === 0 ? (
-        <Empty message={t('pain.empty')} />
-      ) : view === 'lista' ? (
+        <Empty
+          message={t('pain.healthy_empty')}
+          action={!adding ? <button type="button" className="button button--primary" onClick={() => setAdding(true)}>{t('pain.add')}</button> : undefined}
+        />
+      ) : <>
+        <Card title={t('pain.scale')}>
+          <BodyMap levels={worstByRegion} />
+        </Card>
+
+        <div className="pills">
+          {(['lista', 'regiao'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`pill${view === mode ? ' pill--on' : ''}`}
+              onClick={() => setView(mode)}
+            >
+              {t(mode === 'lista' ? 'pain.list' : 'pain.by_region')}
+            </button>
+          ))}
+        </div>
+
+      {view === 'lista' ? (
         <Card>
           <ul className="loglist">
             {events.map((event) => (
@@ -125,6 +132,7 @@ export function Pain() {
           </ul>
         </Card>
       )}
+      </>}
     </div>
   )
 }

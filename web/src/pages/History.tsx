@@ -60,7 +60,10 @@ export function History() {
 
   return (
     <div className="page">
-      <h1>{t('history.title')}</h1>
+      <header className="page__title">
+        <h1>{t('history.title')}</h1>
+        <p className="page__description">{t('pages.history')}</p>
+      </header>
 
       {sessions.length === 0 ? (
         <Empty message={t('history.empty')} />

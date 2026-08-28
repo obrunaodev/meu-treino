@@ -34,7 +34,10 @@ export function Templates() {
   return (
     <div className="page">
       <div className="page__head">
-        <h1>{t('templates.title')}</h1>
+        <div className="page__title">
+          <h1>{t('templates.title')}</h1>
+          <p className="page__description">{t('pages.templates')}</p>
+        </div>
         <button type="button" className="button button--primary" onClick={() => void create()}>
           {t('templates.new')}
         </button>

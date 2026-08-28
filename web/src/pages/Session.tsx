@@ -127,7 +127,10 @@ export function Session() {
     <div className="page session">
       <header className="stack stack--tight">
         <div className="row-between">
-          <h1>{t('session.title')}</h1>
+          <div className="page__title">
+            <h1>{t('session.title')}</h1>
+            <p className="page__description">{t('pages.session')}</p>
+          </div>
           <span className="mono muted">
             {t('session.progress_exercises', { done: progress.done, planned: progress.planned })}
           </span>
