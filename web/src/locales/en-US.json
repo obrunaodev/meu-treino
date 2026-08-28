@@ -43,7 +43,8 @@
     "synced": "Everything synced",
     "conflict_one": "{{count}} conflict to resolve",
     "conflict_other": "{{count}} conflicts to resolve",
-    "resolve": "Resolve now"
+    "resolve": "Resolve now",
+    "dismiss": "Dismiss notice"
   },
   "whatsapp": {
     "eyebrow": "Personal integration",
