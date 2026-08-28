@@ -244,10 +244,9 @@ function ExerciseRow({ item, index, sessionId, logs }: {
         </button>
       </div>
 
-      {(item.notes || description || (exercise?.cues.length ?? 0) > 0) && (
+      {(item.notes || (exercise?.cues.length ?? 0) > 0) && (
         <div className="session-exercise__specifics">
           {item.notes && <p>{item.notes}</p>}
-          {description && <p>{description}</p>}
           {exercise?.cues.map((cue, cueIndex) => <span key={cueIndex}>• {cue}</span>)}
         </div>
       )}
@@ -268,6 +267,7 @@ function ExerciseRow({ item, index, sessionId, logs }: {
 
       {expanded && (
         <div className="session-exercise__details">
+          {description && <p className="session-exercise__description">{description}</p>}
           {(media || videoUrl) && <div className="session__resources">
             {media && <button type="button" className="button button--quiet" onClick={() => setShowImage(true)}>{t('session.view_image')}</button>}
             {videoUrl && <a className="button button--quiet" href={videoUrl} target="_blank" rel="noopener noreferrer">{t('session.watch_video')}</a>}

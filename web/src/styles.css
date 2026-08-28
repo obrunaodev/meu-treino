@@ -768,6 +768,7 @@ p { margin: 0; line-height: 1.55; }
   display: flex; flex-direction: column; gap: 12px; padding: 12px;
   border-top: 1px solid var(--line);
 }
+.session-exercise__description { margin: 0; color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
 .session-exercise button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (min-width: 48rem) {
   .session-checklist__list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
