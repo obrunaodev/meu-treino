@@ -2,42 +2,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  useActiveProgram, useCardioLogs, useCardioOptions, useEquipment, useExercises, useMedia,
-  useSessions, useSetLogs, useSettings, useTemplateItems, useTemplates,
+  useCardioLogs, useCardioOptions, useExercises, useSessions, useSetLogs, useSettings,
+  useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
-import { apiFetch } from '../lib/api.js'
-import { MediaImage } from '../components/MediaImage.js'
 import {
-  CARDIO_SECONDS, PREP_SECONDS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  remainingSeconds, restFor, sessionProgress,
+  CARDIO_SECONDS, PREP_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
+  nextSlot, remainingSeconds,
 } from '../lib/domain/session.js'
-import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
+import { formatLoad } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
-import { Card, Empty, Modal, Select, Stepper } from '../components/ui.js'
-import { PainCapture } from '../components/PainCapture.js'
-import type { CatalogExercise, SetLog, TemplateItem } from '../lib/types.js'
-
-/** Rascunho da série em edição. Vira `set_logs` só quando o usuário confirma. */
-interface Draft {
-  weightKg: number | null
-  plateCount: number | null
-  reps: number
-  seconds: number
-  rir: number
-  side: 'ambos' | 'D' | 'E'
-  isWarmup: boolean
-}
+import { Card, Empty, Select } from '../components/ui.js'
+import { SessionExerciseChecklist } from '../components/SessionExerciseChecklist.js'
+import type { SetLog, TemplateItem } from '../lib/types.js'
 
 export function Session() {
   const { sessionId } = useParams()
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const sessions = useSessions()
   const session = sessions.find((s) => s.id === sessionId) ?? null
-  const program = useActiveProgram()
   const currentItems = useTemplateItems(session?.templateId)
   const items = session?.planSnapshot?.items ?? currentItems
   const templates = useTemplates(session?.programId)
@@ -47,22 +33,16 @@ export function Session() {
   const logs = useSetLogs(session?.id)
   const cardio = useCardioLogs(session?.id)
   const exercises = useExercises()
-  const equipment = useEquipment()
-  const media = useMedia()
   const settings = useSettings()
-  const { logSet, updateSession, logCardio, logPain } = useActions()
+  const { updateSession, logCardio } = useActions()
 
   const [{ phase, phaseStartedAt }, setPhase] = useSessionPhase(
     sessionId,
     logs.some((l) => !l.isWarmup),
   )
   const [now, setNow] = useState(Date.now())
-  const [draft, setDraft] = useState<Draft | null>(null)
-  const [capturingPain, setCapturingPain] = useState<string | null>(null)
   const [intensity, setIntensity] = useState<'leve' | 'moderado' | 'forte' | null>(null)
   const [cardioOptionId, setCardioOptionId] = useState('')
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [showingImage, setShowingImage] = useState(false)
 
   useEffect(() => {
     if (cardio.length > 0) return
@@ -84,35 +64,6 @@ export function Session() {
     })),
   ), [items, logs])
 
-  const item = slot ? items[slot.itemIndex] ?? null : null
-  const exercise = exercises.find((e) => e.id === item?.exerciseId) ?? null
-  const snapshotItem = session?.planSnapshot?.items.find((entry) => entry.id === item?.id) ?? null
-  const exerciseId = item?.exerciseId ?? null
-  const exerciseName = snapshotItem?.exerciseName ?? exercise?.name ?? t('library.gone')
-  const unilateralAsymmetric = snapshotItem?.unilateralAsymmetric ?? exercise?.unilateralAsymmetric ?? false
-  const loadPerSide = snapshotItem?.loadPerSide ?? exercise?.loadPerSide ?? false
-  const gear = snapshotItem?.equipment ?? equipment.find((e) => e.id === exercise?.equipmentId) ?? null
-  const exerciseImage = media.find((m) => m.exerciseId === exerciseId) ?? null
-
-  useEffect(() => setShowingImage(false), [exerciseId])
-
-  useEffect(() => {
-    setVideoUrl(null)
-    if (!exercise?.catalogExerciseId) return
-
-    let current = true
-    void apiFetch<CatalogExercise>(`/api/catalog/exercises/${exercise.catalogExerciseId}`)
-      .then((catalog) => {
-        if (!current) return
-        const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
-        setVideoUrl(catalog.video?.[lang] ?? catalog.video?.pt ?? catalog.video?.en ?? null)
-      })
-      .catch(() => {
-        if (current) setVideoUrl(null)
-      })
-    return () => { current = false }
-  }, [exercise?.catalogExerciseId, i18n.language])
-
   // Entrou no cardio: o relógio recomeça daqui, senão herdaria o descanso anterior.
   //
   // `items.length > 0` não é redundante: o Dexie devolve lista vazia enquanto a
@@ -123,28 +74,18 @@ export function Session() {
     if (items.length > 0 && !slot && phase !== 'cardio') setPhase('cardio')
   }, [items.length, slot, phase])
 
-  const progress = sessionProgress(
+  // A interface antiga parava entre séries. Sessões abertas nessa versão
+  // retomam direto no checklist, que registra o exercício inteiro.
+  useEffect(() => {
+    if (phase === 'descanso') setPhase('exercicios')
+  }, [phase])
+
+  const progress = exerciseProgress(
     items.map((i) => ({ id: i.id, sets: i.sets, restSeconds: i.restSeconds })),
     logs.map((l) => ({
       templateItemId: l.templateItemId, setIndex: l.setIndex, isWarmup: l.isWarmup, skipped: l.skipped,
     })),
   )
-
-  // Semeia o rascunho com a última carga usada neste exercício: quase sempre é
-  // ela mesma, e digitar de novo a cada série seria trabalho inútil.
-  useEffect(() => {
-    if (!item || !exerciseId) return setDraft(null)
-    const previous = logs.filter((l) => l.exerciseId === exerciseId && !l.isWarmup).at(-1)
-    setDraft({
-      weightKg: previous?.weightKg ?? null,
-      plateCount: previous?.plateCount ?? null,
-      reps: previous?.reps ?? item.repMin ?? 10,
-      seconds: previous?.seconds ?? item.repMin ?? 30,
-      rir: previous?.rir ?? item.rirTarget ?? 2,
-      side: unilateralAsymmetric ? 'D' : 'ambos',
-      isWarmup: false,
-    })
-  }, [item?.id, exerciseId, unilateralAsymmetric, logs.length])
 
   if (!session) return <Empty message={t('session.no_open')} />
   if (items.length === 0) {
@@ -154,42 +95,6 @@ export function Session() {
         action={<Link className="button button--primary" to="/treinos">{t('session.edit_template')}</Link>}
       />
     )
-  }
-
-  async function confirmSet(extra: Partial<SetLog> = {}) {
-    if (!draft || !item || !exerciseId) return
-    const created = await logSet({
-      sessionId: session!.id,
-      templateItemId: item.id,
-      exerciseId,
-      setIndex: slot?.setIndex ?? 0,
-      isWarmup: draft.isWarmup,
-      side: draft.side,
-      weightKg: draft.weightKg,
-      plateCount: draft.plateCount,
-      reps: item.isTimeBased ? null : draft.reps,
-      seconds: item.isTimeBased ? draft.seconds : null,
-      rir: draft.rir,
-      ...extra,
-    })
-
-    if (!draft.isWarmup) setPhase('descanso')
-    return created
-  }
-
-  async function skipExercise() {
-    if (!item || !exerciseId) return
-    const done = logs.filter((l) => l.templateItemId === item.id && !l.isWarmup).length
-    for (let index = done; index < item.sets; index++) {
-      await logSet({
-        sessionId: session!.id,
-        templateItemId: item.id,
-        exerciseId,
-        setIndex: index,
-        skipped: true,
-        completedAt: null,
-      })
-    }
   }
 
   async function finish() {
@@ -224,7 +129,7 @@ export function Session() {
         <div className="row-between">
           <h1>{t('session.title')}</h1>
           <span className="mono muted">
-            {t('session.progress', { done: progress.done, planned: progress.planned })}
+            {t('session.progress_exercises', { done: progress.done, planned: progress.planned })}
           </span>
         </div>
         <div className="progress">
@@ -245,158 +150,8 @@ export function Session() {
         </Card>
       )}
 
-      {phase === 'descanso' && (
-        <Card tone="hot" title={t('session.rest')}>
-          <strong className="clock">
-            {formatClock(remainingSeconds(phaseStartedAt, restFor(
-              item ? { id: item.id, sets: item.sets, restSeconds: item.restSeconds } : undefined,
-              program?.defaultRestSeconds ?? 90,
-            ), now))}
-          </strong>
-          <button type="button" className="button button--ghost" onClick={() => setPhase('exercicios')}>
-            {t('session.skip_rest')}
-          </button>
-        </Card>
-      )}
-
-      {(phase === 'exercicios' || phase === 'descanso') && item && exercise && draft && (
-        <>
-          <Card
-            heading={exerciseName}
-            action={
-              <span className="mono muted">
-                {t('session.target', {
-                  sets: item.sets,
-                  range: item.isTimeBased
-                    ? `${item.repMin ?? 0}–${item.repMax ?? 0}s`
-                    : `${item.repMin ?? 0}–${item.repMax ?? 0}`,
-                  rir: item.rirTarget ?? '—',
-                })}
-              </span>
-            }
-          >
-          {(exerciseImage || videoUrl) && (
-            <div className="session__resources">
-              {exerciseImage && (
-                <button type="button" className="button button--quiet" onClick={() => setShowingImage(true)}>
-                  {t('session.view_image')}
-                </button>
-              )}
-              {videoUrl && (
-                <a className="button button--quiet" href={videoUrl} target="_blank" rel="noopener noreferrer">
-                  {t('session.watch_video')}
-                </a>
-              )}
-            </div>
-          )}
-
-          {(exercise?.cues.length ?? 0) > 0 && (
-            <ul className="cues">
-              {exercise?.cues.map((cue, index) => <li key={index}>{cue}</li>)}
-            </ul>
-          )}
-
-          <span className="eyebrow">{t('session.set', { n: (slot?.setIndex ?? 0) + 1 })}</span>
-
-          <div className="steppers">
-            <Stepper
-              label={t('session.load')}
-              value={formatLoad(draft.weightKg, draft.plateCount, unit, showPlates, loadPerSide ? t('session.per_side_short') : null)}
-              onStep={(direction) => {
-                const next = nextLoadStep(
-                  gear ?? { loadType: 'livre', plateTable: [], incrementKg: null },
-                  { plate: draft.plateCount, kg: draft.weightKg },
-                  direction,
-                )
-                setDraft({ ...draft, weightKg: next.kg, plateCount: next.plate })
-              }}
-            />
-            {item.isTimeBased ? (
-              <Stepper
-                label={t('session.seconds')}
-                value={draft.seconds}
-                onStep={(d) => setDraft({ ...draft, seconds: Math.max(0, draft.seconds + d * 5) })}
-              />
-            ) : (
-              <Stepper
-                label={t('session.reps')}
-                value={draft.reps}
-                onStep={(d) => setDraft({ ...draft, reps: Math.max(0, draft.reps + d) })}
-              />
-            )}
-            <Stepper
-              label={t('session.rir')}
-              value={draft.rir}
-              onStep={(d) => setDraft({ ...draft, rir: Math.max(0, draft.rir + d) })}
-            />
-          </div>
-
-          {unilateralAsymmetric && (
-            <div className="pills">
-              {(['D', 'E'] as const).map((side) => (
-                <button
-                  key={side}
-                  type="button"
-                  className={`pill${draft.side === side ? ' pill--on' : ''}`}
-                  onClick={() => setDraft({ ...draft, side })}
-                >
-                  {t(side === 'D' ? 'session.side_right' : 'session.side_left')}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {capturingPain ? (
-            <PainCapture
-              onCancel={() => setCapturingPain(null)}
-              onSave={async (regionSlug, level) => {
-                const created = await confirmSet({ hadPain: true })
-                await logPain({
-                  regionSlug,
-                  level,
-                  sessionId: session.id,
-                  setLogId: created?.id ?? null,
-                })
-                setCapturingPain(null)
-              }}
-            />
-          ) : (
-            <div className="row">
-              <button type="button" className="button button--primary" onClick={() => void confirmSet()}>
-                {t('session.confirm_set')}
-              </button>
-              <button
-                type="button"
-                className="button button--quiet"
-                onClick={() => void confirmSet({ isWarmup: true })}
-              >
-                {t('session.add_warmup')}
-              </button>
-              <button type="button" className="button button--ghost" onClick={() => setCapturingPain(exerciseId)}>
-                {t('session.pain')}
-              </button>
-              <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>
-                {t('session.skip_exercise')}
-              </button>
-            </div>
-          )}
-          </Card>
-          {showingImage && exerciseImage && (
-            <Modal
-              title={exerciseName}
-              closeLabel={t('common.close')}
-              onClose={() => setShowingImage(false)}
-              wide
-            >
-              <MediaImage
-                className="media-lightbox__image"
-                mediaId={exerciseImage.id}
-                variant="full"
-                alt={exerciseName}
-              />
-            </Modal>
-          )}
-        </>
+      {phase !== 'cardio' && (
+        <SessionExerciseChecklist sessionId={session.id} items={items} logs={logs} />
       )}
 
       {items.length > 0 && (phase === 'cardio' || !slot) && (

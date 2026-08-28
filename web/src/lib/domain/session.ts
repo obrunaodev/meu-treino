@@ -64,6 +64,20 @@ export function sessionProgress(items: SessionItem[], logged: LoggedSet[]) {
   return { done, planned: planned + extra, remaining: Math.max(0, planned - done) }
 }
 
+/** Progresso da interface de checklist: um exercício só conta quando foi todo resolvido. */
+export function exerciseProgress(items: SessionItem[], logged: LoggedSet[]) {
+  const done = items.filter((item) => (
+    logged.filter((set) => set.templateItemId === item.id && !set.isWarmup).length >= item.sets
+  )).length
+
+  return { done, planned: items.length, remaining: items.length - done }
+}
+
+/** Valor fixo gravado ao concluir uma prescrição sem editar repetições na sessão. */
+export function prescribedResult(repMin: number | null, repMax: number | null): number | null {
+  return repMax ?? repMin
+}
+
 /**
  * Próximo slot a executar: o primeiro item cujas séries de trabalho ainda não
  * fecharam. Pular um exercício não trava a sessão — o item pulado sai da fila

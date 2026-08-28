@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  groupByExercise, remainingSeconds, restFor, sessionProgress, shouldAutoClose, topWorkingSet,
+  exerciseProgress, groupByExercise, prescribedResult, remainingSeconds, restFor,
+  sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
 const items = [
@@ -80,6 +81,32 @@ describe('sessionProgress', () => {
 
   it('aquecimento não entra na conta', () => {
     expect(sessionProgress(items, [set('i1', 0, { isWarmup: true })]).done).toBe(0)
+  })
+})
+
+describe('exerciseProgress', () => {
+  it('só marca o exercício depois de todas as séries prescritas', () => {
+    expect(exerciseProgress(items, [set('i1', 0), set('i1', 1)])).toEqual({
+      done: 0, planned: 2, remaining: 2,
+    })
+    expect(exerciseProgress(items, [set('i1', 0), set('i1', 1), set('i1', 2)])).toEqual({
+      done: 1, planned: 2, remaining: 1,
+    })
+  })
+
+  it('considera exercício pulado como resolvido', () => {
+    const skipped = [0, 1, 2].map((index) => set('i1', index, { skipped: true }))
+    expect(exerciseProgress(items, skipped).done).toBe(1)
+  })
+})
+
+describe('prescribedResult', () => {
+  it('registra o teto da faixa configurada', () => {
+    expect(prescribedResult(10, 15)).toBe(15)
+  })
+
+  it('aceita prescrição de valor único', () => {
+    expect(prescribedResult(12, null)).toBe(12)
   })
 })
 
