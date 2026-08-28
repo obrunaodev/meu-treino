@@ -293,6 +293,8 @@ export const templateItems = pgTable('template_items', {
   repMax: smallint('rep_max'),
   /** Exercício por tempo (prancha, ponte lateral): rep_min/max viram segundos. */
   isTimeBased: boolean('is_time_based').notNull().default(false),
+  /** `compact`: um valor replica nas séries; `full`: cada série tem valores próprios. */
+  trackingMode: text('tracking_mode').notNull().default('compact'),
   rirTarget: smallint('rir_target'),
   restSeconds: integer('rest_seconds'),
   notes: text('notes'),

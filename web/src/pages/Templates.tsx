@@ -279,6 +279,7 @@ function TemplateEditor({ templateId }: { templateId: string }) {
                     repMax: 12,
                     rirTarget: 2,
                     isTimeBased: false,
+                    trackingMode: 'compact',
                   })
                   setAdding(false)
                 }}
@@ -379,6 +380,14 @@ function ItemRow({ item, name, first, last, onMove, onSave, onRemove }: {
             />
             {t('templates.time_based')}
           </label>
+          <Select
+            label={t('templates.tracking_mode')}
+            value={item.trackingMode ?? 'compact'}
+            onChange={(trackingMode) => onSave({ trackingMode: trackingMode as TemplateItem['trackingMode'] })}
+          >
+            <option value="compact">{t('templates.tracking_compact')}</option>
+            <option value="full">{t('templates.tracking_full')}</option>
+          </Select>
           <button type="button" className="button button--ghost" onClick={onRemove}>
             {t('templates.remove')}
           </button>

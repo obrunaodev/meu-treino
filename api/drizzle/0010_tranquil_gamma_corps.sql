@@ -1,0 +1,1 @@
+ALTER TABLE "template_items" ADD COLUMN "tracking_mode" text DEFAULT 'compact' NOT NULL;

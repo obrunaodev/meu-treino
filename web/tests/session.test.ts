@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  exerciseProgress, groupByExercise, prescribedResult, remainingSeconds, restFor,
+  exerciseProgress, groupByExercise, prescribedResult, previousTemplateSession, remainingSeconds, restFor,
   sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
@@ -107,6 +107,23 @@ describe('prescribedResult', () => {
 
   it('aceita prescrição de valor único', () => {
     expect(prescribedResult(12, null)).toBe(12)
+  })
+})
+
+describe('previousTemplateSession', () => {
+  const sessions = [
+    { id: 'a1', templateId: 'a', startedAt: '2026-08-01T10:00:00Z' },
+    { id: 'b1', templateId: 'b', startedAt: '2026-08-10T10:00:00Z' },
+    { id: 'a2', templateId: 'a', startedAt: '2026-08-20T10:00:00Z' },
+    { id: 'a3', templateId: 'a', startedAt: '2026-08-28T10:00:00Z' },
+  ]
+
+  it('usa o treino anterior do mesmo template', () => {
+    expect(previousTemplateSession(sessions[3]!, sessions)?.id).toBe('a2')
+  })
+
+  it('não usa outro treino nem uma sessão futura', () => {
+    expect(previousTemplateSession(sessions[0]!, sessions)).toBeNull()
   })
 })
 

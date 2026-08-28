@@ -2,15 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActions } from '../lib/actions.js'
 import { apiFetch } from '../lib/api.js'
-import { prescribedResult } from '../lib/domain/session.js'
+import { prescribedResult, previousTemplateSession } from '../lib/domain/session.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
-import { useEquipment, useExercises, useMedia, useSetLogs, useSettings } from '../lib/repo.js'
+import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
 import { Modal, Stepper } from './ui.js'
 
 type ChecklistItem = TemplateItem | PlanSnapshotItem
+
+interface SetDraft {
+  kg: number | null
+  plate: number | null
+  result: number | null
+  rir: number | null
+}
 
 /** Checklist completo da musculação; séries e repetições vêm somente da prescrição. */
 export function SessionExerciseChecklist({ sessionId, items, logs }: {
@@ -51,6 +58,7 @@ function ExerciseRow({ item, index, sessionId, logs }: {
   const exercises = useExercises()
   const equipment = useEquipment()
   const allLogs = useSetLogs()
+  const sessions = useSessions()
   const media = useMedia().find((entry) => entry.exerciseId === item.exerciseId) ?? null
   const settings = useSettings()
   const { logSet, removeSet, logPain } = useActions()
@@ -62,42 +70,51 @@ function ExerciseRow({ item, index, sessionId, logs }: {
   const workLogs = logs.filter((log) => !log.isWarmup)
   const skipped = workLogs.length >= item.sets && workLogs.every((log) => log.skipped)
   const completed = workLogs.length >= item.sets && workLogs.some((log) => !log.skipped)
-  const previous = useMemo(() => allLogs
+  const currentSession = sessions.find((entry) => entry.id === sessionId) ?? null
+  const previousSession = useMemo(() => currentSession
+    ? previousTemplateSession(currentSession, sessions)
+    : null,
+  [currentSession, sessions])
+  const previousLogs = useMemo(() => allLogs
     .filter((log) => (
-      log.sessionId !== sessionId && log.exerciseId === item.exerciseId
-      && !log.isWarmup && !log.skipped && log.weightKg !== null
+      log.sessionId === previousSession?.id && log.exerciseId === item.exerciseId
+      && !log.isWarmup && !log.skipped
     ))
-    .sort((a, b) => (b.completedAt ?? b.createdAt ?? '').localeCompare(a.completedAt ?? a.createdAt ?? ''))[0],
-  [allLogs, item.exerciseId, sessionId])
+    .sort((a, b) => a.setIndex - b.setIndex),
+  [allLogs, item.exerciseId, previousSession?.id])
   const recorded = workLogs.find((log) => !log.skipped)
-  const [load, setLoad] = useState({ kg: recorded?.weightKg ?? previous?.weightKg ?? null, plate: recorded?.plateCount ?? previous?.plateCount ?? null })
+  const draftsFrom = (source: SetLog[]): SetDraft[] => Array.from({ length: item.sets }, (_, setIndex) => {
+    const prior = (item.trackingMode ?? 'compact') === 'compact'
+      ? source.at(-1)
+      : source.find((log) => log.setIndex === setIndex) ?? source.at(-1)
+    return {
+      kg: prior?.weightKg ?? null,
+      plate: prior?.plateCount ?? null,
+      result: item.isTimeBased ? prior?.seconds ?? prescribedResult(item.repMin, item.repMax) : prior?.reps ?? prescribedResult(item.repMin, item.repMax),
+      rir: prior?.rir ?? item.rirTarget,
+    }
+  })
+  const [drafts, setDrafts] = useState<SetDraft[]>(() => draftsFrom(workLogs.length > 0 ? workLogs : previousLogs))
   const [showImage, setShowImage] = useState(false)
   const [showPain, setShowPain] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
+
+  const sourceKey = (workLogs.length > 0 ? workLogs : previousLogs)
+    .map((log) => `${log.id}:${log.updatedAt}`)
+    .join(':')
+  useEffect(() => {
+    setDrafts(draftsFrom(workLogs.length > 0 ? workLogs : previousLogs))
+  }, [sourceKey, item.id, item.sets])
 
   useEffect(() => {
-    if (recorded) {
-      setLoad({ kg: recorded.weightKg, plate: recorded.plateCount })
-      return
-    }
-    setLoad((current) => current.kg !== null || current.plate !== null
-      ? current
-      : { kg: previous?.weightKg ?? null, plate: previous?.plateCount ?? null })
-  }, [recorded?.id, previous?.id])
-
-  useEffect(() => {
-    if (!expanded || !exercise?.catalogExerciseId || videoUrl) return
+    if (!exercise?.catalogExerciseId) return
     let current = true
     void apiFetch<CatalogExercise>(`/api/catalog/exercises/${exercise.catalogExerciseId}`)
-      .then((catalog) => {
-        if (!current) return
-        const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
-        setVideoUrl(catalog.video?.[lang] ?? catalog.video?.pt ?? catalog.video?.en ?? null)
-      })
-      .catch(() => { if (current) setVideoUrl(null) })
+      .then((result) => { if (current) setCatalog(result) })
+      .catch(() => { if (current) setCatalog(null) })
     return () => { current = false }
-  }, [expanded, exercise?.catalogExerciseId, i18n.language, videoUrl])
+  }, [exercise?.catalogExerciseId])
 
   async function clearWorkLogs() {
     for (const log of workLogs) await removeSet(log.id)
@@ -105,18 +122,18 @@ function ExerciseRow({ item, index, sessionId, logs }: {
 
   async function complete() {
     await clearWorkLogs()
-    const result = prescribedResult(item.repMin, item.repMax)
     for (let setIndex = 0; setIndex < item.sets; setIndex++) {
+      const draft = item.trackingMode === 'full' ? drafts[setIndex]! : drafts[0]!
       await logSet({
         sessionId,
         templateItemId: item.id,
         exerciseId: item.exerciseId,
         setIndex,
-        weightKg: load.kg,
-        plateCount: load.plate,
-        reps: item.isTimeBased ? null : result,
-        seconds: item.isTimeBased ? result : null,
-        rir: item.rirTarget,
+        weightKg: draft.kg,
+        plateCount: draft.plate,
+        reps: item.isTimeBased ? null : draft.result,
+        seconds: item.isTimeBased ? draft.result : null,
+        rir: draft.rir,
       })
     }
   }
@@ -133,18 +150,18 @@ function ExerciseRow({ item, index, sessionId, logs }: {
 
   async function addWarmup() {
     const warmups = logs.filter((log) => log.isWarmup)
-    const result = prescribedResult(item.repMin, item.repMax)
+    const draft = drafts[0]!
     await logSet({
       sessionId,
       templateItemId: item.id,
       exerciseId: item.exerciseId,
       setIndex: warmups.length,
       isWarmup: true,
-      weightKg: load.kg,
-      plateCount: load.plate,
-      reps: item.isTimeBased ? null : result,
-      seconds: item.isTimeBased ? result : null,
-      rir: item.rirTarget,
+      weightKg: draft.kg,
+      plateCount: draft.plate,
+      reps: item.isTimeBased ? null : draft.result,
+      seconds: item.isTimeBased ? draft.result : null,
+      rir: draft.rir,
     })
   }
 
@@ -153,6 +170,52 @@ function ExerciseRow({ item, index, sessionId, logs }: {
     : `${item.repMin ?? 0}–${item.repMax}`
   const unit = settings?.unit ?? 'kg'
   const showPlates = settings?.showPlates ?? true
+  const trackingMode = item.trackingMode ?? 'compact'
+  const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
+  const videoUrl = catalog?.video?.[lang] ?? catalog?.video?.pt ?? catalog?.video?.en ?? null
+  const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
+
+  function updateDraft(setIndex: number, patch: Partial<SetDraft>) {
+    setDrafts((current) => current.map((draft, index) => index === setIndex ? { ...draft, ...patch } : draft))
+  }
+
+  function stepLoad(setIndex: number, direction: 1 | -1) {
+    const draft = drafts[setIndex]!
+    updateDraft(setIndex, nextLoadStep(
+      gear ?? { loadType: 'livre', plateTable: [], incrementKg: null },
+      { kg: draft.kg, plate: draft.plate }, direction,
+    ))
+  }
+
+  function fieldsFor(setIndex: number) {
+    const draft = drafts[setIndex]!
+    const resultMin = item.repMin ?? 0
+    const resultMax = item.repMax ?? Number.POSITIVE_INFINITY
+    return (
+      <div className="session-set-fields">
+        <Stepper
+          label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
+          value={formatLoad(draft.kg, draft.plate, unit, showPlates, loadPerSide ? t('session.per_side_short') : null)}
+          disabled={completed}
+          onStep={(direction) => stepLoad(setIndex, direction)}
+        />
+        <Stepper
+          label={item.isTimeBased ? t('session.seconds') : t('session.reps')}
+          value={draft.result ?? '—'}
+          disabled={completed}
+          onStep={(direction) => updateDraft(setIndex, {
+            result: Math.min(resultMax, Math.max(resultMin, (draft.result ?? resultMin) + direction)),
+          })}
+        />
+        <Stepper
+          label={t('session.rir')}
+          value={draft.rir ?? '—'}
+          disabled={completed}
+          onStep={(direction) => updateDraft(setIndex, { rir: Math.min(10, Math.max(0, (draft.rir ?? 0) + direction)) })}
+        />
+      </div>
+    )
+  }
 
   return (
     <li className={`session-exercise${completed ? ' session-exercise--done' : ''}${skipped ? ' session-exercise--skipped' : ''}`}>
@@ -181,15 +244,25 @@ function ExerciseRow({ item, index, sessionId, logs }: {
         </button>
       </div>
 
-      <div className="session-exercise__load">
-        <Stepper
-          label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
-          value={formatLoad(load.kg, load.plate, unit, showPlates, loadPerSide ? t('session.per_side_short') : null)}
-          disabled={completed}
-          onStep={(direction) => setLoad(nextLoadStep(
-            gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, load, direction,
-          ))}
-        />
+      {(item.notes || description || (exercise?.cues.length ?? 0) > 0) && (
+        <div className="session-exercise__specifics">
+          {item.notes && <p>{item.notes}</p>}
+          {description && <p>{description}</p>}
+          {exercise?.cues.map((cue, cueIndex) => <span key={cueIndex}>• {cue}</span>)}
+        </div>
+      )}
+
+      <div className="session-exercise__tracking">
+        {trackingMode === 'compact' ? fieldsFor(0) : (
+          <ol className="session-set-drafts">
+            {drafts.map((_, setIndex) => (
+              <li key={setIndex}>
+                <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+                {fieldsFor(setIndex)}
+              </li>
+            ))}
+          </ol>
+        )}
         {skipped && <span className="badge">{t('session.skipped')}</span>}
       </div>
 
@@ -199,7 +272,6 @@ function ExerciseRow({ item, index, sessionId, logs }: {
             {media && <button type="button" className="button button--quiet" onClick={() => setShowImage(true)}>{t('session.view_image')}</button>}
             {videoUrl && <a className="button button--quiet" href={videoUrl} target="_blank" rel="noopener noreferrer">{t('session.watch_video')}</a>}
           </div>}
-          {(exercise?.cues.length ?? 0) > 0 && <ul className="cues">{exercise?.cues.map((cue, cueIndex) => <li key={cueIndex}>{cue}</li>)}</ul>}
           {showPain ? (
             <PainCapture
               onCancel={() => setShowPain(false)}

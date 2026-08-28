@@ -97,6 +97,8 @@ export interface TemplateItem extends Base {
   repMin: number | null
   repMax: number | null
   isTimeBased: boolean
+  /** Ausente em snapshots antigos; nesses casos a sessão usa `compact`. */
+  trackingMode?: 'compact' | 'full'
   rirTarget: number | null
   restSeconds: number | null
   notes: string | null

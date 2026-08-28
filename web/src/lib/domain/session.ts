@@ -78,6 +78,22 @@ export function prescribedResult(repMin: number | null, repMax: number | null): 
   return repMax ?? repMin
 }
 
+interface SessionReference {
+  id: string
+  templateId: string
+  startedAt: string
+}
+
+/** Sessão anterior do mesmo treino, usando a data do treino e não a última edição. */
+export function previousTemplateSession<T extends SessionReference>(current: T, sessions: T[]): T | null {
+  return sessions
+    .filter((session) => (
+      session.id !== current.id && session.templateId === current.templateId
+      && session.startedAt < current.startedAt
+    ))
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null
+}
+
 /**
  * Próximo slot a executar: o primeiro item cujas séries de trabalho ainda não
  * fecharam. Pular um exercício não trava a sessão — o item pulado sai da fila
