@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   bigint, boolean, index, integer, jsonb, numeric, pgTable, primaryKey,
-  smallint, text, timestamp, unique, uuid,
+  smallint, text, timestamp, unique, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core'
 
 /**
@@ -184,7 +184,12 @@ export const equipment = pgTable('equipment', {
   incrementKg: numeric('increment_kg', { precision: 6, scale: 2 }),
   plateTable: jsonb('plate_table').$type<number[]>().notNull().default([]),
   notes: text('notes'),
-}, (t) => [index('equipment_owner_rev_idx').on(t.ownerId, t.rev)])
+}, (t) => [
+  index('equipment_owner_rev_idx').on(t.ownerId, t.rev),
+  uniqueIndex('equipment_owner_station_alive_uidx')
+    .on(t.ownerId, t.catalogStationCode)
+    .where(sql`deleted_at IS NULL AND catalog_station_code IS NOT NULL`),
+])
 
 /** Aparelhos de cardio que existem na academia do usuário. */
 export const cardioOptions = pgTable('cardio_options', {
@@ -211,7 +216,12 @@ export const exercises = pgTable('exercises', {
   loadPerSide: boolean('load_per_side').notNull().default(false),
   cues: jsonb('cues').$type<string[]>().notNull().default([]),
   notes: text('notes'),
-}, (t) => [index('exercises_owner_rev_idx').on(t.ownerId, t.rev)])
+}, (t) => [
+  index('exercises_owner_rev_idx').on(t.ownerId, t.rev),
+  uniqueIndex('exercises_owner_catalog_alive_uidx')
+    .on(t.ownerId, t.catalogExerciseId)
+    .where(sql`deleted_at IS NULL AND catalog_exercise_id IS NOT NULL`),
+])
 
 export const exerciseMedia = pgTable('exercise_media', {
   ...syncCols,

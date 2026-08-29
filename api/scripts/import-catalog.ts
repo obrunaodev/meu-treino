@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { notInArray, sql } from 'drizzle-orm'
 import { db, pool } from '../src/db/index.js'
 import {
   catalogExercises, catalogGroups, catalogPainSwaps, catalogRelated, catalogStations, painRegions,
@@ -123,7 +124,15 @@ async function main() {
 
   const byId = new Map(raw.exercicios.map((e) => [e.id, e]))
 
-  await db.insert(painRegions).values(PAIN_REGIONS).onConflictDoNothing()
+  const report = await db.transaction(async (tx) => {
+
+  await tx.insert(painRegions).values(PAIN_REGIONS).onConflictDoUpdate({
+    target: painRegions.slug,
+    set: {
+      namePt: sql`excluded.name_pt`, nameEn: sql`excluded.name_en`,
+      side: sql`excluded.side`, catalogSlug: sql`excluded.catalog_slug`,
+    },
+  })
 
   const groups = Object.entries(raw.lookups.grupos).map(([id, g]) => ({
     id: Number(id),
@@ -131,7 +140,12 @@ async function main() {
     name: fixMojibake(g.nome),
     region: g.regiao,
   }))
-  await db.insert(catalogGroups).values(groups).onConflictDoNothing()
+  for (const group of groups) {
+    await tx.insert(catalogGroups).values(group).onConflictDoUpdate({
+      target: catalogGroups.id,
+      set: { slug: group.slug, name: group.name, region: group.region },
+    })
+  }
 
   const stations = Object.entries(raw.lookups.estacoes).map(([code, s]) => ({
     code: code.padStart(2, '0'),
@@ -140,10 +154,13 @@ async function main() {
     loadType: s.tipo_carga ?? null,
   }))
   for (const station of stations) {
-    await db
+    await tx
       .insert(catalogStations)
       .values(station)
-      .onConflictDoUpdate({ target: catalogStations.code, set: { name: station.name } })
+      .onConflictDoUpdate({
+        target: catalogStations.code,
+        set: { name: station.name, category: station.category, loadType: station.loadType },
+      })
   }
 
   const knownStations = new Set(stations.map((s) => s.code))
@@ -169,16 +186,24 @@ async function main() {
   // onConflictDoUpdate e não DoNothing: reimportar precisa corrigir nomes e
   // descrições de uma base já carregada, senão o mojibake ficaria para sempre.
   for (const exercise of exercises) {
-    await db
+    await tx
       .insert(catalogExercises)
       .values(exercise)
       .onConflictDoUpdate({
         target: catalogExercises.id,
         set: {
           name: exercise.name,
+          slug: exercise.slug,
           nameI18n: exercise.nameI18n,
+          groupId: exercise.groupId,
+          stationCode: exercise.stationCode,
+          level: exercise.level,
+          laterality: exercise.laterality,
+          grip: exercise.grip,
           description: exercise.description,
           video: exercise.video,
+          loadType: exercise.loadType,
+          loadInferred: exercise.loadInferred,
         },
       })
   }
@@ -186,7 +211,8 @@ async function main() {
   const related = raw.exercicios.flatMap((e) =>
     (e.relacionados ?? []).filter((r) => byId.has(r)).map((r) => ({ exerciseId: e.id, relatedId: r })),
   )
-  if (related.length) await db.insert(catalogRelated).values(related).onConflictDoNothing()
+  await tx.delete(catalogRelated)
+  if (related.length) await tx.insert(catalogRelated).values(related)
 
   const swaps = []
   const tally: Record<string, Record<string, number>> = {}
@@ -206,19 +232,37 @@ async function main() {
       tally[contra.slug]![verdict.status] = (tally[contra.slug]![verdict.status] ?? 0) + 1
     }
   }
-  if (swaps.length) await db.insert(catalogPainSwaps).values(swaps).onConflictDoNothing()
+  await tx.delete(catalogPainSwaps)
+  if (swaps.length) await tx.insert(catalogPainSwaps).values(swaps)
 
-  logger.info(
-    {
-      grupos: groups.length,
-      estacoes: stations.length,
-      exercicios: exercises.length,
-      relacionados: related.length,
-      substituicoes: swaps.length,
-      triagem: tally,
+  // O JSON é a fonte integral do catálogo global. Remover linhas que saíram
+  // dele evita que reimports deixem exercícios ou estações fantasmas na busca.
+  const removedExercises = await tx.delete(catalogExercises)
+    .where(notInArray(catalogExercises.id, exercises.map((exercise) => exercise.id)))
+    .returning({ id: catalogExercises.id })
+  const removedStations = await tx.delete(catalogStations)
+    .where(notInArray(catalogStations.code, stations.map((station) => station.code)))
+    .returning({ code: catalogStations.code })
+  const removedGroups = await tx.delete(catalogGroups)
+    .where(notInArray(catalogGroups.id, groups.map((group) => group.id)))
+    .returning({ id: catalogGroups.id })
+
+  return {
+    grupos: groups.length,
+    estacoes: stations.length,
+    exercicios: exercises.length,
+    relacionados: related.length,
+    substituicoes: swaps.length,
+    triagem: tally,
+    removidos: {
+      exercicios: removedExercises.length,
+      estacoes: removedStations.length,
+      grupos: removedGroups.length,
     },
-    'catálogo importado',
-  )
+  }
+  })
+
+  logger.info(report, 'catálogo importado')
   await pool.end()
 }
 

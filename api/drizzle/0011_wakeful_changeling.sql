@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "equipment_owner_station_alive_uidx" ON "equipment" USING btree ("owner_id","catalog_station_code") WHERE deleted_at IS NULL AND catalog_station_code IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "exercises_owner_catalog_alive_uidx" ON "exercises" USING btree ("owner_id","catalog_exercise_id") WHERE deleted_at IS NULL AND catalog_exercise_id IS NOT NULL;

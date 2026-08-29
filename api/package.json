@@ -9,6 +9,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "catalog:import": "tsx scripts/import-catalog.ts",
+    "catalog:import-user": "tsx scripts/import-catalog-for-user.ts",
     "test": "vitest run --exclude \"tests/integration/**\"",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
