@@ -59,11 +59,11 @@ test.describe('jornada completa', () => {
     await page.getByRole('button', { name: /continuar/i }).click()   // lembretes
     await page.getByRole('button', { name: /criar meu programa/i }).click()
 
-    await expect(page.getByRole('heading', { name: /progresso/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible()
   })
 
   test('importa um exercício do catálogo', async () => {
-    await page.getByRole('link', { name: /biblioteca/i }).first().click()
+    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
     await page.getByRole('button', { name: /importar do catálogo/i }).click()
 
     const items = page.locator('.checkitem')
@@ -83,43 +83,34 @@ test.describe('jornada completa', () => {
     await expect(page.getByLabel(/duração planejada/i)).toHaveValue('20')
   })
 
-  test('inicia a sessão e registra a primeira série', async () => {
-    await page.getByRole('link', { name: /progresso/i }).first().click()
-    await page.getByRole('button', { name: /iniciar sessão/i }).click()
+  test('inicia a sessão e conclui o exercício', async () => {
+    await page.getByRole('link', { name: /treino de hoje/i }).first().click()
+    await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
+    await page.getByRole('button', { name: /iniciar treino a/i }).click()
 
-    await expect(page.getByRole('heading', { name: /sessão ao vivo/i })).toBeVisible()
     await page.getByRole('button', { name: /começar exercícios/i }).click()
     await page.locator('.stepper').first().getByRole('button', { name: '+' }).click()
-    await page.getByRole('button', { name: /registrar série/i }).click()
+    await page.getByRole('checkbox', { name: /concluir/i }).first().click()
 
-    await expect(page.getByText(/1 de 3 séries/i)).toBeVisible()
+    await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
   })
 
   test('a sessão sobrevive a recarregar a página', async () => {
     await page.reload()
 
     // O estado vive no IndexedDB, não na memória do React: trocar para o app de
-    // música e voltar não pode perder a série já registrada.
-    await expect(page.getByRole('heading', { name: /sessão ao vivo/i })).toBeVisible()
-    await expect(page.getByText(/1 de 3 séries/i)).toBeVisible()
+    // música e voltar não pode perder o exercício já registrado.
+    await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
+    await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
   })
 
-  test('fecha as séries restantes e encerra no cardio', async () => {
-    for (let i = 0; i < 2; i++) {
-      await page.getByRole('button', { name: /registrar série/i }).click()
-      // O descanso some sozinho quando a última série fecha, então o botão pode
-      // desaparecer entre a checagem e o clique — tentar e ignorar é o correto.
-      await page.getByRole('button', { name: /pular descanso/i })
-        .click({ timeout: 4000 })
-        .catch(() => undefined)
-    }
-
+  test('encerra a sessão no cardio', async () => {
     await expect(page.getByRole('heading', { name: /cardio/i })).toBeVisible()
     await expect(page.getByLabel(/modalidade/i)).toHaveValue(/.+/)
     await page.getByRole('button', { name: /^moderado$/i }).click()
     await page.getByRole('button', { name: /encerrar sessão/i }).click()
 
-    await expect(page.getByRole('heading', { name: /progresso/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible()
     await expect(page.locator('.dashboard__metric').filter({ hasText: /treinos na semana/i }).locator('strong')).toHaveText('1')
   })
 
@@ -156,6 +147,7 @@ test.describe('jornada completa', () => {
   })
 
   test('configuração do WhatsApp funciona em mobile e desktop', async () => {
+    await page.getByRole('link', { name: /configurações/i }).first().click()
     await page.getByRole('link', { name: /^WhatsApp$/i }).click()
     await expect(page.getByRole('heading', { name: /^WhatsApp$/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /conectar WhatsApp/i })).toBeVisible()
@@ -167,25 +159,22 @@ test.describe('jornada completa', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280)
   })
 
-  test('iniciar em /sessao pergunta qual treino antes', async () => {
-    await page.getByRole('link', { name: /sessão de hoje/i }).first().click()
-    await page.getByRole('button', { name: /iniciar agora/i }).click()
+  test('iniciar em /sessao mostra a prévia e permite trocar', async () => {
+    await page.getByRole('link', { name: /treino de hoje/i }).first().click()
 
-    // O modal precisa listar os treinos do ciclo, com o próximo marcado.
-    const dialogo = page.getByRole('dialog')
-    await expect(dialogo.getByRole('heading', { name: /qual treino hoje/i })).toBeVisible()
-    await expect(dialogo.locator('.checkitem')).toHaveCount(2)
-    await expect(dialogo.locator('.badge')).toHaveCount(1)
+    await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /escolher outro treino/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /iniciar treino b/i })).toBeVisible()
 
-    // Esc fecha sem começar nada: escolher é do usuário, e o <dialog> nativo é
-    // quem responde a essa tecla.
-    await page.keyboard.press('Escape')
-    await expect(dialogo).toBeHidden()
-    await expect(page.getByText(/nenhuma sessão aberta/i)).toBeVisible()
+    await page.getByRole('button', { name: /escolher outro treino/i }).click()
+    await expect(page.locator('.checkitem')).toHaveCount(2)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.locator('.checkitem').filter({ hasText: /treino a/i }).click()
+    await expect(page.getByRole('button', { name: /iniciar treino a/i })).toBeVisible()
   })
 
   test('o histórico mostra a sessão concluída', async () => {
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
   })
 
@@ -200,7 +189,7 @@ test.describe('jornada completa', () => {
   })
 
   test('corrige uma série registrada no detalhe da sessão', async () => {
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
 
     await expect(page.getByRole('heading', { name: /treino a/i })).toBeVisible()
@@ -217,7 +206,7 @@ test.describe('jornada completa', () => {
   test('marcar uma série como aquecimento tira ela do volume', async () => {
     // Começa da navegação, não do estado deixado pelo teste anterior: acoplar
     // um teste ao anterior torna a falha ilegível quando algo muda lá em cima.
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
 
     const primeira = page.locator('.setrow').first()
@@ -236,18 +225,18 @@ test.describe('jornada completa', () => {
   test('editar a carga por lado não reescreve a sessão antiga', async () => {
     // A sessão foi iniciada antes desta mudança. O histórico precisa manter
     // a configuração capturada naquela data, não a biblioteca de hoje.
-    await page.getByRole('link', { name: /biblioteca/i }).first().click()
+    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
     await page.locator('.tile').first().click()
     await page.getByRole('checkbox', { name: /carga por lado/i }).click()
 
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
     await expect(page.locator('.setrow__value').first()).not.toContainText('/lado')
   })
 
   test('o + exercício usa o plano capturado pela sessão', async () => {
     // Um exercício na biblioteca que NÃO está no Treino A.
-    await page.getByRole('link', { name: /biblioteca/i }).first().click()
+    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
     await page.getByRole('button', { name: /importar do catálogo/i }).click()
     const catalogo = page.locator('.checkitem')
     await expect(catalogo.first()).toBeVisible({ timeout: 15_000 })
@@ -256,7 +245,7 @@ test.describe('jornada completa', () => {
     await expect(page.locator('.tile')).toHaveCount(2)
 
     const abrirPicker = async () => {
-      await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+      await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
       await page.locator('.calendar__day--concluida').click()
       await page.getByRole('button', { name: /\+ exercício/i }).click()
     }
@@ -277,7 +266,7 @@ test.describe('jornada completa', () => {
     await expect(page.locator('.checkitem').filter({ hasText: forado })).toHaveCount(0)
 
     // Devolve tudo: apagar o exercício também tira o item do treino.
-    await page.getByRole('link', { name: /biblioteca/i }).first().click()
+    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
     await page.getByRole('button', { name: new RegExp(forado, 'i') }).click()
     await page.getByRole('button', { name: /apagar exercício/i }).click()
     await page.getByRole('button', { name: /apagar exercício/i }).click()
@@ -285,12 +274,12 @@ test.describe('jornada completa', () => {
   })
 
   test('muda o status da sessão', async () => {
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
 
     await page.getByLabel(/^status$/i).selectOption('incompleta')
 
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await expect(page.locator('.calendar__day--incompleta')).toHaveCount(1)
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(0)
   })
@@ -332,7 +321,7 @@ test.describe('jornada completa', () => {
 
     // Soft delete: a sessão continua no calendário, com a letra do treino.
     // Ela está como incompleta desde o teste que mexeu no status.
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await expect(page.locator('.calendar__day--incompleta')).toHaveCount(1)
     await expect(page.locator('.calendar__day--incompleta')).toContainText('A')
   })
@@ -345,7 +334,7 @@ test.describe('jornada completa', () => {
   })
 
   test('apagar a sessão leva junto as séries e o cardio', async () => {
-    await page.getByRole('link', { name: /histórico de sessões/i }).first().click()
+    await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--incompleta').click()
     await page.getByRole('button', { name: /apagar sessão/i }).click()
     // O gatilho some ao confirmar, então o nome pode ser o mesmo — e ser
@@ -367,7 +356,7 @@ test.describe('jornada completa', () => {
   })
 
   test('apagar um exercício tira ele do treino e da biblioteca', async () => {
-    await page.getByRole('link', { name: /biblioteca/i }).first().click()
+    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
     await page.locator('.tile').first().click()
 
     // O aviso conta a consequência antes: o exercício sai dos treinos que o usam.
