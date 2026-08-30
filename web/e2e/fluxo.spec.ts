@@ -102,6 +102,14 @@ test.describe('jornada completa', () => {
     // música e voltar não pode perder o exercício já registrado.
     await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    const rowsFitViewport = await page.locator('.loglist__row').evaluateAll((rows) => rows.every((row) => {
+      const box = row.getBoundingClientRect()
+      return box.left >= 0 && box.right <= document.documentElement.clientWidth
+        && row.scrollWidth <= row.clientWidth
+    }))
+    expect(rowsFitViewport).toBe(true)
   })
 
   test('encerra a sessão no cardio', async () => {

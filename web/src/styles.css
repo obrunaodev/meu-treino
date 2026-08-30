@@ -808,9 +808,14 @@ p { margin: 0; line-height: 1.55; }
 .session-loggroup + .session-loggroup { padding-top: 12px; border-top: 1px solid var(--line); }
 .session-loggroup h3 { font-size: 14px; font-weight: 600; }
 .loglist__row {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px;
   padding: 9px 12px; border-radius: var(--r-tile);
   background: var(--shell); font-size: 12.5px;
+}
+.loglist__row > span:last-child { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+@media (max-width: 24rem) {
+  .loglist__row { grid-template-columns: 1fr; gap: 4px; }
+  .loglist__row > span:last-child { text-align: left; }
 }
 .loglist__row--skip { opacity: 0.45; text-decoration: line-through; }
 
