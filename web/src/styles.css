@@ -238,7 +238,9 @@ p { margin: 0; line-height: 1.55; }
   .shell__main { padding: 28px 30px 34px; }
 }
 @media (max-width: 56rem) {
-  .shell__main { padding: 18px 20px 28px; }
+  .shell__main {
+    padding: 18px 20px calc(88px + env(safe-area-inset-bottom));
+  }
 }
 
 /* ── cartões ──────────────────────────────────────────────────────────────*/

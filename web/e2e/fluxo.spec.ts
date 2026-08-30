@@ -110,6 +110,11 @@ test.describe('jornada completa', () => {
         && row.scrollWidth <= row.clientWidth
     }))
     expect(rowsFitViewport).toBe(true)
+    const bottomClearance = await page.locator('.shell__main').evaluate((main) => {
+      const tabs = document.querySelector<HTMLElement>('.shell__tabs')!
+      return Number.parseFloat(getComputedStyle(main).paddingBottom) - tabs.getBoundingClientRect().height
+    })
+    expect(bottomClearance).toBeGreaterThanOrEqual(20)
   })
 
   test('encerra a sessão no cardio', async () => {
