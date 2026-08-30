@@ -219,13 +219,13 @@ p { margin: 0; line-height: 1.55; }
 
 .shell__tabs {
   position: sticky; bottom: 0; z-index: 2;
-  display: flex; gap: 2px;
+  display: flex; justify-content: space-evenly; gap: 2px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: var(--shell);
 }
 .shell__tab {
-  flex: 1; text-align: center; padding: 6px 2px; text-decoration: none;
+  flex: 0 0 auto; text-align: center; padding: 6px 2px; text-decoration: none;
   font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--dim);
 }

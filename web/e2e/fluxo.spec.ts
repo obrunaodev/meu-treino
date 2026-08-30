@@ -145,6 +145,13 @@ test.describe('jornada completa', () => {
     await volumeMetric.click()
     await expect(volumeMetric).toHaveClass(/pill--on/)
     await expect(page.locator('.dashboard__stats')).toHaveCSS('grid-template-columns', /.+ .+/)
+    const mobileTabs = await page.locator('.shell__tabs').evaluate((tabs) => ({
+      distribution: getComputedStyle(tabs).justifyContent,
+      flexGrow: [...tabs.querySelectorAll<HTMLElement>('.shell__tab')]
+        .map((tab) => getComputedStyle(tab).flexGrow),
+    }))
+    expect(mobileTabs.distribution).toBe('space-evenly')
+    expect(mobileTabs.flexGrow).toEqual(['0', '0', '0', '0', '0'])
     const mobileActionFillsRow = await page.locator('.dashboard__next').evaluate((section) => {
       const button = section.querySelector<HTMLElement>('.button')!
       return Math.abs(button.getBoundingClientRect().width - section.clientWidth + 32) < 1
