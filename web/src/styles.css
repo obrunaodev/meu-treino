@@ -736,7 +736,7 @@ p { margin: 0; line-height: 1.55; }
 .session-preview__exercises small { color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
 .session-preview__actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 @media (max-width: 32rem) {
-  .session-preview__actions { position: sticky; bottom: 72px; padding: 10px; margin-inline: -10px; background: var(--shell); }
+  .session-preview__actions { padding-top: 2px; }
   .session-preview__actions .button { flex: 1; }
 }
 .session-checklist { display: flex; flex-direction: column; gap: 12px; }

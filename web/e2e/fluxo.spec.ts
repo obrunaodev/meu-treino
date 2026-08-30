@@ -185,11 +185,21 @@ test.describe('jornada completa', () => {
     await expect(page.getByRole('button', { name: /escolher outro treino/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /iniciar treino b/i })).toBeVisible()
 
+    await page.setViewportSize({ width: 390, height: 844 })
+    const previewDoesNotOverlap = await page.locator('.session-preview__actions').evaluate((actions) => {
+      const exerciseCard = document.querySelector<HTMLElement>('.session-preview > .card')!
+      const actionBox = actions.getBoundingClientRect()
+      const cardBox = exerciseCard.getBoundingClientRect()
+      return getComputedStyle(actions).position === 'static' && actionBox.top >= cardBox.bottom
+    })
+    expect(previewDoesNotOverlap).toBe(true)
+
     await page.getByRole('button', { name: /escolher outro treino/i }).click()
     await expect(page.locator('.checkitem')).toHaveCount(2)
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await page.locator('.checkitem').filter({ hasText: /treino a/i }).click()
     await expect(page.getByRole('button', { name: /iniciar treino a/i })).toBeVisible()
+    await page.setViewportSize({ width: 1280, height: 800 })
   })
 
   test('o histórico mostra a sessão concluída', async () => {
