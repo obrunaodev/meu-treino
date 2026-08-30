@@ -99,14 +99,10 @@ export function Library() {
               <button
                 key={exercise.id}
                 type="button"
-                className="tile"
+                className={`tile${thumb ? '' : ' tile--no-image'}`}
                 onClick={() => setDetailId(exercise.id)}
               >
-                {thumb ? (
-                  <MediaImage mediaId={thumb.id} variant="full" alt="" loading="lazy" />
-                ) : (
-                  <span className="tile__blank" aria-hidden="true" />
-                )}
+                {thumb && <MediaImage mediaId={thumb.id} variant="full" alt="" loading="lazy" />}
                 <span className="tile__copy">
                   <span className="tile__name">{exercise.name}</span>
                   <span className="tile__meta">{machine?.name ?? t('library.no_equipment')}</span>

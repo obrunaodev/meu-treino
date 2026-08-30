@@ -71,6 +71,8 @@ test.describe('jornada completa', () => {
     await items.first().click()
 
     await expect(page.locator('.tile')).toHaveCount(1)
+    await expect(page.locator('.tile')).toHaveClass(/tile--no-image/)
+    await expect(page.locator('.tile img')).toHaveCount(0)
     const imageFilter = page.getByRole('group', { name: /filtrar exercícios por imagem/i })
     await imageFilter.getByRole('button', { name: /^com imagem$/i }).click()
     await expect(page.getByText(/nenhum exercício corresponde/i)).toBeVisible()
@@ -92,6 +94,11 @@ test.describe('jornada completa', () => {
 
     const removeImage = page.getByRole('button', { name: /apagar imagem do exercício/i })
     await expect(removeImage).toBeVisible({ timeout: 15_000 })
+    await page.getByRole('button', { name: /voltar/i }).click()
+    await expect(page.locator('.tile')).not.toHaveClass(/tile--no-image/)
+    await expect(page.locator('.tile img')).toHaveCSS('object-fit', 'contain')
+
+    await page.locator('.tile').click()
     await removeImage.click()
     await expect(removeImage).toHaveCount(0)
   })
