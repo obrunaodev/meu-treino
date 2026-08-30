@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   assignCycleNumbers, averageIntervalDays, blockJustClosed, currentStreak, cyclePosition,
-  nextTemplate,
+  groupSessionsByBlock, nextTemplate,
 } from '../src/lib/domain/cycle'
 
 const templates = [
@@ -154,5 +154,25 @@ describe('assignCycleNumbers', () => {
   it('sessão incompleta ocupa lugar, porque consumiu o slot', () => {
     const list = [s('a', '2026-08-01', 'incompleta'), s('b', '2026-08-03')]
     expect(assignCycleNumbers(list, 2, 4).get(list[1]!)?.cycleNumber).toBe(1)
+  })
+})
+
+describe('groupSessionsByBlock', () => {
+  const s = (id: string, at: string, status = 'concluida') => ({ templateId: id, startedAt: at, status })
+
+  it('agrupa do bloco e ciclo mais recentes para os mais antigos', () => {
+    const sessions = Array.from({ length: 5 }, (_, index) => s('a', `2026-08-0${index + 1}`))
+    const groups = groupSessionsByBlock(sessions, 2, 2)
+
+    expect(groups.map((group) => group.blockNumber)).toEqual([2, 1])
+    expect(groups[0]?.cycles[0]?.cycleNumber).toBe(3)
+    expect(groups[1]?.cycles.map((cycle) => cycle.cycleNumber)).toEqual([2, 1])
+  })
+
+  it('mostra a sessão em andamento no ciclo atual sem avançá-lo', () => {
+    const open = s('b', '2026-08-02', 'em_andamento')
+    const groups = groupSessionsByBlock([s('a', '2026-08-01'), open], 2, 2)
+
+    expect(groups[0]?.cycles[0]?.sessions).toEqual([open, expect.objectContaining({ templateId: 'a' })])
   })
 })

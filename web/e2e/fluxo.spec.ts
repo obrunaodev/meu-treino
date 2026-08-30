@@ -236,6 +236,13 @@ test.describe('jornada completa', () => {
   test('o histórico mostra a sessão concluída', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
+    await expect(page.getByText('Bloco 1', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ciclo 1' })).toBeVisible()
+    await expect(page.locator('.history-sessions')).toContainText('Treino A')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+    await page.setViewportSize({ width: 1280, height: 800 })
   })
 
   test('exporta o CSV das séries', async () => {

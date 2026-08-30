@@ -66,8 +66,12 @@ export function useSubstitutions() {
 }
 
 /** Um programa ativo por vez; os outros ficam guardados como histórico. */
+export function usePrograms(): Program[] {
+  return live<Program>('programs') ?? []
+}
+
 export function useActiveProgram(): Program | null {
-  const programs = live<Program>('programs') ?? []
+  const programs = usePrograms()
   return programs.find((p) => p.isActive) ?? null
 }
 

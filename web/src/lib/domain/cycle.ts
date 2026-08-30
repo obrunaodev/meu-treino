@@ -23,6 +23,16 @@ export interface CyclePosition {
   sessionsToBlockEnd: number
 }
 
+export interface CycleSessionGroup<T extends CycleSession> {
+  cycleNumber: number
+  sessions: T[]
+}
+
+export interface BlockSessionGroup<T extends CycleSession> {
+  blockNumber: number
+  cycles: CycleSessionGroup<T>[]
+}
+
 const CONTA_PARA_O_CICLO = new Set(['concluida', 'incompleta'])
 
 /** Sessões que avançam o ciclo, da mais antiga para a mais nova. */
@@ -102,6 +112,35 @@ export function assignCycleNumbers(
     out.set(session, cyclePosition(sessionsPerCycle, cyclesPerBlock, index))
   })
   return out
+}
+
+/** Agrupa todo o histórico por bloco e ciclo, do período mais recente ao mais antigo. */
+export function groupSessionsByBlock<T extends CycleSession>(
+  sessions: T[],
+  sessionsPerCycle: number,
+  cyclesPerBlock: number,
+): BlockSessionGroup<T>[] {
+  const blocks = new Map<number, Map<number, T[]>>()
+  let completedSessions = 0
+
+  for (const session of [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt))) {
+    const position = cyclePosition(sessionsPerCycle, cyclesPerBlock, completedSessions)
+    const cycles = blocks.get(position.blockNumber) ?? new Map<number, T[]>()
+    const groupedSessions = cycles.get(position.cycleNumber) ?? []
+    groupedSessions.push(session)
+    cycles.set(position.cycleNumber, groupedSessions)
+    blocks.set(position.blockNumber, cycles)
+
+    if (CONTA_PARA_O_CICLO.has(session.status)) completedSessions += 1
+  }
+
+  return [...blocks.entries()].reverse().map(([blockNumber, cycles]) => ({
+    blockNumber,
+    cycles: [...cycles.entries()].reverse().map(([cycleNumber, groupedSessions]) => ({
+      cycleNumber,
+      sessions: [...groupedSessions].reverse(),
+    })),
+  }))
 }
 
 /** Sequência de sessões sem furo, para o cartão de "sequência" do dashboard. */

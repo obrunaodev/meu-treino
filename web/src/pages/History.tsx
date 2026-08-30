@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { historyRoute } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
-import { useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
+import { usePrograms, useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
+import { groupSessionsByBlock } from '../lib/domain/cycle.js'
 
 /**
  * Calendário mensal. Ele registra o que aconteceu — não é ele que decide o
@@ -13,6 +14,7 @@ import { Card, Empty } from '../components/ui.js'
 export function History() {
   const { t, i18n } = useTranslation()
   const sessions = useSessions()
+  const programs = usePrograms()
   // Inclui treinos apagados: o calendário conta o que aconteceu, e um treino
   // removido depois não pode apagar a letra das sessões antigas.
   const templates = useTemplatesEver()
@@ -46,6 +48,29 @@ export function History() {
     }
     return map
   }, [sessions, templates, allSets])
+
+  const sessionGroups = useMemo(() => {
+    const byProgram = new Map<string, typeof sessions>()
+    for (const session of sessions) {
+      const entries = byProgram.get(session.programId) ?? []
+      entries.push(session)
+      byProgram.set(session.programId, entries)
+    }
+
+    return [...byProgram.entries()].map(([programId, entries]) => {
+      const program = programs.find((candidate) => candidate.id === programId)
+      return {
+        id: programId,
+        name: program?.name ?? t('history.gone_program'),
+        latestAt: entries.at(-1)?.startedAt ?? '',
+        blocks: groupSessionsByBlock(
+          entries,
+          program?.sessionsPerCycle ?? Math.max(1, entries[0]?.cycleNumber ?? 1),
+          program?.cyclesPerBlock ?? Math.max(1, entries[0]?.blockNumber ?? 1),
+        ),
+      }
+    }).sort((a, b) => b.latestAt.localeCompare(a.latestAt))
+  }, [programs, sessions, t])
 
   const year = cursor.getFullYear()
   const month = cursor.getMonth()
@@ -115,24 +140,48 @@ export function History() {
             </div>
           </Card>
 
-          <Card title={t('history.list')}>
-            <ul className="loglist">
-              {[...sessions].reverse().map((session) => {
-                const template = templates.find((x) => x.id === session.templateId)
-                return (
-                  <li key={session.id} className="loglist__row">
-                    <Link to={historyRoute(session.id)} className="loglist__link">
-                      {session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}
-                    </Link>
-                    <span className="mono muted">
-                      {new Date(session.startedAt).toLocaleDateString(i18n.language)}
-                      {' · '}
-                      {t(`history.${session.status}`)}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
+          <Card title={t('history.by_cycle')}>
+            <div className="history-groups">
+              {sessionGroups.map((programGroup) => (
+                <section key={programGroup.id} className="history-program">
+                  {sessionGroups.length > 1 && <h3 className="history-program__name">{programGroup.name}</h3>}
+                  {programGroup.blocks.map((block, blockIndex) => (
+                    <details key={block.blockNumber} className="history-block" open={blockIndex === 0}>
+                      <summary>
+                        <span>{t('history.block', { number: block.blockNumber })}</span>
+                        <span className="mono muted">
+                          {t('history.cycles_count', { count: block.cycles.length })}
+                        </span>
+                      </summary>
+                      <div className="history-block__body">
+                        {block.cycles.map((cycle) => (
+                          <section key={cycle.cycleNumber} className="history-cycle">
+                            <h4>{t('history.cycle', { number: cycle.cycleNumber })}</h4>
+                            <ul className="history-sessions">
+                              {cycle.sessions.map((session) => {
+                                const template = templates.find((candidate) => candidate.id === session.templateId)
+                                return (
+                                  <li key={session.id}>
+                                    <Link to={historyRoute(session.id)} className="loglist__link">
+                                      {session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}
+                                    </Link>
+                                    <span className="mono muted">
+                                      {new Date(session.startedAt).toLocaleDateString(i18n.language)}
+                                      {' · '}
+                                      {t(`history.${session.status}`)}
+                                    </span>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </section>
+                        ))}
+                      </div>
+                    </details>
+                  ))}
+                </section>
+              ))}
+            </div>
           </Card>
         </>
       )}
