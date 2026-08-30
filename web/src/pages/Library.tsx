@@ -18,6 +18,7 @@ export function Library() {
   const pending = usePendingUploads()
   const [detailId, setDetailId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
+  const [imageFilter, setImageFilter] = useState<'all' | 'with' | 'without'>('all')
   const [view, setView] = useState<'grid' | 'list'>(() =>
     localStorage.getItem('library-view') === 'list' ? 'list' : 'grid',
   )
@@ -26,6 +27,10 @@ export function Library() {
     () => new Set(media.map((m) => m.exerciseId)),
     [media],
   )
+  const visibleExercises = useMemo(() => exercises.filter((exercise) => {
+    if (imageFilter === 'all') return true
+    return illustrated.has(exercise.id) === (imageFilter === 'with')
+  }), [exercises, illustrated, imageFilter])
 
   const detail = exercises.find((e) => e.id === detailId) ?? null
   if (detail) return <ExerciseDetail exercise={detail} onBack={() => setDetailId(null)} />
@@ -47,20 +52,34 @@ export function Library() {
           {t('library.illustrated', { done: illustrated.size, total: exercises.length })}
           {pending.length > 0 && ` · ${t('library.queued', { count: pending.length })}`}
         </span>
-        <div className="view-switch" aria-label={t('library.view')}>
-          {(['grid', 'list'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={view === option}
-              onClick={() => {
-                setView(option)
-                localStorage.setItem('library-view', option)
-              }}
-            >
-              {t(`library.${option}`)}
-            </button>
-          ))}
+        <div className="library__controls">
+          <div className="view-switch" role="group" aria-label={t('library.image_filter')}>
+            {(['all', 'with', 'without'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={imageFilter === option}
+                onClick={() => setImageFilter(option)}
+              >
+                {t(`library.image_${option}`)}
+              </button>
+            ))}
+          </div>
+          <div className="view-switch" role="group" aria-label={t('library.view')}>
+            {(['grid', 'list'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view === option}
+                onClick={() => {
+                  setView(option)
+                  localStorage.setItem('library-view', option)
+                }}
+              >
+                {t(`library.${option}`)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -68,9 +87,11 @@ export function Library() {
 
       {exercises.length === 0 ? (
         <Empty message={t('library.empty')} />
+      ) : visibleExercises.length === 0 ? (
+        <Empty message={t('library.filter_empty')} />
       ) : (
         <div className={`exercise-gallery exercise-gallery--${view}`}>
-          {exercises.map((exercise) => {
+          {visibleExercises.map((exercise) => {
             const thumb = media.find((m) => m.exerciseId === exercise.id)
             const machine = equipment.find((item) => item.id === exercise.equipmentId)
             return (

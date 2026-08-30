@@ -71,6 +71,12 @@ test.describe('jornada completa', () => {
     await items.first().click()
 
     await expect(page.locator('.tile')).toHaveCount(1)
+    const imageFilter = page.getByRole('group', { name: /filtrar exercícios por imagem/i })
+    await imageFilter.getByRole('button', { name: /^com imagem$/i }).click()
+    await expect(page.getByText(/nenhum exercício corresponde/i)).toBeVisible()
+    await imageFilter.getByRole('button', { name: /^sem imagem$/i }).click()
+    await expect(page.locator('.tile')).toHaveCount(1)
+    await imageFilter.getByRole('button', { name: /^todos$/i }).click()
   })
 
   test('adiciona o exercício ao treino', async () => {
