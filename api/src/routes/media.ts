@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import multer from 'multer'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { exerciseMedia, exercises } from '../db/schema.js'
 import { requireAuth } from '../middleware/auth.js'
@@ -50,20 +50,50 @@ mediaRouter.post('/exercises/:exerciseId', uploadLimit, upload.single('file'), a
     putObject(thumbKey, thumb, 'image/webp'),
   ])
 
-  const [row] = await db
-    .insert(exerciseMedia)
-    .values({
-      id: mediaId,
-      ownerId,
-      exerciseId,
-      s3Key,
-      thumbKey,
-      mime: 'image/webp',
-      bytes: full.byteLength,
-      width,
-      height,
-    })
-    .returning()
+  let row: typeof exerciseMedia.$inferSelect
+  let replaced: (typeof exerciseMedia.$inferSelect)[] = []
+  try {
+    ;({ row, replaced } = await db.transaction(async (tx) => {
+      // A trava por exercício impede dois uploads simultâneos de atravessarem
+      // o UPDATE juntos e disputarem o índice de imagem ativa.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${ownerId}:${exerciseId}`}))`)
+      const oldRows = await tx
+        .update(exerciseMedia)
+        .set({ deletedAt: new Date() })
+        .where(and(
+          eq(exerciseMedia.ownerId, ownerId),
+          eq(exerciseMedia.exerciseId, exerciseId),
+          isNull(exerciseMedia.deletedAt),
+        ))
+        .returning()
+      const [inserted] = await tx
+        .insert(exerciseMedia)
+        .values({
+          id: mediaId,
+          ownerId,
+          exerciseId,
+          s3Key,
+          thumbKey,
+          mime: 'image/webp',
+          bytes: full.byteLength,
+          width,
+          height,
+        })
+        .returning()
+      return { row: inserted!, replaced: oldRows }
+    }))
+  } catch (error) {
+    // O upload ao S3 acontece antes da transação; se o banco recusar, estes
+    // objetos ainda não têm linha para o job de limpeza encontrar.
+    await Promise.allSettled([deleteObject(s3Key), deleteObject(thumbKey)])
+    throw error
+  }
+
+  // A linha apagada fica para o sync, mas os objetos privados já podem sair.
+  // Falha aqui não invalida a troca: o job de purge tenta novamente depois.
+  await Promise.allSettled(replaced.flatMap((item) => [
+    deleteObject(item.s3Key), deleteObject(item.thumbKey),
+  ]))
 
   // Mesma conversão do pull: esta resposta também vai direto para o
   // IndexedDB, e é o outro caminho por onde uma linha do banco chega ao

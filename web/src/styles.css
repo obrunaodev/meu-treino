@@ -899,10 +899,13 @@ p { margin: 0; line-height: 1.55; }
   .exercise-gallery--grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .media-preview {
-  display: block; padding: 0; border: 0; border-radius: var(--r-tile);
+  display: block; width: min(100%, 30rem); padding: 0; border: 0; border-radius: var(--r-tile);
   background: transparent; overflow: hidden; cursor: zoom-in;
 }
-.media-preview img { transition: transform 160ms ease; }
+.media-preview img {
+  display: block; width: 100%; aspect-ratio: 6 / 5; object-fit: cover;
+  transition: transform 160ms ease;
+}
 .media-preview:hover img { transform: scale(1.025); }
 .media-lightbox__image {
   display: block; width: 100%; max-height: calc(100dvh - 8rem);

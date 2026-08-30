@@ -322,12 +322,17 @@ export function makeActions(ownerId: string) {
 
     /** Fila local de imagens: a foto tirada na academia sobe quando houver rede. */
     async queueUpload(exerciseId: string, blob: Blob, filename: string) {
-      await localDb.uploads.put({
-        id: uuidv7(),
-        exerciseId,
-        blob,
-        filename,
-        queuedAt: new Date().toISOString(),
+      await localDb.transaction('rw', localDb.uploads, async () => {
+        // Só a escolha mais recente precisa subir quando várias fotos forem
+        // feitas offline para o mesmo exercício.
+        await localDb.uploads.where('exerciseId').equals(exerciseId).delete()
+        await localDb.uploads.put({
+          id: uuidv7(),
+          exerciseId,
+          blob,
+          filename,
+          queuedAt: new Date().toISOString(),
+        })
       })
     },
   }

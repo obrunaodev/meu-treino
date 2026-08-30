@@ -191,7 +191,7 @@ function CatalogImport({ onClose }: { onClose: () => void }) {
 function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () => void }) {
   const { t, i18n } = useTranslation()
   const equipment = useEquipment()
-  const media = useMedia().filter((m) => m.exerciseId === exercise.id)
+  const media = useMedia().find((m) => m.exerciseId === exercise.id) ?? null
   const { saveExercise, queueUpload } = useActions()
   const fileInput = useRef<HTMLInputElement>(null)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
@@ -206,10 +206,9 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
   }, [exercise.catalogExerciseId])
 
   async function receive(files: FileList | null) {
-    if (!files) return
-    for (const file of Array.from(files)) {
-      await queueUpload(exercise.id, file, file.name)
-    }
+    const file = files?.item(files.length - 1)
+    if (!file) return
+    await queueUpload(exercise.id, file, file.name)
     await flushUploads()
   }
 
@@ -334,26 +333,20 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
             ref={fileInput}
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            multiple
             hidden
             onChange={(e) => void receive(e.target.files)}
           />
         </div>
 
-        {media.length > 0 && (
-          <div className="gallery gallery--tight">
-            {media.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="media-preview"
-                aria-label={t('library.open_image')}
-                onClick={() => setExpandedMediaId(item.id)}
-              >
-                <MediaImage mediaId={item.id} variant="full" alt="" loading="lazy" />
-              </button>
-            ))}
-          </div>
+        {media && (
+          <button
+            type="button"
+            className="media-preview"
+            aria-label={t('library.open_image')}
+            onClick={() => setExpandedMediaId(media.id)}
+          >
+            <MediaImage mediaId={media.id} variant="full" alt="" loading="lazy" />
+          </button>
         )}
       </Card>
 

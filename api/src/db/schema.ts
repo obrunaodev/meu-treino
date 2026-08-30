@@ -239,7 +239,12 @@ export const exerciseMedia = pgTable('exercise_media', {
    * de vez a tornaria invisível para quem ainda não sincronizou.
    */
   purgedAt: timestamp('purged_at', { withTimezone: true }),
-}, (t) => [index('exercise_media_owner_rev_idx').on(t.ownerId, t.rev)])
+}, (t) => [
+  index('exercise_media_owner_rev_idx').on(t.ownerId, t.rev),
+  uniqueIndex('exercise_media_owner_exercise_alive_uidx')
+    .on(t.ownerId, t.exerciseId)
+    .where(sql`deleted_at IS NULL`),
+])
 
 /** `reason`: 'equipamento' (a academia não tem), 'dor', 'preferencia'. */
 export const exerciseSubstitutions = pgTable('exercise_substitutions', {

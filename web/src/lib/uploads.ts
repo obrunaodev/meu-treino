@@ -26,9 +26,20 @@ export async function flushUploads(): Promise<number> {
         method: 'POST',
         body: form,
       })
-      // Grava local na hora: a imagem aparece sem esperar o próximo pull.
-      await localDb.table_('exercise_media').put(media as never)
-      await localDb.uploads.delete(upload.id)
+      const mediaTable = localDb.table_('exercise_media')
+      await localDb.transaction('rw', mediaTable, localDb.uploads, async () => {
+        // O servidor já apagou as anteriores. Espelhar isso na mesma transação
+        // evita que a UI mostre duas imagens até o próximo pull.
+        const current = await mediaTable.toArray()
+        const deletedAt = new Date().toISOString()
+        for (const row of current) {
+          if (row.exerciseId === upload.exerciseId && !row.deletedAt) {
+            await mediaTable.put({ ...row, deletedAt } as never)
+          }
+        }
+        await mediaTable.put(media as never)
+        await localDb.uploads.delete(upload.id)
+      })
       sent += 1
     } catch (error) {
       // Exercício apagado ou arquivo rejeitado: descartar, senão a fila trava
