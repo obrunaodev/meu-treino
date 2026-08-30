@@ -42,10 +42,10 @@ export async function flushUploads(): Promise<number> {
       })
       sent += 1
     } catch (error) {
-      // Exercício apagado ou arquivo rejeitado: descartar, senão a fila trava
-      // para sempre num item que nunca vai passar.
+      // Arquivo rejeitado nunca vai passar. Já 404 pode ser só o exercício
+      // local ainda chegando pelo sync; manter na fila permite tentar depois.
       const status = (error as { status?: number }).status
-      if (status === 404 || status === 400) await localDb.uploads.delete(upload.id)
+      if (status === 400) await localDb.uploads.delete(upload.id)
       else break
     }
   }

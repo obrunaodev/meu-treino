@@ -442,6 +442,7 @@
     "grid": "Grade",
     "list": "Lista",
     "open_image": "Abrir imagem em tamanho completo",
+    "delete_image": "Apagar imagem do exercício",
     "upload": "Imagem do exercício",
     "upload_hint": "PNG, JPG ou WebP até 5 MB",
     "choose": "escolher imagem",

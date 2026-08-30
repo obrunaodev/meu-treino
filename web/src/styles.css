@@ -907,6 +907,18 @@ p { margin: 0; line-height: 1.55; }
   transition: transform 160ms ease;
 }
 .media-preview:hover img { transform: scale(1.025); }
+.media-single { position: relative; width: min(100%, 30rem); }
+.media-single .media-preview { width: 100%; }
+.media-single__delete {
+  position: absolute; top: 8px; right: 8px; z-index: 1;
+  width: 32px; height: 32px; padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  border-radius: var(--r-chip); background: color-mix(in srgb, var(--shell) 88%, transparent);
+  color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+.media-single__delete:hover { background: var(--accent); color: var(--accent-ink); }
+.media-single__delete:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .media-lightbox__image {
   display: block; width: 100%; max-height: calc(100dvh - 8rem);
   object-fit: contain; border-radius: var(--r-tile); background: var(--shell);

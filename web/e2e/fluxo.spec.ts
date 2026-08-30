@@ -79,6 +79,23 @@ test.describe('jornada completa', () => {
     await imageFilter.getByRole('button', { name: /^todos$/i }).click()
   })
 
+  test('adiciona e apaga a imagem pelo detalhe do exercício', async () => {
+    await page.locator('.tile').first().click()
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'exercise.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    })
+
+    const removeImage = page.getByRole('button', { name: /apagar imagem do exercício/i })
+    await expect(removeImage).toBeVisible({ timeout: 15_000 })
+    await removeImage.click()
+    await expect(removeImage).toHaveCount(0)
+  })
+
   test('adiciona o exercício ao treino', async () => {
     await page.getByRole('link', { name: /gerenciar treinos/i }).first().click()
     await page.getByRole('button', { name: /adicionar exercício/i }).click()

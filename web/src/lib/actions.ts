@@ -117,6 +117,13 @@ export function makeActions(ownerId: string) {
     saveExercise: (patch: Partial<Exercise> & { id?: string }) =>
       write<Exercise>('exercises', patch as Record<string, unknown>),
 
+    async removeExerciseMedia(id: string) {
+      const media = await localDb.table_('exercise_media').get(id)
+      if (!media || media.deletedAt) return
+      await localDb.uploads.where('exerciseId').equals(String(media.exerciseId)).delete()
+      await remove('exercise_media', id)
+    },
+
     /**
      * Apaga o exercício e o que só existe por causa dele.
      *
@@ -129,6 +136,7 @@ export function makeActions(ownerId: string) {
      * exercício morto ofereceria uma troca impossível na hora da dor.
      */
     async deleteExercise(exerciseId: string) {
+      await localDb.uploads.where('exerciseId').equals(exerciseId).delete()
       const items = await localDb.table_('template_items').toArray()
       for (const item of items) {
         if (item.exerciseId === exerciseId && !item.deletedAt) await remove('template_items', item.id)

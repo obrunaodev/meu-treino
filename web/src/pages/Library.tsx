@@ -6,6 +6,7 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { flushUploads, usePendingUploads } from '../lib/uploads.js'
+import { runSync } from '../lib/sync.js'
 import { Card, Empty, Modal, Select } from '../components/ui.js'
 import { MediaImage } from '../components/MediaImage.js'
 import type { CatalogExercise, Exercise } from '../lib/types.js'
@@ -192,7 +193,7 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
   const { t, i18n } = useTranslation()
   const equipment = useEquipment()
   const media = useMedia().find((m) => m.exerciseId === exercise.id) ?? null
-  const { saveExercise, queueUpload } = useActions()
+  const { saveExercise, queueUpload, removeExerciseMedia } = useActions()
   const fileInput = useRef<HTMLInputElement>(null)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
   const [cue, setCue] = useState('')
@@ -209,6 +210,7 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
     const file = files?.item(files.length - 1)
     if (!file) return
     await queueUpload(exercise.id, file, file.name)
+    await runSync().catch(() => undefined)
     await flushUploads()
   }
 
@@ -339,14 +341,27 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
         </div>
 
         {media && (
-          <button
-            type="button"
-            className="media-preview"
-            aria-label={t('library.open_image')}
-            onClick={() => setExpandedMediaId(media.id)}
-          >
-            <MediaImage mediaId={media.id} variant="full" alt="" loading="lazy" />
-          </button>
+          <div className="media-single">
+            <button
+              type="button"
+              className="media-preview"
+              aria-label={t('library.open_image')}
+              onClick={() => setExpandedMediaId(media.id)}
+            >
+              <MediaImage mediaId={media.id} variant="full" alt="" loading="lazy" />
+            </button>
+            <button
+              type="button"
+              className="media-single__delete"
+              aria-label={t('library.delete_image')}
+              onClick={() => {
+                setExpandedMediaId(null)
+                void removeExerciseMedia(media.id)
+              }}
+            >
+              ×
+            </button>
+          </div>
         )}
       </Card>
 
