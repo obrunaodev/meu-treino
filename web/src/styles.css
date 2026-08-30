@@ -219,7 +219,7 @@ p { margin: 0; line-height: 1.55; }
 
 .shell__tabs {
   position: sticky; bottom: 0; z-index: 2;
-  display: flex; justify-content: space-evenly; gap: 2px;
+  display: flex; justify-content: space-between; gap: 2px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: var(--shell);
