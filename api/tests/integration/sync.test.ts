@@ -403,7 +403,7 @@ suite('paginação do pull não pula linhas', () => {
 })
 
 /**
- * `/historico/:id` corrige série já registrada. Enquanto `set_logs` era
+ * `/history/:id` corrige série já registrada. Enquanto `set_logs` era
  * append-only, o servidor respondia `noop` a esses upserts: a UI é local-first
  * e mostrava o valor novo, a fila esvaziava normalmente, e o banco continuava
  * com o valor velho. Nenhum erro em lugar nenhum — só divergência no próximo

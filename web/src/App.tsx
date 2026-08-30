@@ -23,6 +23,7 @@ import { More } from './pages/More.js'
 import { SessionDetail } from './pages/SessionDetail.js'
 import { SessionGate } from './pages/SessionGate.js'
 import { WhatsApp } from './pages/WhatsApp.js'
+import { routes } from './lib/routes.js'
 
 /**
  * Preferências salvas aplicadas ao documento: tema na raiz, idioma no i18n.
@@ -62,26 +63,26 @@ function Authed() {
     <>
       <PreferencesSync />
       <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+        <Route path={routes.onboarding} element={<Onboarding />} />
+        <Route path={routes.authCallback} element={<Navigate to={routes.dashboard} replace />} />
 
         <Route element={<AppShell />}>
           {/* Sem programa não há ciclo, e sem ciclo nenhuma tela tem o que mostrar. */}
-          <Route path="/" element={program ? <Dashboard /> : <Navigate to="/onboarding" replace />} />
-          <Route path="/sessao" element={<SessionGate />} />
-          <Route path="/sessao/:sessionId" element={<Session />} />
-          <Route path="/treinos" element={<Templates />} />
-          <Route path="/biblioteca" element={<Library />} />
-          <Route path="/equipamentos" element={<Equipment />} />
-          <Route path="/dor" element={<Pain />} />
-          <Route path="/marcador" element={<Tests />} />
-          <Route path="/historico" element={<History />} />
-          <Route path="/historico/:sessionId" element={<SessionDetail />} />
-          <Route path="/configuracoes" element={<Settings />} />
-          <Route path="/conflitos" element={<Conflicts />} />
-          <Route path="/whatsapp" element={<WhatsApp />} />
-          <Route path="/mais" element={<More />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path={routes.dashboard} element={program ? <Dashboard /> : <Navigate to={routes.onboarding} replace />} />
+          <Route path={routes.session} element={<SessionGate />} />
+          <Route path={`${routes.session}/:sessionId`} element={<Session />} />
+          <Route path={routes.workouts} element={<Templates />} />
+          <Route path={routes.exercises} element={<Library />} />
+          <Route path={routes.equipment} element={<Equipment />} />
+          <Route path={routes.pain} element={<Pain />} />
+          <Route path={routes.functionalTests} element={<Tests />} />
+          <Route path={routes.history} element={<History />} />
+          <Route path={`${routes.history}/:sessionId`} element={<SessionDetail />} />
+          <Route path={routes.settings} element={<Settings />} />
+          <Route path={routes.conflicts} element={<Conflicts />} />
+          <Route path={routes.whatsapp} element={<WhatsApp />} />
+          <Route path={routes.more} element={<More />} />
+          <Route path="*" element={<Navigate to={routes.dashboard} replace />} />
         </Route>
       </Routes>
     </>
@@ -95,9 +96,9 @@ function Routed() {
   if (status === 'anonimo') {
     return (
       <Routes>
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/" element={<Login />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path={routes.authCallback} element={<AuthCallback />} />
+        <Route path={routes.dashboard} element={<Login />} />
+        <Route path="*" element={<Navigate to={routes.dashboard} replace />} />
       </Routes>
     )
   }

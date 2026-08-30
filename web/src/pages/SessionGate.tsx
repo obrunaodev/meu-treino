@@ -6,10 +6,11 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
+import { sessionRoute } from '../lib/routes.js'
 import { Card, Empty } from '../components/ui.js'
 
 /**
- * `/sessao` sem id: retoma a sessão aberta, ou abre a próxima do ciclo. Existe
+ * `/session` sem id: retoma a sessão aberta, ou abre a próxima do ciclo. Existe
  * para a aba do rodapé ter um destino único, sem o usuário precisar saber que
  * sessão tem id.
  */
@@ -32,7 +33,7 @@ export function SessionGate() {
     if (!selectedId && upcoming) setSelectedId(upcoming.id)
   }, [selectedId, upcoming?.id])
 
-  if (open) return <Navigate to={`/sessao/${open.id}`} replace />
+  if (open) return <Navigate to={sessionRoute(open.id)} replace />
   if (!program) return <Empty message={t('dashboard.no_program')} />
 
   const selected = templates.find((template) => template.id === selectedId) ?? upcoming ?? templates[0] ?? null
@@ -47,7 +48,7 @@ export function SessionGate() {
     const session = await startSession(
       program!.id, templateId, position.cycleNumber, position.blockNumber,
     )
-    navigate(`/sessao/${session.id}`, { replace: true })
+    navigate(sessionRoute(session.id), { replace: true })
   }
 
   if (!selected) return <Empty message={t('templates.empty')} />

@@ -5,6 +5,7 @@ import {
   useActiveProgram, useCardioOptions, useExercises, useSessions, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
+import { routes } from '../lib/routes.js'
 import { Card, Empty, Select, Stepper } from '../components/ui.js'
 import type { Program, Template, TemplateItem } from '../lib/types.js'
 
@@ -93,7 +94,7 @@ function TemplateCardio({ template }: { template: Template }) {
     <Card title={t('templates.cardio')}>
       {options.length === 0 ? (
         <p className="muted">
-          {t('templates.cardio_empty')} <Link to="/equipamentos">{t('templates.cardio_configure')}</Link>
+          {t('templates.cardio_empty')} <Link to={routes.equipment}>{t('templates.cardio_configure')}</Link>
         </p>
       ) : (
         <>
@@ -265,7 +266,7 @@ function TemplateEditor({ templateId }: { templateId: string }) {
       {adding && (
         <div className="checklist">
           {exercises.length === 0 ? (
-            <Link to="/biblioteca" className="button button--quiet">{t('library.add')}</Link>
+            <Link to={routes.exercises} className="button button--quiet">{t('library.add')}</Link>
           ) : (
             exercises.map((exercise) => (
               <button

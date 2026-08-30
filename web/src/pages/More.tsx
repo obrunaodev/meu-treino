@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 
 /**
@@ -7,13 +8,13 @@ import { Link } from 'react-router-dom'
  */
 const GROUPS = [
   { key: 'resources', entries: [
-    { to: '/biblioteca', key: 'library' },
-    { to: '/equipamentos', key: 'academy' },
-    { to: '/marcador', key: 'tests' },
-    { to: '/dor', key: 'pain' },
+    { to: routes.exercises, key: 'library' },
+    { to: routes.equipment, key: 'academy' },
+    { to: routes.functionalTests, key: 'tests' },
+    { to: routes.pain, key: 'pain' },
   ] },
   { key: 'system', entries: [
-    { to: '/configuracoes', key: 'settings' },
+    { to: routes.settings, key: 'settings' },
   ] },
 ]
 

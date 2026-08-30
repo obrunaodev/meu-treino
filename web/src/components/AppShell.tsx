@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/auth.js'
 import { SyncBar } from './SyncBar.js'
+import { routes } from '../lib/routes.js'
 
 /**
  * Desktop: navegação completa agrupada e identidade no rodapé. Mobile: quatro
@@ -9,19 +10,19 @@ import { SyncBar } from './SyncBar.js'
  */
 const GROUPS = [
   { key: 'training', links: [
-    { to: '/', key: 'dashboard', end: true },
-    { to: '/sessao', key: 'session' },
-    { to: '/historico', key: 'history' },
-    { to: '/treinos', key: 'templates' },
+    { to: routes.dashboard, key: 'dashboard', end: true },
+    { to: routes.session, key: 'session' },
+    { to: routes.history, key: 'history' },
+    { to: routes.workouts, key: 'templates' },
   ] },
   { key: 'resources', links: [
-    { to: '/biblioteca', key: 'library' },
-    { to: '/equipamentos', key: 'academy' },
-    { to: '/marcador', key: 'tests' },
-    { to: '/dor', key: 'pain' },
+    { to: routes.exercises, key: 'library' },
+    { to: routes.equipment, key: 'academy' },
+    { to: routes.functionalTests, key: 'tests' },
+    { to: routes.pain, key: 'pain' },
   ] },
   { key: 'system', links: [
-    { to: '/configuracoes', key: 'settings' },
+    { to: routes.settings, key: 'settings' },
   ] },
 ]
 
@@ -29,11 +30,11 @@ const GROUPS = [
  * Os quatro destinos centrais ficam fixos; “Mais” concentra recursos e sistema.
  */
 const TABS = [
-  { to: '/', key: 'dashboard_short', end: true },
-  { to: '/sessao', key: 'today' },
-  { to: '/treinos', key: 'workouts' },
-  { to: '/historico', key: 'history_short' },
-  { to: '/mais', key: 'more' },
+  { to: routes.dashboard, key: 'dashboard_short', end: true },
+  { to: routes.session, key: 'today' },
+  { to: routes.workouts, key: 'workouts' },
+  { to: routes.history, key: 'history_short' },
+  { to: routes.more, key: 'more' },
 ]
 
 export function AppShell() {
@@ -73,7 +74,7 @@ export function AppShell() {
               <section key={group.key} className="shell__nav-group">
                 <span className="shell__nav-label">{t(`nav.groups.${group.key}`)}</span>
                 {group.links.map((link) => (
-                  <NavLink key={link.to} to={link.to} end={link.end} className="shell__link">
+                  <NavLink key={link.to} to={link.to} end={link.to === routes.dashboard} className="shell__link">
                     {t(`nav.${link.key}`)}
                   </NavLink>
                 ))}
@@ -104,7 +105,7 @@ export function AppShell() {
 
       <nav className="shell__tabs" aria-label={t('app.name')}>
         {TABS.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} end={tab.end} className="shell__tab">
+          <NavLink key={tab.to} to={tab.to} end={tab.to === routes.dashboard} className="shell__tab">
             {t(`nav.${tab.key}`)}
           </NavLink>
         ))}

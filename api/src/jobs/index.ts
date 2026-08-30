@@ -195,7 +195,7 @@ export async function sendWorkoutReminders(
     sent += await notifyUser(row.userId, {
       title: row.name,
       body: `Treino em ${row.lead} min`,
-      url: '/sessao',
+      url: '/session',
     })
     // Marca mesmo sem entrega: sem inscrição de push, repetir a cada tick só
     // gastaria consulta o dia inteiro.

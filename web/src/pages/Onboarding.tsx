@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api.js'
+import { routes } from '../lib/routes.js'
 import { useActions, type ProgramDraft } from '../lib/actions.js'
 import { Card } from '../components/ui.js'
 import type { CatalogStation } from '../lib/types.js'
@@ -83,7 +84,7 @@ export function Onboarding() {
     setSaving(true)
     try {
       await createProgram(draft)
-      navigate('/', { replace: true })
+      navigate(routes.dashboard, { replace: true })
     } finally {
       setSaving(false)
     }

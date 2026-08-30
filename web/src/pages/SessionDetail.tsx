@@ -10,6 +10,7 @@ import { assignCycleNumbers } from '../lib/domain/cycle.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
+import { routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import type { PlanSnapshot, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
@@ -54,7 +55,7 @@ export function SessionDetail() {
 
   async function destroy() {
     await deleteSession(session!.id)
-    navigate('/historico', { replace: true })
+    navigate(routes.history, { replace: true })
   }
 
   return (

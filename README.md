@@ -141,6 +141,18 @@ destrutivo não é automático.
 
 ## Arquitetura
 
+### Convenção de rotas
+
+- URLs são estáveis e independentes do idioma da interface: todos os segmentos
+  usam inglês americano, minúsculas e `kebab-case`.
+- A web centraliza os caminhos canônicos em `web/src/lib/routes.ts`; textos de
+  menu continuam traduzidos por i18n.
+- Recursos HTTP ficam em `/api/<resource>`, coleções usam substantivos no
+  plural e parâmetros identificadores ocupam o segmento seguinte.
+- Autenticação fica em `/auth` e a verificação operacional em `/health`.
+- Não há aliases em português: links antigos caem no fallback da aplicação em
+  vez de manter duas URLs canônicas para a mesma tela.
+
 ### Offline-first
 
 O IndexedDB é a fonte de verdade da UI — nada na tela lê da rede direto. Toda
@@ -245,7 +257,7 @@ sair no meio é `incompleta`, e é isso que o calendário desenha diferente.
 
 ### Editar o que já aconteceu
 
-Todo dia do calendário abre `/historico/:id`, onde a sessão é corrigida: status,
+Todo dia do calendário abre `/history/:id`, onde a sessão é corrigida: status,
 data, anotações, cada série (carga, reps, RIR, lado, aquecimento, pulada),
 o cardio e os registros de dor — com adicionar e apagar em cada um.
 
@@ -277,7 +289,7 @@ e `web/src/components/ui.tsx` são sua implementação executável. O webapp é
 | concluído | `#7f9a6a` |
 
 Barra lateral de 232px no desktop; no mobile, quatro abas curtas
-(Hoje · Progresso · Treinos · Mais) com as telas secundárias em `/mais`, como
+(Hoje · Progresso · Treinos · Mais) com as telas secundárias em `/more`, como
 no frame de 420px. Botão primário é pílula (`999px`, 11×22, 14px/600), cartão
 tem raio 14px e padding 20px, rótulo de seção em IBM Plex Mono 11px com
 `letter-spacing: 0.16em`.

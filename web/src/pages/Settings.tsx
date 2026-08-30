@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { useActiveProgram, useEquipment, useSettings } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
@@ -148,12 +149,12 @@ export function Settings() {
       <Card title={t('settings.equipment')} action={
         <span className="mono muted">{equipment.length}</span>
       }>
-        <Link className="button button--quiet" to="/equipamentos">{t('settings.equipment')}</Link>
+        <Link className="button button--quiet" to={routes.equipment}>{t('settings.equipment')}</Link>
       </Card>
 
       <Card title={t('settings.integrations')}>
         <span className="mono muted">{t('settings.whatsapp_hint')}</span>
-        <Link className="button button--quiet" to="/whatsapp">WhatsApp</Link>
+        <Link className="button button--quiet" to={routes.whatsapp}>WhatsApp</Link>
       </Card>
 
       <Card title={t('settings.export')}>
@@ -168,7 +169,7 @@ export function Settings() {
       </Card>
 
       <Card title={t('settings.danger')} tone="quiet">
-        <Link className="button button--quiet" to="/onboarding">{t('settings.redo_onboarding')}</Link>
+        <Link className="button button--quiet" to={routes.onboarding}>{t('settings.redo_onboarding')}</Link>
         <span className="mono muted">{t('settings.clear_hint')}</span>
         {confirming ? (
           <div className="row">

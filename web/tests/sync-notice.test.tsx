@@ -20,7 +20,7 @@ describe('SyncNotice', () => {
 
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('2 conflitos para resolver')
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/conflitos')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/conflicts')
   })
 
   it('mostra offline antes de alterações pendentes', () => {

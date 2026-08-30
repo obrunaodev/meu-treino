@@ -16,6 +16,7 @@ import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { SessionExerciseChecklist } from '../components/SessionExerciseChecklist.js'
 import type { SetLog, TemplateItem } from '../lib/types.js'
+import { routes } from '../lib/routes.js'
 
 export function Session() {
   const { sessionId } = useParams()
@@ -92,7 +93,7 @@ export function Session() {
     return (
       <Empty
         message={t('session.empty_template')}
-        action={<Link className="button button--primary" to="/treinos">{t('session.edit_template')}</Link>}
+        action={<Link className="button button--primary" to={routes.workouts}>{t('session.edit_template')}</Link>}
       />
     )
   }
@@ -117,7 +118,7 @@ export function Session() {
       endedAt: new Date().toISOString(),
     })
     clearSessionPhase(session!.id)
-    navigate('/', { replace: true })
+    navigate(routes.dashboard, { replace: true })
   }
 
   const unit = settings?.unit ?? 'kg'

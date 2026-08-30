@@ -178,7 +178,7 @@ test.describe('jornada completa', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1280)
   })
 
-  test('iniciar em /sessao mostra a prévia e permite trocar', async () => {
+  test('iniciar em /session mostra a prévia e permite trocar', async () => {
     await page.getByRole('link', { name: /treino de hoje/i }).first().click()
 
     await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()

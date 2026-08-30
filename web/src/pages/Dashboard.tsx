@@ -5,6 +5,7 @@ import {
   useActiveProgram, useOpenSession, useSessions, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
+import { routes, sessionRoute } from '../lib/routes.js'
 import { blockJustClosed, currentStreak, cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
 import { sessionsByWeek, weeksToBlockEnd } from '../lib/domain/dashboard.js'
 import { Card, Empty } from '../components/ui.js'
@@ -52,7 +53,7 @@ export function Dashboard() {
       position.cycleNumber,
       position.blockNumber,
     )
-    navigate(`/sessao/${session.id}`)
+    navigate(sessionRoute(session.id))
   }
 
   if (!program) {
@@ -60,7 +61,7 @@ export function Dashboard() {
       <Empty
         message={t('dashboard.no_program')}
         action={
-          <Link className="button button--primary" to="/onboarding">
+          <Link className="button button--primary" to={routes.onboarding}>
             {t('dashboard.create_program')}
           </Link>
         }
@@ -78,7 +79,7 @@ export function Dashboard() {
           <h1>{t('dashboard.title')}</h1>
           <p className="page__description">{t('pages.dashboard')}</p>
         </div>
-        <Link className="button button--quiet dashboard__history" to="/historico">
+        <Link className="button button--quiet dashboard__history" to={routes.history}>
           {t('dashboard.view_history')}
         </Link>
       </header>
@@ -92,7 +93,7 @@ export function Dashboard() {
             })}
           </p>
           <div className="row">
-            <Link className="button button--primary" to="/treinos">
+            <Link className="button button--primary" to={routes.workouts}>
               {t('dashboard.block_apply')}
             </Link>
             <button
@@ -115,7 +116,7 @@ export function Dashboard() {
           <span>{t('dashboard.exercises', { count: items.length })}</span>
         </div>
         {openSession ? (
-          <Link className="button button--primary" to={`/sessao/${openSession.id}`}>
+          <Link className="button button--primary" to={sessionRoute(openSession.id)}>
             {t('dashboard.resume')}
           </Link>
         ) : (

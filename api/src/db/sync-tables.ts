@@ -25,7 +25,7 @@ export const SYNC_TABLES = {
   templates: { table: s.templates, mergeStrategy: 'field-merge' },
   template_items: { table: s.templateItems, mergeStrategy: 'field-merge' },
   workout_sessions: { table: s.workoutSessions, mergeStrategy: 'field-merge' },
-  // field-merge, não append-only: /historico/:id corrige carga, reps, RIR,
+  // field-merge, não append-only: /history/:id corrige carga, reps, RIR,
   // lado, aquecimento e pulada de uma série já registrada.
   set_logs: { table: s.setLogs, mergeStrategy: 'field-merge' },
   cardio_logs: { table: s.cardioLogs, mergeStrategy: 'field-merge' },

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { routes } from '../lib/routes.js'
 import { useSyncState } from '../lib/sync-context.js'
 
 /** Estado de sincronização em um toast que não desloca o conteúdo da tela. */
@@ -46,7 +47,7 @@ export function SyncNotice({ conflicts, pending, online }: {
   if (kind === null || dismissed === kind) return null
 
   const content = kind === 'conflict' ? (
-    <Link to="/conflitos" className="sync-toast__link">
+    <Link to={routes.conflicts} className="sync-toast__link">
       <span className="sync-toast__dot" aria-hidden="true" />
       <span className="sync-toast__copy">
         <strong>{t('sync.conflict', { count: conflicts })}</strong>

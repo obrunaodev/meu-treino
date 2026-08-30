@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { historyRoute } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
@@ -98,7 +99,7 @@ export function History() {
                 return (
                   <Link
                     key={cell.key}
-                    to={`/historico/${entry.id}`}
+                    to={historyRoute(entry.id)}
                     className={`calendar__day calendar__day--${entry.status} calendar__day--link`}
                     title={t('history.sets', { count: entry.sets })}
                   >
@@ -120,7 +121,7 @@ export function History() {
                 const template = templates.find((x) => x.id === session.templateId)
                 return (
                   <li key={session.id} className="loglist__row">
-                    <Link to={`/historico/${session.id}`} className="loglist__link">
+                    <Link to={historyRoute(session.id)} className="loglist__link">
                       {session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}
                     </Link>
                     <span className="mono muted">
