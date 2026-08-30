@@ -63,7 +63,7 @@ test.describe('jornada completa', () => {
   })
 
   test('importa um exercício do catálogo', async () => {
-    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
     await page.getByRole('button', { name: /importar do catálogo/i }).click()
 
     const items = page.locator('.checkitem')
@@ -244,7 +244,7 @@ test.describe('jornada completa', () => {
   test('editar a carga por lado não reescreve a sessão antiga', async () => {
     // A sessão foi iniciada antes desta mudança. O histórico precisa manter
     // a configuração capturada naquela data, não a biblioteca de hoje.
-    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
     await page.locator('.tile').first().click()
     await page.getByRole('checkbox', { name: /carga por lado/i }).click()
 
@@ -255,7 +255,7 @@ test.describe('jornada completa', () => {
 
   test('o + exercício usa o plano capturado pela sessão', async () => {
     // Um exercício na biblioteca que NÃO está no Treino A.
-    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
     await page.getByRole('button', { name: /importar do catálogo/i }).click()
     const catalogo = page.locator('.checkitem')
     await expect(catalogo.first()).toBeVisible({ timeout: 15_000 })
@@ -285,7 +285,7 @@ test.describe('jornada completa', () => {
     await expect(page.locator('.checkitem').filter({ hasText: forado })).toHaveCount(0)
 
     // Devolve tudo: apagar o exercício também tira o item do treino.
-    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
     await page.getByRole('button', { name: new RegExp(forado, 'i') }).click()
     await page.getByRole('button', { name: /apagar exercício/i }).click()
     await page.getByRole('button', { name: /apagar exercício/i }).click()
@@ -375,7 +375,7 @@ test.describe('jornada completa', () => {
   })
 
   test('apagar um exercício tira ele do treino e da biblioteca', async () => {
-    await page.getByRole('link', { name: /catálogo de exercícios/i }).first().click()
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
     await page.locator('.tile').first().click()
 
     // O aviso conta a consequência antes: o exercício sai dos treinos que o usam.

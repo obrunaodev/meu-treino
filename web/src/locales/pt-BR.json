@@ -25,8 +25,8 @@
     "dashboard": "Dashboard",
     "session": "Treino de Hoje",
     "templates": "Gerenciar Treinos",
-    "library": "Catálogo de Exercícios",
-    "academy": "Academia",
+    "library": "Exercícios",
+    "academy": "Equipamentos",
     "pain": "Histórico de Dor",
     "tests": "Testes Funcionais",
     "history": "Histórico de Treinos",
@@ -427,7 +427,7 @@
     "delete_last": "o ciclo precisa de pelo menos um treino"
   },
   "library": {
-    "title": "Catálogo de Exercícios",
+    "title": "Exercícios",
     "empty": "Nenhum exercício cadastrado ainda.",
     "add": "Novo exercício",
     "from_catalog": "Importar do catálogo",
@@ -470,7 +470,7 @@
     "gone": "Exercício removido"
   },
   "equipment": {
-    "title": "Academia",
+    "title": "Equipamentos",
     "empty": "Nenhum equipamento cadastrado.",
     "add": "Novo equipamento",
     "load_type": "Tipo de carga",
