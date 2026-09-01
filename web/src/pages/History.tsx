@@ -98,10 +98,35 @@ export function History() {
           <Card
             title={monthLabel}
             action={
-              <span className="row">
-                <button type="button" className="button button--ghost" onClick={() => setMonthOffset((v) => v - 1)}>‹</button>
-                <button type="button" className="button button--ghost" onClick={() => setMonthOffset((v) => v + 1)}>›</button>
-              </span>
+              <nav className="calendar-nav" aria-label={t('history.calendar_navigation')}>
+                <button
+                  type="button"
+                  className="button button--ghost"
+                  aria-label={t('history.previous_month')}
+                  onClick={() => setMonthOffset((value) => value - 1)}
+                >
+                  <span aria-hidden="true">←</span>
+                  <span>{t('history.previous')}</span>
+                </button>
+                {monthOffset !== 0 && (
+                  <button
+                    type="button"
+                    className="button button--ghost calendar-nav__today"
+                    onClick={() => setMonthOffset(0)}
+                  >
+                    {t('history.current_month')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="button button--ghost"
+                  aria-label={t('history.next_month')}
+                  onClick={() => setMonthOffset((value) => value + 1)}
+                >
+                  <span>{t('history.next')}</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              </nav>
             }
           >
             <div className="calendar">

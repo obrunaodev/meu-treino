@@ -960,6 +960,12 @@ p { margin: 0; line-height: 1.55; }
 }
 
 /* ── calendário ───────────────────────────────────────────────────────────*/
+.calendar-nav { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.calendar-nav .button { min-height: 36px; }
+.calendar-nav__today { color: var(--ink-2); }
+@media (max-width: 30rem) {
+  .calendar-nav { width: 100%; justify-content: space-between; }
+}
 .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .calendar__head {
   text-align: center; padding-bottom: 4px;

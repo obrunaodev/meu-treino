@@ -240,6 +240,14 @@ test.describe('jornada completa', () => {
     await expect(page.getByRole('heading', { name: 'Ciclo 1' })).toBeVisible()
     await expect(page.locator('.history-sessions')).toContainText('Treino A')
 
+    const currentMonth = await page.locator('.card__title').first().textContent()
+    await page.getByRole('button', { name: /mês anterior/i }).click()
+    await expect(page.locator('.card__title').first()).not.toHaveText(currentMonth)
+    await expect(page.locator('.calendar__day--concluida')).toHaveCount(0)
+    await page.getByRole('button', { name: /^hoje$/i }).click()
+    await expect(page.locator('.card__title').first()).toHaveText(currentMonth)
+    await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
+
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
     await page.setViewportSize({ width: 1280, height: 800 })
