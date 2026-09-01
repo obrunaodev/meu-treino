@@ -14,7 +14,8 @@ describe('opções de cardio da academia', () => {
   it('cria as opções marcadas durante o onboarding', async () => {
     await actions.createProgram({
       name: 'Programa', scheduleMode: 'continuous', weekdays: [],
-      templateNames: ['Treino A'], cyclesPerBlock: 4, rirDeltaPerBlock: -1,
+      templateNames: ['Treino A'], blockDurationWeeks: 2, periodDurationMonths: 1,
+      cyclesPerBlock: 4, rirDeltaPerBlock: -1,
       defaultRestSeconds: 90, reminderLeadMinutes: 60, remindersEnabled: false,
       gymName: 'Academia', stations: [], cardioNames: ['Esteira', 'Elíptico'],
     })

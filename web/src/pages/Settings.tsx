@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
-import { useActiveProgram, useEquipment, useSettings } from '../lib/repo.js'
+import { useActiveProgram, useEquipment, useSettings, useTemplates } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { buildSetLogCsv, downloadBlob } from '../lib/export.js'
 import { localDb } from '../lib/db.js'
@@ -14,6 +14,7 @@ export function Settings() {
   const { t, i18n } = useTranslation()
   const settings = useSettings()
   const program = useActiveProgram()
+  const templates = useTemplates(program?.id)
   const equipment = useEquipment()
   const { saveSettings, updateProgram } = useActions()
   const [confirming, setConfirming] = useState(false)
@@ -83,6 +84,53 @@ export function Settings() {
 
       {program && (
         <Card title={t('settings.program')}>
+          <div className="setting-summary">
+            <span className="eyebrow">{t('settings.cycle_structure')}</span>
+            <strong>{t('settings.cycle_workouts', { count: templates.length })}</strong>
+            <span className="mono muted">{t('settings.cycle_structure_hint')}</span>
+            <Link className="button button--ghost" to={routes.workouts}>{t('settings.manage_cycle')}</Link>
+          </div>
+
+          <label className="field">
+            {t('settings.block_weeks')}
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={program.blockDurationWeeks ?? 2}
+              onChange={(event) => void updateProgram(program.id, {
+                blockDurationWeeks: Math.min(12, Math.max(1, Number(event.target.value))),
+              })}
+            />
+          </label>
+
+          <label className="field">
+            {t('settings.period_months')}
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={program.periodDurationMonths ?? 1}
+              onChange={(event) => void updateProgram(program.id, {
+                periodDurationMonths: Math.min(12, Math.max(1, Number(event.target.value))),
+              })}
+            />
+          </label>
+          <span className="mono muted">{t('settings.cadence_hint')}</span>
+
+          <label className="field">
+            {t('settings.block_rir')}
+            <input
+              type="number"
+              min={-3}
+              max={3}
+              value={program.rirDeltaPerBlock}
+              onChange={(event) => void updateProgram(program.id, {
+                rirDeltaPerBlock: Math.min(3, Math.max(-3, Number(event.target.value))),
+              })}
+            />
+          </label>
+
           <label className="field">
             {t('settings.rest')}
             <input

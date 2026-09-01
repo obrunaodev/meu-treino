@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  useActiveProgram, useCardioLogs, useCardioOptions, useEquipment, useExercises, usePainEvents,
+  useCardioLogs, useCardioOptions, useEquipment, useExercises, usePainEvents,
   useSessions, useSetLogs, useSettings, useTemplateItems, useTemplatesEver,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
-import { assignCycleNumbers } from '../lib/domain/cycle.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
@@ -31,7 +30,6 @@ export function SessionDetail() {
 
   const sessions = useSessions()
   const session = sessions.find((s) => s.id === sessionId) ?? null
-  const program = useActiveProgram()
   const templates = useTemplatesEver()
   const logs = useSetLogs(sessionId)
   const currentPlan = useTemplateItems(session?.templateId)
@@ -44,12 +42,6 @@ export function SessionDetail() {
   if (!session) return <Empty message={t('history.gone')} />
 
   const template = templates.find((x) => x.id === session.templateId)
-  const position = assignCycleNumbers(
-    sessions,
-    program?.sessionsPerCycle ?? 1,
-    program?.cyclesPerBlock ?? 1,
-  ).get(session)
-
   const working = logs.filter((l) => !l.isWarmup && !l.skipped)
   const date = new Date(session.startedAt)
 
@@ -66,9 +58,11 @@ export function SessionDetail() {
 
       <header className="page__title">
         <span className="eyebrow">
-          {position
-            ? t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })
-            : t(`history.${session.status}`)}
+          {t('dashboard.cycle', {
+            cycle: session.cycleNumber,
+            block: session.blockNumber,
+            period: session.periodNumber ?? 1,
+          })}
         </span>
         <h1>{session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}</h1>
         <span className="mono muted">

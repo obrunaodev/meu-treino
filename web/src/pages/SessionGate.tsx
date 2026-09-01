@@ -5,7 +5,7 @@ import {
   useActiveProgram, useAllTemplateItems, useExercises, useOpenSession, useSessions, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
-import { cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
+import { calendarTrainingPosition, nextTemplate } from '../lib/domain/cycle.js'
 import { sessionRoute } from '../lib/routes.js'
 import { Card, Empty } from '../components/ui.js'
 
@@ -41,12 +41,19 @@ export function SessionGate() {
     .filter((item) => item.templateId === selected?.id)
     .sort((a, b) => a.position - b.position)
   const exerciseNames = new Map(exercises.map((exercise) => [exercise.id, exercise.name]))
-  const finished = sessions.filter((s) => s.status !== 'em_andamento')
-  const position = cyclePosition(program.sessionsPerCycle, program.cyclesPerBlock, finished.length)
+  const programSessions = sessions.filter((session) => session.programId === program.id)
+  const finished = programSessions.filter((session) => session.status !== 'em_andamento')
+  const position = calendarTrainingPosition(
+    program.sessionsPerCycle,
+    finished.length,
+    program.startedAt ?? program.createdAt ?? new Date().toISOString(),
+    program.blockDurationWeeks ?? 2,
+    program.periodDurationMonths ?? 1,
+  )
 
   async function begin(templateId: string) {
     const session = await startSession(
-      program!.id, templateId, position.cycleNumber, position.blockNumber,
+      program!.id, templateId, position.cycleNumber, position.blockNumber, position.periodNumber,
     )
     navigate(sessionRoute(session.id), { replace: true })
   }
@@ -65,7 +72,9 @@ export function SessionGate() {
         </div>
         {selected.focus && <p className="muted">{selected.focus}</p>}
         <p className="mono muted">
-          {t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })}
+          {t('dashboard.cycle', {
+            cycle: position.cycleNumber, block: position.blockNumber, period: position.periodNumber,
+          })}
         </p>
       </header>
 

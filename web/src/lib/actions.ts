@@ -19,6 +19,8 @@ export interface ProgramDraft {
   scheduleMode: 'continuous' | 'weekly'
   weekdays: number[]
   templateNames: string[]
+  blockDurationWeeks: number
+  periodDurationMonths: number
   cyclesPerBlock: number
   rirDeltaPerBlock: number
   defaultRestSeconds: number
@@ -70,6 +72,8 @@ export function makeActions(ownerId: string) {
         scheduleMode: draft.scheduleMode,
         weekdays: draft.weekdays,
         sessionsPerCycle: draft.templateNames.length,
+        blockDurationWeeks: draft.blockDurationWeeks,
+        periodDurationMonths: draft.periodDurationMonths,
         cyclesPerBlock: draft.cyclesPerBlock,
         rirDeltaPerBlock: draft.rirDeltaPerBlock,
         defaultRestSeconds: draft.defaultRestSeconds,
@@ -241,7 +245,13 @@ export function makeActions(ownerId: string) {
       }
     },
 
-    async startSession(programId: string, templateId: string, cycleNumber: number, blockNumber: number) {
+    async startSession(
+      programId: string,
+      templateId: string,
+      cycleNumber: number,
+      blockNumber: number,
+      periodNumber = 1,
+    ) {
       const [template, allItems, exercises, equipment] = await Promise.all([
         localDb.table_('templates').get(templateId),
         localDb.table_('template_items').toArray(),
@@ -264,6 +274,7 @@ export function makeActions(ownerId: string) {
         planSnapshot,
         cycleNumber,
         blockNumber,
+        periodNumber,
         status: 'em_andamento',
         startedAt: new Date().toISOString(),
       })

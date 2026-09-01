@@ -92,6 +92,13 @@
       "when": 1788120476858,
       "tag": "0012_overrated_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788305459082,
+      "tag": "0013_strong_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

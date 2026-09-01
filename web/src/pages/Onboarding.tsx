@@ -33,6 +33,8 @@ export function Onboarding() {
     scheduleMode: 'continuous',
     weekdays: [2, 4, 6],
     templateNames: defaultTemplateNames(2, t('onboarding.cycle.prefix')),
+    blockDurationWeeks: 2,
+    periodDurationMonths: 1,
     cyclesPerBlock: 4,
     rirDeltaPerBlock: -1,
     defaultRestSeconds: 90,
@@ -184,15 +186,26 @@ export function Onboarding() {
         {step === 'bloco' && (
           <div className="stack">
             <label className="field">
-              {t('onboarding.block.cycles')}
+              {t('onboarding.block.weeks')}
               <input
                 type="number"
                 min={1}
-                max={24}
-                value={draft.cyclesPerBlock}
-                onChange={(e) => patch({ cyclesPerBlock: Math.max(1, Number(e.target.value)) })}
+                max={12}
+                value={draft.blockDurationWeeks}
+                onChange={(e) => patch({ blockDurationWeeks: Math.max(1, Number(e.target.value)) })}
               />
             </label>
+            <label className="field">
+              {t('onboarding.block.period_months')}
+              <input
+                type="number"
+                min={1}
+                max={12}
+                value={draft.periodDurationMonths}
+                onChange={(e) => patch({ periodDurationMonths: Math.max(1, Number(e.target.value)) })}
+              />
+            </label>
+            <span className="mono muted">{t('onboarding.block.calendar_hint')}</span>
             <label className="field">
               {t('onboarding.block.rir')}
               <input

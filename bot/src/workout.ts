@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { PoolClient } from 'pg'
 import { pool } from './db.js'
 import type { ExerciseEntry } from './parser.js'
+import { calendarCadence } from './cadence.js'
 
 export interface WorkoutItem {
   id: string
@@ -159,9 +160,10 @@ async function createNextSession(client: PoolClient, ownerId: string) {
   const items = await loadItems(client, ownerId, slot.template_id)
   const snapshot = createPlanSnapshot(slot.template_id, slot.template_name, ownerId, items)
   await client.query(`insert into workout_sessions
-    (id,owner_id,program_id,template_id,plan_snapshot,cycle_number,block_number,status,started_at)
-    values ($1,$2,$3,$4,$5,$6,$7,'em_andamento',now())`,
-  [id, ownerId, slot.program_id, slot.template_id, JSON.stringify(snapshot), slot.cycle_number, slot.block_number])
+    (id,owner_id,program_id,template_id,plan_snapshot,cycle_number,block_number,period_number,status,started_at)
+    values ($1,$2,$3,$4,$5,$6,$7,$8,'em_andamento',now())`,
+  [id, ownerId, slot.program_id, slot.template_id, JSON.stringify(snapshot),
+    slot.cycle_number, slot.block_number, slot.period_number])
   return { id, template_id: slot.template_id, template_name: slot.template_name, plan_snapshot: snapshot }
 }
 
@@ -170,14 +172,19 @@ async function nextWorkoutSlot(client: PoolClient, ownerId: string) {
   if (!program) return null
   const templates = (await client.query(`select id,name from templates where owner_id=$1 and program_id=$2 and deleted_at is null order by position`, [ownerId, program.id])).rows
   if (!templates.length) return null
-  const history = (await client.query(`select template_id from workout_sessions where owner_id=$1 and status in ('concluida','incompleta') and deleted_at is null order by started_at`, [ownerId])).rows
+  const history = (await client.query(`select template_id from workout_sessions where owner_id=$1 and program_id=$2 and status in ('concluida','incompleta') and deleted_at is null order by started_at`, [ownerId, program.id])).rows
   const lastIndex = templates.findIndex((template) => template.id === history.at(-1)?.template_id)
   const template = templates[(lastIndex + 1) % templates.length]!
   const cycleNumber = Math.floor(history.length / Math.max(1, program.sessions_per_cycle)) + 1
-  const blockNumber = Math.floor((cycleNumber - 1) / Math.max(1, program.cycles_per_block)) + 1
+  const cadence = calendarCadence(
+    new Date(program.started_at ?? program.created_at),
+    Math.max(1, program.block_duration_weeks),
+    Math.max(1, program.period_duration_months),
+    new Date(),
+  )
   return {
     program_id: program.id, template_id: template.id, template_name: template.name,
-    cycle_number: cycleNumber, block_number: blockNumber,
+    cycle_number: cycleNumber, block_number: cadence.blockNumber, period_number: cadence.periodNumber,
   }
 }
 

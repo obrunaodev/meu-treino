@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  assignCycleNumbers, averageIntervalDays, blockJustClosed, currentStreak, cyclePosition,
+  assignCycleNumbers, averageIntervalDays, blockJustClosed, calendarTrainingPosition,
+  currentStreak, cyclePosition,
   groupSessionsByBlock, nextTemplate,
 } from '../src/lib/domain/cycle'
 
@@ -76,6 +77,23 @@ describe('cyclePosition', () => {
 
   it('trata configuração degenerada sem dividir por zero', () => {
     expect(cyclePosition(0, 0, 5).cycleNumber).toBe(6)
+  })
+})
+
+describe('calendarTrainingPosition', () => {
+  it('A e B fecham um ciclo sem depender da duração do bloco', () => {
+    const position = calendarTrainingPosition(2, 2, '2026-01-01T12:00:00Z', 2, 1, new Date('2026-01-05T12:00:00Z'))
+    expect(position.cycleNumber).toBe(2)
+  })
+
+  it('avança o bloco pela quantidade configurada de semanas', () => {
+    const position = calendarTrainingPosition(2, 1, '2026-01-01T12:00:00Z', 2, 3, new Date('2026-01-16T12:00:00Z'))
+    expect(position).toMatchObject({ blockNumber: 2, periodNumber: 1 })
+  })
+
+  it('reinicia os blocos quando abre outro período mensal', () => {
+    const position = calendarTrainingPosition(2, 4, '2026-01-10T12:00:00Z', 1, 1, new Date('2026-02-10T12:00:00Z'))
+    expect(position).toMatchObject({ blockNumber: 1, periodNumber: 2, cycleNumber: 3 })
   })
 })
 

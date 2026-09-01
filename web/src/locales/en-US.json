@@ -152,7 +152,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "cycle": "Cycle {{cycle}} · block {{block}}",
+    "cycle": "Cycle {{cycle}} · block {{block}} · period {{period}}",
     "empty": "No sessions recorded. Charts stay empty until your first workout.",
     "start_first": "Do the first workout",
     "next": "Next session",
@@ -174,6 +174,8 @@
     "block_review": "Block review",
     "weeks_value_one": "{{count}} week",
     "weeks_value_other": "{{count}} weeks",
+    "period_value_one": "complete period: {{count}} month",
+    "period_value_other": "complete period: {{count}} months",
     "block_no_pace": "complete one more workout to estimate",
     "metric_weight": "Top load",
     "metric_volume": "Volume",
@@ -282,10 +284,13 @@
     },
     "bloco": {
       "title": "Block and rest",
-      "desc": "How many cycles close a block, and what changes when it does."
+      "desc": "Set the block length in weeks and the complete period in months."
     },
     "block": {
       "cycles": "Cycles per block",
+      "weeks": "Block length (weeks)",
+      "period_months": "Complete period (months)",
+      "calendar_hint": "A cycle remains one pass through workouts A, B, and the rest. Blocks and periods follow the calendar.",
       "rir": "RIR change when the block closes",
       "rir_hint": "A suggestion, never applied on its own: you confirm it.",
       "rest": "Default rest (seconds)"
@@ -551,6 +556,7 @@
     "list": "All sessions",
     "by_cycle": "Sessions by block and cycle",
     "block": "Block {{number}}",
+    "period": "Period {{number}}",
     "cycle": "Cycle {{number}}",
     "cycles_count": "{{count}} cycle",
     "cycles_count_other": "{{count}} cycles",
@@ -600,7 +606,16 @@
     "clear": "Delete history",
     "clear_hint": "Deletes sessions, sets, pain and test results. Program and exercises stay.",
     "clear_confirm": "Really delete? This cannot be undone.",
-    "program": "Program"
+    "program": "Program",
+    "cycle_structure": "Cycle structure",
+    "cycle_workouts_one": "{{count}} workout per cycle",
+    "cycle_workouts_other": "{{count}} workouts per cycle",
+    "cycle_structure_hint": "One pass through every workout forms a complete cycle.",
+    "manage_cycle": "Manage cycle workouts",
+    "block_weeks": "Block length (weeks)",
+    "period_months": "Complete period (months)",
+    "cadence_hint": "Changes apply to future sessions. History keeps its recorded numbering.",
+    "block_rir": "RIR change when the block closes"
   },
   "conflicts": {
     "title": "Sync conflicts",

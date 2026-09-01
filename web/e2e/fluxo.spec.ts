@@ -198,6 +198,12 @@ test.describe('jornada completa', () => {
 
   test('configuração do WhatsApp funciona em mobile e desktop', async () => {
     await page.getByRole('link', { name: /configurações/i }).first().click()
+    await expect(page.getByLabel(/duração do bloco/i)).toHaveValue('2')
+    await expect(page.getByLabel(/período completo/i)).toHaveValue('1')
+    await expect(page.getByText(/2 treinos por ciclo/i)).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+    await page.setViewportSize({ width: 1280, height: 800 })
     await page.getByRole('link', { name: /^WhatsApp$/i }).click()
     await expect(page.getByRole('heading', { name: /^WhatsApp$/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /conectar WhatsApp/i })).toBeVisible()
@@ -236,6 +242,7 @@ test.describe('jornada completa', () => {
   test('o histórico mostra a sessão concluída', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
+    await expect(page.getByRole('heading', { name: 'Período 1' })).toBeVisible()
     await expect(page.getByText('Bloco 1', { exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Ciclo 1' })).toBeVisible()
     await expect(page.locator('.history-sessions')).toContainText('Treino A')

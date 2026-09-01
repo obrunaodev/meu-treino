@@ -287,6 +287,7 @@ p { margin: 0; line-height: 1.55; }
 
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack--tight { gap: 8px; }
+.setting-summary { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
@@ -823,6 +824,8 @@ p { margin: 0; line-height: 1.55; }
 
 .history-groups, .history-program, .history-block__body { display: flex; flex-direction: column; gap: 12px; }
 .history-program__name { font-size: 15px; font-weight: 600; }
+.history-period { display: flex; flex-direction: column; gap: 10px; }
+.history-period > h3 { font-size: 15px; font-weight: 600; }
 .history-block { border: 1px solid var(--line); border-radius: var(--r-field); overflow: clip; }
 .history-block > summary {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;

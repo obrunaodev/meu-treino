@@ -25,7 +25,7 @@ export function toCsv(headers: string[], rows: CsvValue[][]): string {
 }
 
 export const SET_LOG_HEADERS = [
-  'sessao_id', 'data', 'ciclo', 'bloco', 'treino', 'status_sessao',
+  'sessao_id', 'data', 'periodo', 'bloco', 'ciclo', 'treino', 'status_sessao',
   'exercicio', 'equipamento', 'serie', 'aquecimento', 'lado',
   // `carga_por_lado` acompanha `carga_kg` porque o número sozinho é ambíguo
   // em máquina articulada: 40 pode ser 40 ou 80 no total.

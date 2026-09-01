@@ -257,8 +257,8 @@ export const exerciseSubstitutions = pgTable('exercise_substitutions', {
 
 /**
  * O ciclo é o eixo do app, não o calendário. `sessionsPerCycle` é o tamanho da
- * lista ordenada de templates; `cyclesPerBlock` fecha o bloco, e ao fechar o
- * app SUGERE `rirDeltaPerBlock` (o usuário confirma, nunca aplica sozinho).
+ * lista ordenada de templates. Blocos e períodos são medidos em calendário;
+ * ao fechar um bloco o app SUGERE `rirDeltaPerBlock`.
  *
  * `scheduleMode`:
  *   'continuous' — o ciclo avança a cada sessão concluída, sem data.
@@ -269,6 +269,9 @@ export const programs = pgTable('programs', {
   name: text('name').notNull(),
   scheduleMode: text('schedule_mode').notNull().default('continuous'),
   sessionsPerCycle: smallint('sessions_per_cycle').notNull().default(2),
+  blockDurationWeeks: smallint('block_duration_weeks').notNull().default(2),
+  periodDurationMonths: smallint('period_duration_months').notNull().default(1),
+  /** Mantido para clientes antigos; novos cálculos usam `blockDurationWeeks`. */
   cyclesPerBlock: smallint('cycles_per_block').notNull().default(4),
   rirDeltaPerBlock: smallint('rir_delta_per_block').notNull().default(-1),
   defaultRestSeconds: integer('default_rest_seconds').notNull().default(90),
@@ -324,6 +327,7 @@ export const workoutSessions = pgTable('workout_sessions', {
   planSnapshot: jsonb('plan_snapshot'),
   cycleNumber: integer('cycle_number').notNull().default(1),
   blockNumber: integer('block_number').notNull().default(1),
+  periodNumber: integer('period_number').notNull().default(1),
   status: text('status').notNull().default('em_andamento'),
   startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
   endedAt: timestamp('ended_at', { withTimezone: true }),

@@ -42,8 +42,9 @@ export async function buildSetLogCsv(): Promise<Blob> {
       return [
         set.sessionId,
         session?.startedAt ?? '',
-        session?.cycleNumber ?? '',
+        session?.periodNumber ?? 1,
         session?.blockNumber ?? '',
+        session?.cycleNumber ?? '',
         session ? session.planSnapshot?.templateName ?? templateById.get(session.templateId)?.name ?? '' : '',
         session?.status ?? '',
         snapshotItem?.exerciseName ?? exercise?.name ?? '',

@@ -6,8 +6,8 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { routes, sessionRoute } from '../lib/routes.js'
-import { blockJustClosed, currentStreak, cyclePosition, nextTemplate } from '../lib/domain/cycle.js'
-import { sessionsByWeek, weeksToBlockEnd } from '../lib/domain/dashboard.js'
+import { calendarTrainingPosition, currentStreak, nextTemplate } from '../lib/domain/cycle.js'
+import { sessionsByWeek } from '../lib/domain/dashboard.js'
 import { Card, Empty } from '../components/ui.js'
 import { DashboardAnalytics } from '../components/DashboardAnalytics.js'
 
@@ -20,30 +20,32 @@ export function Dashboard() {
   const openSession = useOpenSession()
   const { startSession } = useActions()
 
-  const [dismissedBlock, setDismissedBlock] = useState<number | null>(null)
-  const finished = sessions.filter((s) => s.status !== 'em_andamento')
-  const upcoming = nextTemplate(templates, sessions)
+  const [dismissedBlock, setDismissedBlock] = useState<string | null>(null)
+  const programSessions = sessions.filter((session) => session.programId === program?.id)
+  const finished = programSessions.filter((session) => session.status !== 'em_andamento')
+  const upcoming = nextTemplate(templates, programSessions)
   const currentItems = useTemplateItems(upcoming?.id)
   const items = openSession?.planSnapshot?.items ?? currentItems
-  const position = cyclePosition(
+  const position = calendarTrainingPosition(
     program?.sessionsPerCycle ?? 1,
-    program?.cyclesPerBlock ?? 1,
     finished.length,
+    program?.startedAt ?? program?.createdAt ?? new Date().toISOString(),
+    program?.blockDurationWeeks ?? 2,
+    program?.periodDurationMonths ?? 1,
   )
 
   const completed = finished.filter((session) => session.status === 'concluida').length
   const adherence = finished.length === 0 ? 0 : Math.round((completed / finished.length) * 100)
-  const streak = currentStreak(sessions)
+  const streak = currentStreak(programSessions)
   const sessionsInCycle = finished.length % (program?.sessionsPerCycle ?? 1)
-  const blockWeeks = weeksToBlockEnd(position.sessionsToBlockEnd, sessions)
-  const sessionsPerBlock = (program?.sessionsPerCycle ?? 1) * (program?.cyclesPerBlock ?? 1)
-  const blockDone = sessionsPerBlock - position.sessionsToBlockEnd
-  const currentWeekSessions = sessionsByWeek(sessions).at(-1)?.value ?? 0
+  const currentWeekSessions = sessionsByWeek(programSessions).at(-1)?.value ?? 0
+  const blockKey = `${position.periodNumber}:${position.blockNumber}`
+  const lastFinished = finished.at(-1)
 
   const blockClosed =
-    program &&
-    blockJustClosed(program.sessionsPerCycle, program.cyclesPerBlock, finished.length) &&
-    dismissedBlock !== position.blockNumber
+    lastFinished &&
+    ((lastFinished.periodNumber ?? 1) !== position.periodNumber || lastFinished.blockNumber !== position.blockNumber) &&
+    dismissedBlock !== blockKey
 
   async function begin() {
     if (!program || !upcoming) return
@@ -52,6 +54,7 @@ export function Dashboard() {
       upcoming.id,
       position.cycleNumber,
       position.blockNumber,
+      position.periodNumber,
     )
     navigate(sessionRoute(session.id))
   }
@@ -68,13 +71,14 @@ export function Dashboard() {
       />
     )
   }
-
   return (
     <div className="page dashboard">
       <header className="dashboard__head">
         <div className="page__title">
           <span className="eyebrow">
-            {t('dashboard.cycle', { cycle: position.cycleNumber, block: position.blockNumber })}
+            {t('dashboard.cycle', {
+              cycle: position.cycleNumber, block: position.blockNumber, period: position.periodNumber,
+            })}
           </span>
           <h1>{t('dashboard.title')}</h1>
           <p className="page__description">{t('pages.dashboard')}</p>
@@ -88,7 +92,7 @@ export function Dashboard() {
         <Card tone="quiet">
           <p>
             {t('dashboard.block_closed', {
-              block: position.blockNumber - 1,
+              block: lastFinished?.blockNumber,
               delta: program.rirDeltaPerBlock > 0 ? `+${program.rirDeltaPerBlock}` : program.rirDeltaPerBlock,
             })}
           </p>
@@ -99,7 +103,7 @@ export function Dashboard() {
             <button
               type="button"
               className="button button--ghost"
-              onClick={() => setDismissedBlock(position.blockNumber)}
+              onClick={() => setDismissedBlock(blockKey)}
             >
               {t('dashboard.block_dismiss')}
             </button>
@@ -136,12 +140,10 @@ export function Dashboard() {
             <DashboardMetric label={t('dashboard.cycle_progress')} value={`${sessionsInCycle}/${program.sessionsPerCycle}`} hint={t('dashboard.cycle_progress_hint')} />
             <DashboardMetric
               label={t('dashboard.block_review')}
-              value={blockWeeks === null ? '—' : t('dashboard.weeks_value', { count: blockWeeks })}
-              hint={blockWeeks === null
-                ? t('dashboard.block_no_pace')
-                : t('dashboard.block_remaining', { count: position.sessionsToBlockEnd })}
+              value={t('dashboard.weeks_value', { count: program.blockDurationWeeks ?? 2 })}
+              hint={t('dashboard.period_value', { count: program.periodDurationMonths ?? 1 })}
               tone="quiet"
-              progress={{ value: blockDone, max: sessionsPerBlock }}
+              progress={{ value: position.blockProgress, max: 1 }}
             />
           </div>
 

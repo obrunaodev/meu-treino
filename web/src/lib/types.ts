@@ -68,6 +68,8 @@ export interface Program extends Base {
   name: string
   scheduleMode: 'continuous' | 'weekly'
   sessionsPerCycle: number
+  blockDurationWeeks?: number
+  periodDurationMonths?: number
   cyclesPerBlock: number
   rirDeltaPerBlock: number
   defaultRestSeconds: number
@@ -112,6 +114,7 @@ export interface WorkoutSession extends Base {
   planSnapshot: PlanSnapshot | null
   cycleNumber: number
   blockNumber: number
+  periodNumber?: number
   status: SessionStatus
   startedAt: string
   endedAt: string | null

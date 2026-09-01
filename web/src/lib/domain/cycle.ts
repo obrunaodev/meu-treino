@@ -14,6 +14,9 @@ export interface CycleSession {
   templateId: string
   status: string
   startedAt: string
+  cycleNumber?: number
+  blockNumber?: number
+  periodNumber?: number
 }
 
 export interface CyclePosition {
@@ -21,6 +24,13 @@ export interface CyclePosition {
   blockNumber: number
   /** Quantas sessões faltam para fechar o bloco corrente. */
   sessionsToBlockEnd: number
+}
+
+export interface CalendarTrainingPosition {
+  cycleNumber: number
+  blockNumber: number
+  periodNumber: number
+  blockProgress: number
 }
 
 export interface CycleSessionGroup<T extends CycleSession> {
@@ -80,6 +90,47 @@ export function cyclePosition(
   return { cycleNumber, blockNumber, sessionsToBlockEnd }
 }
 
+/** Posição atual: ciclo por sessões; bloco e período por tempo de calendário. */
+export function calendarTrainingPosition(
+  sessionsPerCycle: number,
+  completedSessions: number,
+  programStartedAt: string,
+  blockDurationWeeks: number,
+  periodDurationMonths: number,
+  at = new Date(),
+): CalendarTrainingPosition {
+  const anchor = new Date(programStartedAt)
+  const safeAt = at < anchor ? anchor : at
+  const periodMonths = Math.max(1, periodDurationMonths)
+  const elapsedMonths = completedCalendarMonths(anchor, safeAt)
+  const periodNumber = Math.floor(elapsedMonths / periodMonths) + 1
+  const periodStart = addCalendarMonths(anchor, (periodNumber - 1) * periodMonths)
+  const blockMilliseconds = Math.max(1, blockDurationWeeks) * 7 * 86_400_000
+  const elapsedInPeriod = Math.max(0, safeAt.getTime() - periodStart.getTime())
+
+  return {
+    cycleNumber: Math.floor(completedSessions / Math.max(1, sessionsPerCycle)) + 1,
+    blockNumber: Math.floor(elapsedInPeriod / blockMilliseconds) + 1,
+    periodNumber,
+    blockProgress: (elapsedInPeriod % blockMilliseconds) / blockMilliseconds,
+  }
+}
+
+function completedCalendarMonths(from: Date, to: Date) {
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth()
+  if (addCalendarMonths(from, months) > to) months -= 1
+  return Math.max(0, months)
+}
+
+function addCalendarMonths(date: Date, months: number) {
+  const result = new Date(date)
+  const targetMonth = result.getMonth() + months
+  result.setDate(1)
+  result.setMonth(targetMonth)
+  result.setDate(Math.min(date.getDate(), new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate()))
+  return result
+}
+
 /**
  * O bloco fechou quando a próxima sessão abre um bloco novo. Só sinaliza —
  * quem aplica a mudança de RIR é o usuário, nunca o app sozinho.
@@ -124,7 +175,11 @@ export function groupSessionsByBlock<T extends CycleSession>(
   let completedSessions = 0
 
   for (const session of [...sessions].sort((a, b) => a.startedAt.localeCompare(b.startedAt))) {
-    const position = cyclePosition(sessionsPerCycle, cyclesPerBlock, completedSessions)
+    const derived = cyclePosition(sessionsPerCycle, cyclesPerBlock, completedSessions)
+    const position = {
+      cycleNumber: session.cycleNumber ?? derived.cycleNumber,
+      blockNumber: session.blockNumber ?? derived.blockNumber,
+    }
     const cycles = blocks.get(position.blockNumber) ?? new Map<number, T[]>()
     const groupedSessions = cycles.get(position.cycleNumber) ?? []
     groupedSessions.push(session)

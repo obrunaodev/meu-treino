@@ -152,7 +152,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "cycle": "Ciclo {{cycle}} · bloco {{block}}",
+    "cycle": "Ciclo {{cycle}} · bloco {{block}} · período {{period}}",
     "empty": "Nenhuma sessão registrada. Os gráficos ficam vazios até o primeiro treino.",
     "start_first": "Fazer o primeiro treino",
     "next": "Próxima sessão",
@@ -174,6 +174,8 @@
     "block_review": "Revisão do bloco",
     "weeks_value_one": "{{count}} semana",
     "weeks_value_other": "{{count}} semanas",
+    "period_value_one": "período completo: {{count}} mês",
+    "period_value_other": "período completo: {{count}} meses",
     "block_no_pace": "faça mais um treino para estimar",
     "metric_weight": "Carga máxima",
     "metric_volume": "Volume",
@@ -282,10 +284,13 @@
     },
     "bloco": {
       "title": "Bloco e descanso",
-      "desc": "Quantos ciclos fecham um bloco, e o que muda quando ele fecha."
+      "desc": "Defina a duração do bloco em semanas e do período completo em meses."
     },
     "block": {
       "cycles": "Ciclos por bloco",
+      "weeks": "Duração do bloco (semanas)",
+      "period_months": "Período completo (meses)",
+      "calendar_hint": "O ciclo continua sendo uma volta pelos treinos A, B e demais. Bloco e período seguem o calendário.",
       "rir": "Mudança de RIR ao fechar o bloco",
       "rir_hint": "Sugestão, nunca aplicada sozinha: você confirma na hora.",
       "rest": "Descanso padrão (segundos)"
@@ -551,6 +556,7 @@
     "list": "Todas as sessões",
     "by_cycle": "Sessões por bloco e ciclo",
     "block": "Bloco {{number}}",
+    "period": "Período {{number}}",
     "cycle": "Ciclo {{number}}",
     "cycles_count": "{{count}} ciclo",
     "cycles_count_other": "{{count}} ciclos",
@@ -600,7 +606,16 @@
     "clear": "Apagar histórico",
     "clear_hint": "Apaga sessões, séries, dor e resultados de teste. Programa e exercícios ficam.",
     "clear_confirm": "Apagar mesmo? Isso não tem volta.",
-    "program": "Programa"
+    "program": "Programa",
+    "cycle_structure": "Estrutura do ciclo",
+    "cycle_workouts_one": "{{count}} treino por ciclo",
+    "cycle_workouts_other": "{{count}} treinos por ciclo",
+    "cycle_structure_hint": "Uma volta por todos os treinos forma um ciclo completo.",
+    "manage_cycle": "Gerenciar treinos do ciclo",
+    "block_weeks": "Duração do bloco (semanas)",
+    "period_months": "Período completo (meses)",
+    "cadence_hint": "Mudanças valem para as próximas sessões. O histórico mantém os números já registrados.",
+    "block_rir": "Mudança de RIR ao fechar o bloco"
   },
   "conflicts": {
     "title": "Conflitos de sincronização",

@@ -63,11 +63,16 @@ export function History() {
         id: programId,
         name: program?.name ?? t('history.gone_program'),
         latestAt: entries.at(-1)?.startedAt ?? '',
-        blocks: groupSessionsByBlock(
-          entries,
-          program?.sessionsPerCycle ?? Math.max(1, entries[0]?.cycleNumber ?? 1),
-          program?.cyclesPerBlock ?? Math.max(1, entries[0]?.blockNumber ?? 1),
-        ),
+        periods: [...new Set(entries.map((entry) => entry.periodNumber ?? 1))]
+          .sort((a, b) => b - a)
+          .map((periodNumber) => ({
+            periodNumber,
+            blocks: groupSessionsByBlock(
+              entries.filter((entry) => (entry.periodNumber ?? 1) === periodNumber),
+              program?.sessionsPerCycle ?? 1,
+              program?.cyclesPerBlock ?? 1,
+            ),
+          })),
       }
     }).sort((a, b) => b.latestAt.localeCompare(a.latestAt))
   }, [programs, sessions, t])
@@ -170,8 +175,11 @@ export function History() {
               {sessionGroups.map((programGroup) => (
                 <section key={programGroup.id} className="history-program">
                   {sessionGroups.length > 1 && <h3 className="history-program__name">{programGroup.name}</h3>}
-                  {programGroup.blocks.map((block, blockIndex) => (
-                    <details key={block.blockNumber} className="history-block" open={blockIndex === 0}>
+                  {programGroup.periods.map((period, periodIndex) => (
+                    <section key={period.periodNumber} className="history-period">
+                      <h3>{t('history.period', { number: period.periodNumber })}</h3>
+                      {period.blocks.map((block, blockIndex) => (
+                    <details key={block.blockNumber} className="history-block" open={periodIndex === 0 && blockIndex === 0}>
                       <summary>
                         <span>{t('history.block', { number: block.blockNumber })}</span>
                         <span className="mono muted">
@@ -203,6 +211,8 @@ export function History() {
                         ))}
                       </div>
                     </details>
+                      ))}
+                    </section>
                   ))}
                 </section>
               ))}

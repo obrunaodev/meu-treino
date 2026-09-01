@@ -95,6 +95,11 @@ class TreinoDB extends Dexie {
     this.version(4).stores(stores).upgrade(async (tx) => {
       await tx.table('meta').delete('cursor')
     })
+
+    // Recarrega a cadência temporal adicionada a programas e sessões.
+    this.version(5).stores(stores).upgrade(async (tx) => {
+      await tx.table('meta').clear()
+    })
   }
 
   table_(entity: SyncEntity) {
