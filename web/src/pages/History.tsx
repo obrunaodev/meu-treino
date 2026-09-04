@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { historyRoute } from '../lib/routes.js'
+import { blockReportRoute, cycleReportRoute, historyRoute } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { usePrograms, useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
@@ -179,17 +179,32 @@ export function History() {
                     <section key={period.periodNumber} className="history-period">
                       <h3>{t('history.period', { number: period.periodNumber })}</h3>
                       {period.blocks.map((block, blockIndex) => (
-                    <details key={block.blockNumber} className="history-block" open={periodIndex === 0 && blockIndex === 0}>
-                      <summary>
-                        <span>{t('history.block', { number: block.blockNumber })}</span>
-                        <span className="mono muted">
-                          {t('history.cycles_count', { count: block.cycles.length })}
-                        </span>
-                      </summary>
-                      <div className="history-block__body">
-                        {block.cycles.map((cycle) => (
-                          <section key={cycle.cycleNumber} className="history-cycle">
-                            <h4>{t('history.cycle', { number: cycle.cycleNumber })}</h4>
+                        <details key={block.blockNumber} className="history-block" open={periodIndex === 0 && blockIndex === 0}>
+                          <summary>
+                            <span>{t('history.block', { number: block.blockNumber })}</span>
+                            <span className="history-block__actions">
+                              <Link
+                                to={blockReportRoute(programGroup.id, period.periodNumber, block.blockNumber)}
+                                onClick={(event) => event.stopPropagation()}
+                                aria-label={t('reports.open_block', { number: block.blockNumber })}
+                              >
+                                {t('reports.view')}
+                              </Link>
+                              <span className="mono muted">{t('history.cycles_count', { count: block.cycles.length })}</span>
+                            </span>
+                          </summary>
+                          <div className="history-block__body">
+                            {block.cycles.map((cycle) => (
+                              <section key={cycle.cycleNumber} className="history-cycle">
+                                <div className="history-cycle__head">
+                                  <h4>{t('history.cycle', { number: cycle.cycleNumber })}</h4>
+                                  <Link
+                                    to={cycleReportRoute(programGroup.id, cycle.cycleNumber)}
+                                    aria-label={t('reports.open_cycle', { number: cycle.cycleNumber })}
+                                  >
+                                    {t('reports.view')}
+                                  </Link>
+                                </div>
                             <ul className="history-sessions">
                               {cycle.sessions.map((session) => {
                                 const template = templates.find((candidate) => candidate.id === session.templateId)
@@ -207,10 +222,10 @@ export function History() {
                                 )
                               })}
                             </ul>
-                          </section>
-                        ))}
-                      </div>
-                    </details>
+                              </section>
+                            ))}
+                          </div>
+                        </details>
                       ))}
                     </section>
                   ))}

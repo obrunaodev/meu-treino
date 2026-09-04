@@ -247,6 +247,19 @@ test.describe('jornada completa', () => {
     await expect(page.getByRole('heading', { name: 'Ciclo 1' })).toBeVisible()
     await expect(page.locator('.history-sessions')).toContainText('Treino A')
 
+    await page.getByRole('link', { name: /relatório do ciclo 1/i }).click()
+    await expect(page.getByRole('heading', { name: /relatório do ciclo 1/i })).toBeVisible()
+    await expect(page.getByText('100%', { exact: true })).toBeVisible()
+    await page.getByRole('link', { name: /voltar/i }).click()
+    await expect(page.getByRole('heading', { name: /histórico de treinos/i })).toBeVisible()
+    await page.getByRole('link', { name: /relatório do bloco 1/i }).click()
+    await expect(page.getByRole('heading', { name: /relatório do bloco 1/i })).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+    await page.getByRole('link', { name: /voltar/i }).click()
+    await expect(page.getByRole('heading', { name: /histórico de treinos/i })).toBeVisible()
+    await page.setViewportSize({ width: 1280, height: 800 })
+
     const currentMonth = await page.locator('.card__title').first().textContent()
     await page.getByRole('button', { name: /mês anterior/i }).click()
     await expect(page.locator('.card__title').first()).not.toHaveText(currentMonth)
@@ -276,6 +289,9 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByRole('heading', { name: /treino a/i })).toBeVisible()
     await expect(page.locator('.page__title')).toContainText(/3 séries/i)
+    await expect(page.getByRole('heading', { name: /resumo do relatório/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /detalhamento por exercício/i })).toBeVisible()
+    await expect(page.getByText('100%', { exact: true })).toBeVisible()
 
     // O primeiro exercício já vem aberto; subir a carga é o caso real de ter
     // registrado errado na academia.

@@ -12,6 +12,8 @@ import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
 import { routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
+import { TrainingReportView } from '../components/TrainingReportView.js'
+import { buildTrainingReport } from '../lib/domain/training-report.js'
 import type { PlanSnapshot, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 
 const STATUSES = ['concluida', 'incompleta', 'em_andamento'] as const
@@ -35,6 +37,8 @@ export function SessionDetail() {
   const currentPlan = useTemplateItems(session?.templateId)
   const planned = session?.planSnapshot?.items ?? currentPlan
   const cardio = useCardioLogs(sessionId)
+  const exercises = useExercises()
+  const pain = usePainEvents().filter((event) => event.sessionId === sessionId)
   const settings = useSettings()
   const { updateSession, deleteSession } = useActions()
   const [confirming, setConfirming] = useState(false)
@@ -44,6 +48,9 @@ export function SessionDetail() {
   const template = templates.find((x) => x.id === session.templateId)
   const working = logs.filter((l) => !l.isWarmup && !l.skipped)
   const date = new Date(session.startedAt)
+  const report = buildTrainingReport(
+    [session], logs, cardio, pain, new Map(exercises.map((exercise) => [exercise.id, exercise.name])),
+  )
 
   async function destroy() {
     await deleteSession(session!.id)
@@ -71,6 +78,8 @@ export function SessionDetail() {
           {t('history.sets', { count: working.length })}
         </span>
       </header>
+
+      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} />
 
       <Card title={t('history.session')}>
         <Select

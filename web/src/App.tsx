@@ -23,6 +23,7 @@ import { More } from './pages/More.js'
 import { SessionDetail } from './pages/SessionDetail.js'
 import { SessionGate } from './pages/SessionGate.js'
 import { WhatsApp } from './pages/WhatsApp.js'
+import { TrainingReport } from './pages/TrainingReport.js'
 import { routes } from './lib/routes.js'
 
 /**
@@ -77,6 +78,8 @@ function Authed() {
           <Route path={routes.pain} element={<Pain />} />
           <Route path={routes.functionalTests} element={<Tests />} />
           <Route path={routes.history} element={<History />} />
+          <Route path={`${routes.history}/reports/cycle/:programId/:cycleNumber`} element={<TrainingReport scope="cycle" />} />
+          <Route path={`${routes.history}/reports/period/:periodNumber/block/:programId/:blockNumber`} element={<TrainingReport scope="block" />} />
           <Route path={`${routes.history}/:sessionId`} element={<SessionDetail />} />
           <Route path={routes.settings} element={<Settings />} />
           <Route path={routes.conflicts} element={<Conflicts />} />
