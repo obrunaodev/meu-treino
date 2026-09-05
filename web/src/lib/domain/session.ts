@@ -77,6 +77,21 @@ export function prescribedResult(repMin: number | null, repMax: number | null): 
   return repMax ?? repMin
 }
 
+/** Chooses defaults for the next set without overriding work already done today. */
+export function previousSetForDraft<T extends { setIndex: number }>(
+  currentSets: T[],
+  previousSessionSets: T[],
+  nextSetIndex: number,
+  trackingMode: 'compact' | 'full',
+): T | null {
+  const current = currentSets.at(-1)
+  if (current) return current
+  if (trackingMode === 'full') {
+    return previousSessionSets.find((set) => set.setIndex === nextSetIndex) ?? previousSessionSets.at(-1) ?? null
+  }
+  return previousSessionSets.at(-1) ?? null
+}
+
 interface SessionReference {
   id: string
   templateId: string

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
-import { prescribedResult, previousTemplateSession } from '../lib/domain/session.js'
+import { prescribedResult, previousSetForDraft, previousTemplateSession } from '../lib/domain/session.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '../lib/types.js'
@@ -101,9 +101,8 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const previous = useMemo(() => currentSession ? previousTemplateSession(currentSession, sessions) : null, [currentSession, sessions])
   const previousLogs = allLogs.filter((log) => log.sessionId === previous?.id && log.exerciseId === item.exerciseId && !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
   const setIndex = workLogs.length
-  const source = (item.trackingMode ?? 'compact') === 'full'
-    ? previousLogs.find((log) => log.setIndex === setIndex) ?? workLogs.at(-1) ?? previousLogs.at(-1)
-    : workLogs.at(-1) ?? previousLogs.at(-1)
+  const source = previousSetForDraft(workLogs, previousLogs, setIndex, item.trackingMode ?? 'compact')
+  const sourceKey = source ? `${source.id}:${source.updatedAt}` : 'none'
   const defaultResult = item.isTimeBased ? source?.seconds : source?.reps
   const initialDraft = (): Draft => ({
     kg: source?.weightKg ?? null, plate: source?.plateCount ?? null,
@@ -114,7 +113,9 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const [showPain, setShowPain] = useState(false)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
 
-  useEffect(() => setDraft(initialDraft()), [item.id, setIndex])
+  // O histórico chega do IndexedDB depois do primeiro render; a chave garante
+  // que a primeira série seja preenchida assim que esse registro aparecer.
+  useEffect(() => setDraft(initialDraft()), [item.id, setIndex, sourceKey])
   useEffect(() => {
     if (!exercise?.catalogExerciseId) return
     let current = true

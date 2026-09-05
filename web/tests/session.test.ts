@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  exerciseProgress, groupByExercise, prescribedResult, previousTemplateSession, remainingSeconds, restFor,
+  exerciseProgress, groupByExercise, prescribedResult, previousSetForDraft, previousTemplateSession, remainingSeconds, restFor,
   sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
@@ -107,6 +107,23 @@ describe('prescribedResult', () => {
 
   it('aceita prescrição de valor único', () => {
     expect(prescribedResult(12, null)).toBe(12)
+  })
+})
+
+describe('previousSetForDraft', () => {
+  const previous = [
+    { setIndex: 0, weightKg: 70 },
+    { setIndex: 1, weightKg: 65 },
+  ]
+
+  it('prefills the first set from the matching set of the previous session', () => {
+    expect(previousSetForDraft([], previous, 0, 'full')?.weightKg).toBe(70)
+  })
+
+  it('copies the immediately preceding set during the current session', () => {
+    const current = [{ setIndex: 0, weightKg: 80 }]
+    expect(previousSetForDraft(current, previous, 1, 'full')?.weightKg).toBe(80)
+    expect(previousSetForDraft(current, previous, 1, 'compact')?.weightKg).toBe(80)
   })
 })
 
