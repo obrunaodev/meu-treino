@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
-import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
+import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
 import { prescribedResult, previousTemplateSession } from '../lib/domain/session.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
@@ -10,7 +10,7 @@ import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '..
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
 import { RirSelector } from './RirSelector.js'
-import { Modal, Stepper } from './ui.js'
+import { Modal, NumberStepper } from './ui.js'
 
 export type SessionChecklistItem = TemplateItem | PlanSnapshotItem
 
@@ -160,6 +160,13 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     setDraft((current) => ({ ...current, ...nextLoadStep(gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, { kg: current.kg, plate: current.plate }, direction) }))
   }
 
+  function typeLoad(displayValue: number | null) {
+    const normalized = displayValue === null ? null : Math.min(settings?.unit === 'lb' ? 2202 : 999, Math.max(0, displayValue))
+    const kg = normalized === null ? null : settings?.unit === 'lb' ? lbToKg(normalized) : normalized
+    const plate = kg !== null && gear?.loadType === 'pino' ? plateForKg(gear, kg) : null
+    setDraft((current) => ({ ...current, kg, plate }))
+  }
+
   if (resting) return <section className="session-focus session-rest">
     <span className="eyebrow">{t('session.rest_before_set', { number: setIndex + 1 })}</span>
     <strong className="clock">{Math.floor(restRemaining / 60)}:{String(restRemaining % 60).padStart(2, '0')}</strong>
@@ -184,12 +191,27 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     </header>
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
     <div className="session-focus__fields">
-      <Stepper
+      <NumberStepper
         label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
-        value={formatLoad(draft.kg, draft.plate, settings?.unit ?? 'kg', settings?.showPlates ?? true, loadPerSide ? t('session.per_side_short') : null)}
+        value={draft.kg === null ? null : settings?.unit === 'lb' ? Number(kgToLb(draft.kg).toFixed(1)) : draft.kg}
+        suffix={loadPerSide ? `${settings?.unit ?? 'kg'}/${t('session.per_side_short')}` : settings?.unit ?? 'kg'}
+        step={0.5}
+        max={settings?.unit === 'lb' ? 2202 : 999}
+        onChange={typeLoad}
         onStep={stepLoad}
       />
-      <Stepper label={item.isTimeBased ? t('session.seconds') : t('session.reps')} value={draft.result ?? '—'} onStep={(direction) => setDraft((current) => ({ ...current, result: Math.min(resultMax, Math.max(resultMin, (current.result ?? resultMin) + direction)) }))} />
+      <NumberStepper
+        label={item.isTimeBased ? t('session.seconds') : t('session.reps')}
+        value={draft.result}
+        min={resultMin}
+        max={Number.isFinite(resultMax) ? resultMax : undefined}
+        step={item.isTimeBased ? 5 : 1}
+        onChange={(result) => setDraft((current) => ({
+          ...current,
+          result: result === null ? null : Math.min(resultMax, Math.max(resultMin, result)),
+        }))}
+        onStep={(direction) => setDraft((current) => ({ ...current, result: Math.min(resultMax, Math.max(resultMin, (current.result ?? resultMin) + direction * (item.isTimeBased ? 5 : 1))) }))}
+      />
       <RirSelector value={draft.rir} onChange={(rir) => setDraft((current) => ({ ...current, rir }))} />
     </div>
     {(item.notes || (exercise?.cues.length ?? 0) > 0 || description) && <details className="session-focus__specifics">

@@ -733,6 +733,13 @@ p { margin: 0; line-height: 1.55; }
 .stepper__row button:hover:not(:disabled) { background: var(--line-strong); }
 .stepper__row button:disabled { opacity: 0.4; cursor: not-allowed; }
 .stepper__value { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 14px; }
+.stepper__input {
+  width: 100%; min-width: 0; padding: 8px 4px; border: 0; outline: 0;
+  background: transparent; color: var(--ink); text-align: center;
+  font: inherit; font-family: var(--font-mono); font-size: 14px;
+}
+.stepper__input:focus-visible { border-radius: var(--r-tile); outline: 2px solid var(--accent); }
+.stepper__suffix { flex-shrink: 0; color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
 
 /* ── sessão ───────────────────────────────────────────────────────────────*/
 .clock { font-family: var(--font-mono); font-size: 40px; line-height: 1; font-weight: 500; }

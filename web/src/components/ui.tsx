@@ -98,6 +98,43 @@ export function Stepper({ label, value, onStep, disabled }: {
   )
 }
 
+/** Numeric input with the same large increment controls as Stepper. */
+export function NumberStepper({ label, value, onChange, onStep, min = 0, max, step = 1, suffix, disabled }: {
+  label: ReactNode
+  value: number | null
+  onChange: (value: number | null) => void
+  onStep: (direction: 1 | -1) => void
+  min?: number
+  max?: number
+  step?: number
+  suffix?: ReactNode
+  disabled?: boolean
+}) {
+  const id = useId()
+  return (
+    <div className="stepper">
+      <label className="stepper__label" htmlFor={id}>{label}</label>
+      <div className="stepper__row">
+        <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-label="−">−</button>
+        <input
+          id={id}
+          className="stepper__input"
+          type="number"
+          inputMode="decimal"
+          min={min}
+          max={max}
+          step={step}
+          value={value ?? ''}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value === '' ? null : Number(event.target.value))}
+        />
+        {suffix && <span className="stepper__suffix">{suffix}</span>}
+        <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-label="+">+</button>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Diálogo modal sobre a tela.
  *

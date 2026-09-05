@@ -120,7 +120,8 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByText(/preparação/i)).toHaveCount(0)
     await page.locator('.session-exercise__overview').click()
-    await page.locator('.stepper').first().getByRole('button', { name: '+' }).click()
+    await page.getByRole('spinbutton', { name: /carga/i }).fill('72.5')
+    await page.getByRole('spinbutton', { name: /reps/i }).fill('12')
     for (let setIndex = 0; setIndex < 3; setIndex++) {
       await page.getByRole('button', { name: /concluir série/i }).click()
       if (setIndex < 2) await page.getByRole('button', { name: /começar próxima série/i }).click()

@@ -91,7 +91,9 @@ collapse, or progressively disclose it instead.
 - `Card title` is a quiet monospace section label.
 - `Card heading` is the accessible name of an exercise, workout, or equipment.
 - `Select` keeps its label explicitly associated with the control.
-- `Stepper` is used for bounded numeric adjustments.
+- `Stepper` is used for bounded numeric adjustments. `NumberStepper` combines
+  those large tap targets with direct numeric entry when exact load or
+  repetition values matter.
 - `RirSelector` records perceived effort with four words: Light, Moderate,
   Heavy, and Very heavy. It uses a two-column grid on mobile and four columns
   where space permits; numeric RIR remains an internal compatibility detail.
