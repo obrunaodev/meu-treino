@@ -113,8 +113,9 @@ default, two from 40 rem, and never more than three from 68 rem. Exercise media
 uses a 6:5 preview ratio; full-resolution media opens in a modal. List previews
 are 7.5 rem wide on mobile and 11 rem from 40 rem.
 
-The live session starts with a compact exercise overview split into pending and
-completed groups. Exercise execution uses a focused page with one current set
+The live session starts with a compact exercise overview split into pending,
+skipped, and completed groups. Skipped is never styled or counted as done.
+Exercise execution uses a focused page with one current set
 at a time; rest separates sets and returns to the overview after the final set.
 Historical sets remain grouped under their exercise.
 

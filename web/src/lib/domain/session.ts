@@ -66,10 +66,18 @@ export function sessionProgress(items: SessionItem[], logged: LoggedSet[]) {
 /** Progresso da interface de checklist: um exercício só conta quando foi todo resolvido. */
 export function exerciseProgress(items: SessionItem[], logged: LoggedSet[]) {
   const done = items.filter((item) => (
-    logged.filter((set) => set.templateItemId === item.id && !set.isWarmup).length >= item.sets
+    logged.filter((set) => set.templateItemId === item.id && !set.isWarmup && !set.skipped).length >= item.sets
   )).length
 
   return { done, planned: items.length, remaining: items.length - done }
+}
+
+/** Distinguishes skipped exercises from completed ones in the live overview. */
+export function exerciseExecutionStatus(item: SessionItem, logged: LoggedSet[]): 'pending' | 'skipped' | 'done' {
+  const itemSets = logged.filter((set) => set.templateItemId === item.id && !set.isWarmup)
+  if (itemSets.filter((set) => !set.skipped).length >= item.sets) return 'done'
+  if (itemSets.some((set) => set.skipped)) return 'skipped'
+  return 'pending'
 }
 
 /** Valor fixo gravado ao concluir uma prescrição sem editar repetições na sessão. */
@@ -135,7 +143,10 @@ export function restFor(item: SessionItem | undefined, programDefault: number): 
  * calendário desenha diferente.
  */
 export function finalStatus(items: SessionItem[], logged: LoggedSet[]): 'concluida' | 'incompleta' {
-  return nextSlot(items, logged) === null ? 'concluida' : 'incompleta'
+  const completed = items.every((item) => (
+    logged.filter((set) => set.templateItemId === item.id && !set.isWarmup && !set.skipped).length >= item.sets
+  ))
+  return completed ? 'concluida' : 'incompleta'
 }
 
 export function shouldAutoClose(lastActivityAt: string, now: number = Date.now()): boolean {

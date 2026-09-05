@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  exerciseProgress, groupByExercise, prescribedResult, previousSetForDraft, previousTemplateSession, remainingSeconds, restFor,
+  exerciseExecutionStatus, exerciseProgress, groupByExercise, prescribedResult, previousSetForDraft, previousTemplateSession, remainingSeconds, restFor,
   sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
@@ -94,9 +94,17 @@ describe('exerciseProgress', () => {
     })
   })
 
-  it('considera exercício pulado como resolvido', () => {
+  it('não considera exercício pulado como concluído', () => {
     const skipped = [0, 1, 2].map((index) => set('i1', index, { skipped: true }))
-    expect(exerciseProgress(items, skipped).done).toBe(1)
+    expect(exerciseProgress(items, skipped).done).toBe(0)
+  })
+})
+
+describe('exerciseExecutionStatus', () => {
+  it('keeps a skipped exercise separate from pending and done', () => {
+    expect(exerciseExecutionStatus(items[0]!, [])).toBe('pending')
+    expect(exerciseExecutionStatus(items[0]!, [set('i1', 0, { skipped: true })])).toBe('skipped')
+    expect(exerciseExecutionStatus(items[0]!, [set('i1', 0), set('i1', 1), set('i1', 2)])).toBe('done')
   })
 })
 
@@ -161,12 +169,12 @@ describe('finalStatus', () => {
     expect(finalStatus(items, done)).toBe('concluida')
   })
 
-  it('exercício pulado ainda conta como resolvido', () => {
+  it('exercício pulado deixa a sessão incompleta', () => {
     const done = [
       set('i1', 0, { skipped: true }), set('i1', 1, { skipped: true }), set('i1', 2, { skipped: true }),
       set('i2', 0), set('i2', 1),
     ]
-    expect(finalStatus(items, done)).toBe('concluida')
+    expect(finalStatus(items, done)).toBe('incompleta')
   })
 
   it('sair no meio é incompleta', () => {

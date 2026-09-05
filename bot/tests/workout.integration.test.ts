@@ -67,8 +67,8 @@ integration('registro completo pelo WhatsApp', () => {
     })
     const completed = await client.query('select status, ended_at from workout_sessions where id=$1', [sessionId])
 
-    expect(last).toMatchObject({ status: 'saved', finished: true })
-    expect(completed.rows[0].status).toBe('concluida')
+    expect(last).toMatchObject({ status: 'saved', finished: true, incomplete: true })
+    expect(completed.rows[0].status).toBe('incompleta')
     expect(completed.rows[0].ended_at).toBeInstanceOf(Date)
 
     await client.query(`update set_logs set template_item_id=null
@@ -76,6 +76,8 @@ integration('registro completo pelo WhatsApp', () => {
     expect((await lastWorkoutReview(ownerId))?.items[0]).toMatchObject({
       weightKg: 100, sets: 3, reps: 12, rir: 2,
     })
+    await client.query(`update set_logs set template_item_id=$2
+      where session_id=$1 and exercise_id=$3`, [sessionId, itemIds[0], exerciseIds[0]])
 
     const correction = await recordExercise(ownerId, {
       exerciseNumber: 2, weightKg: 60, sets: 3, reps: 12, rir: 2,

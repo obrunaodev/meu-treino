@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
-import { prescribedResult, previousSetForDraft, previousTemplateSession } from '../lib/domain/session.js'
+import { exerciseExecutionStatus, prescribedResult, previousSetForDraft, previousTemplateSession } from '../lib/domain/session.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '../lib/types.js'
@@ -30,10 +30,11 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
   const session = sessions.find((entry) => entry.id === sessionId) ?? null
   const previous = useMemo(() => session ? previousTemplateSession(session, sessions) : null, [session, sessions])
   const currentByItem = new Map(items.map((item) => [item.id, logs.filter((log) => log.templateItemId === item.id && !log.isWarmup)]))
-  const resolved = (item: SessionChecklistItem) => (currentByItem.get(item.id)?.length ?? 0) >= item.sets
+  const statusOf = (item: SessionChecklistItem) => exerciseExecutionStatus(item, currentByItem.get(item.id) ?? [])
   const sections = [
-    { key: 'pending', items: items.filter((item) => !resolved(item)) },
-    { key: 'done', items: items.filter(resolved) },
+    { key: 'pending', items: items.filter((item) => statusOf(item) === 'pending') },
+    { key: 'skipped', items: items.filter((item) => statusOf(item) === 'skipped') },
+    { key: 'done', items: items.filter((item) => statusOf(item) === 'done') },
   ] as const
 
   return <section className="session-checklist" aria-label={t('session.exercise_list')}>
@@ -52,7 +53,8 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
         const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
         const range = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
         const effort = representative?.rir ?? item.rirTarget
-        return <li className={`session-exercise${resolved(item) ? ' session-exercise--done' : ''}`} key={item.id}>
+        const status = statusOf(item)
+        return <li className={`session-exercise session-exercise--${status}`} key={item.id}>
           <button type="button" className="session-exercise__overview" onClick={() => onSelect(item.id)}>
             <span className="session-exercise__number mono">{String(index + 1).padStart(2, '0')}</span>
             <span className="session-exercise__copy">
@@ -60,7 +62,7 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
               <small>{item.sets} × {range} · {effort === null ? '—' : t(rirLabelKey(effort)!)}</small>
               <small>{t('session.expected_load')}: {formatLoad(representative?.weightKg ?? null, representative?.plateCount ?? null, settings?.unit ?? 'kg', settings?.showPlates ?? true, perSide ? t('session.per_side_short') : null)}{gear?.name ? ` · ${gear.name}` : ''}</small>
             </span>
-            <span className="session-exercise__state">{resolved(item) ? '✓' : t('session.open_exercise')}</span>
+            <span className="session-exercise__state">{status === 'done' ? '✓' : status === 'skipped' ? t('session.skipped') : t('session.open_exercise')}</span>
           </button>
         </li>
       })}</ol>
@@ -187,7 +189,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const resultMax = item.repMax ?? Number.POSITIVE_INFINITY
   return <section className="session-focus">
     <header className="session-focus__head">
-      <button type="button" className="button button--ghost" onClick={onDone}>{t('common.back')}</button>
+      <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.back_and_skip')}</button>
       <span className="mono muted">{String(index + 1).padStart(2, '0')} · {t('session.set_progress', { current: setIndex + 1, total: item.sets })}</span>
     </header>
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>

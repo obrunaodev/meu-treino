@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { helpMessage, lastWorkoutMessage, todayMessage, weeklyHistoryMessage, workoutMessage } from '../src/messages.js'
+import { helpMessage, lastWorkoutMessage, savedMessage, todayMessage, weeklyHistoryMessage, workoutMessage } from '../src/messages.js'
 import type { ActiveWorkout, WorkoutItem } from '../src/workout.js'
 import type { WorkoutReview } from '../src/workout-history.js'
 
@@ -147,5 +147,16 @@ describe('workoutMessage', () => {
 
     expect(message).toContain('Carga: 40 kg/lado')
     expect(message).toContain('Carga: definir')
+  })
+})
+
+describe('session completion messages', () => {
+  it('does not call a session with skipped exercises completed', () => {
+    const message = savedMessage(1, item(), {
+      exerciseNumber: 1, weightKg: 100, sets: 3, reps: 12, rir: 2,
+    }, true, true)
+
+    expect(message).toContain('incompleta')
+    expect(message).not.toContain('Treino concluído')
   })
 })

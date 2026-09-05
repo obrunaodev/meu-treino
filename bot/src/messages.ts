@@ -35,16 +35,19 @@ export function todayMessage(
   return `▶️ Esta sessão já está em andamento.\n\n${workoutMessage(workout, options)}${progress}\n\nContinue registrando os exercícios ou envie */end* para encerrar.`
 }
 
-export function savedMessage(index: number, item: WorkoutItem, entry: ExerciseEntry, finished: boolean) {
+export function savedMessage(index: number, item: WorkoutItem, entry: ExerciseEntry, finished: boolean, incomplete = false) {
   const weight = Number(entry.weightKg.toFixed(1))
   const side = item.loadPerSide ? '/lado' : ''
   const done = `✅ *${index}. ${item.name}*\n${weight} kg${side} · ${entry.sets}×${entry.reps} · ${rirLabelPt(entry.rir)}`
-  return finished ? `${done}\n\n🏁 *Treino concluído!* O histórico já foi atualizado.` : done
+  if (!finished) return done
+  return incomplete
+    ? `${done}\n\n🏁 Sessão encerrada como *incompleta* porque houve exercício pulado.`
+    : `${done}\n\n🏁 *Treino concluído!* O histórico já foi atualizado.`
 }
 
-export function skippedMessage(index: number, item: WorkoutItem, finished: boolean) {
+export function skippedMessage(index: number, item: WorkoutItem, finished: boolean, incomplete = false) {
   const skipped = `⏭️ *${index}. ${item.name}* foi pulado.`
-  return finished ? `${skipped}\n\n🏁 *Treino concluído!* O histórico já foi atualizado.` : skipped
+  return finished && incomplete ? `${skipped}\n\n🏁 Sessão encerrada como *incompleta* porque houve exercício pulado.` : skipped
 }
 
 export function editReviewMessage(review: WorkoutReview) {

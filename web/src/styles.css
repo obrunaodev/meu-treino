@@ -773,7 +773,8 @@ p { margin: 0; line-height: 1.55; }
   background: var(--surface); overflow: hidden;
 }
 .session-exercise--done { border-color: var(--good); }
-.session-exercise--skipped { opacity: 0.62; }
+.session-exercise--skipped { border-style: dashed; opacity: 0.72; }
+.session-exercise--skipped .session-exercise__state { color: var(--muted); font-size: 10.5px; }
 .session-exercise__overview {
   width: 100%; min-height: 92px; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center; gap: 10px; padding: 14px; border: 0;

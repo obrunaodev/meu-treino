@@ -96,9 +96,9 @@ export async function recordExercise(ownerId: string, entry: ExerciseEntry) {
 
     if (state === 'skipped') await removeSkip(client, session.id, item.id)
     await insertSets(client, ownerId, session.id, item, entry)
-    const finished = await completeIfAllExercisesLogged(client, session.id, ownerId, items)
+    const completion = await completeIfAllExercisesLogged(client, session.id, ownerId, items)
     await client.query('commit')
-    return { status: 'saved' as const, item, finished }
+    return { status: 'saved' as const, item, ...completion }
   } catch (error) {
     await client.query('rollback')
     throw error
@@ -122,9 +122,9 @@ export async function skipExercise(ownerId: string, exerciseNumber: number) {
     if (state === 'skipped') return await rollback(client, { status: 'already_skipped' as const, item })
 
     await insertSkip(client, ownerId, session.id, item)
-    const finished = await completeIfAllExercisesLogged(client, session.id, ownerId, items)
+    const completion = await completeIfAllExercisesLogged(client, session.id, ownerId, items)
     await client.query('commit')
-    return { status: 'skipped' as const, item, finished }
+    return { status: 'skipped' as const, item, ...completion }
   } catch (error) {
     await client.query('rollback')
     throw error
@@ -146,7 +146,7 @@ async function findRevisableSession(client: PoolClient, ownerId: string) {
   const { rows } = await client.query(`
     select s.id, s.template_id, t.name as template_name, s.plan_snapshot
     from workout_sessions s join templates t on t.id=s.template_id
-    where s.owner_id=$1 and s.status='concluida' and s.deleted_at is null
+    where s.owner_id=$1 and s.status in ('concluida','incompleta') and s.deleted_at is null
       and s.ended_at >= now() - interval '6 hours'
       and exists (select 1 from set_logs l where l.session_id=s.id and l.skipped=true and l.deleted_at is null)
     order by s.ended_at desc limit 1 for update of s`, [ownerId])
@@ -261,14 +261,16 @@ async function removeSkip(client: PoolClient, sessionId: string, itemId: string)
 async function completeIfAllExercisesLogged(
   client: PoolClient, sessionId: string, ownerId: string, items: WorkoutItem[],
 ) {
-  if (items.length === 0) return false
-  const { rows } = await client.query(`select distinct template_item_id from set_logs
-    where session_id=$1 and deleted_at is null and (skipped=true or (skipped=false and is_warmup=false))`, [sessionId])
+  if (items.length === 0) return { finished: false, incomplete: false }
+  const { rows } = await client.query(`select template_item_id,bool_or(skipped) as skipped from set_logs
+    where session_id=$1 and deleted_at is null and (skipped=true or (skipped=false and is_warmup=false))
+    group by template_item_id`, [sessionId])
   const resolved = new Set(rows.map((row) => row.template_item_id))
-  if (items.some((item) => !resolved.has(item.id))) return false
-  const result = await client.query(`update workout_sessions set status='concluida',ended_at=now(),updated_at=now()
-    where id=$1 and owner_id=$2 and status='em_andamento' returning id`, [sessionId, ownerId])
-  return result.rowCount === 1
+  if (items.some((item) => !resolved.has(item.id))) return { finished: false, incomplete: false }
+  const incomplete = rows.some((row) => row.skipped)
+  const result = await client.query(`update workout_sessions set status=$3,ended_at=now(),updated_at=now()
+    where id=$1 and owner_id=$2 and status in ('em_andamento','incompleta') returning id`, [sessionId, ownerId, incomplete ? 'incompleta' : 'concluida'])
+  return { finished: result.rowCount === 1, incomplete }
 }
 
 interface SessionRow {
