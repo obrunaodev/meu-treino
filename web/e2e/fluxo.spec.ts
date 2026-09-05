@@ -129,6 +129,7 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
     await expect(page.getByRole('heading', { name: /exercícios concluídos/i })).toBeVisible()
+    await page.getByRole('button', { name: /continuar para o cardio/i }).click()
   })
 
   test('a sessão sobrevive a recarregar a página', async () => {

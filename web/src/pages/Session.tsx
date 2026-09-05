@@ -63,16 +63,6 @@ export function Session() {
     })),
   ), [items, logs])
 
-  // Entrou no cardio: o relógio recomeça daqui, senão herdaria o descanso anterior.
-  //
-  // `items.length > 0` não é redundante: o Dexie devolve lista vazia enquanto a
-  // consulta não resolve, e sem essa guarda a sessão pularia para o cardio no
-  // primeiro render, antes de os exercícios chegarem. Template de verdade sem
-  // exercícios cai no estado vazio logo abaixo e nunca chega aqui.
-  useEffect(() => {
-    if (items.length > 0 && !slot && phase !== 'cardio') setPhase('cardio')
-  }, [items.length, slot, phase])
-
   const selectedIndex = items.findIndex((item) => item.id === itemId)
   const selectedItem = selectedIndex >= 0 ? items[selectedIndex]! : null
   const selectedRest = selectedItem?.restSeconds ?? 90
@@ -164,15 +154,22 @@ export function Session() {
       )}
 
       {phase !== 'cardio' && !selectedItem && (
-        <SessionExerciseChecklist
-          sessionId={session.id}
-          items={items}
-          logs={logs}
-          onSelect={(selectedId) => navigate(sessionExerciseRoute(session.id, selectedId))}
-        />
+        <>
+          <SessionExerciseChecklist
+            sessionId={session.id}
+            items={items}
+            logs={logs}
+            onSelect={(selectedId) => navigate(sessionExerciseRoute(session.id, selectedId))}
+          />
+          {!slot && (
+            <button type="button" className="button button--primary" onClick={() => setPhase('cardio')}>
+              {t('session.continue_to_cardio')}
+            </button>
+          )}
+        </>
       )}
 
-      {items.length > 0 && (phase === 'cardio' || !slot) && (
+      {items.length > 0 && phase === 'cardio' && (
         <Card title={t('session.cardio')}>
           <strong className="clock">
             {formatClock(remainingSeconds(phaseStartedAt, template?.cardioDurationSeconds ?? CARDIO_SECONDS, now))}
