@@ -508,6 +508,15 @@ p { margin: 0; line-height: 1.55; }
 .pill:hover { color: var(--ink-2); }
 .pill--on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
+.rir-selector { min-width: 0; margin: 0; padding: 0; border: 0; }
+.rir-selector legend {
+  margin-bottom: 6px; font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+}
+.rir-scale { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.rir-scale .pill { width: 100%; min-height: 34px; padding: 7px 9px; white-space: normal; }
+@media (min-width: 40rem) { .rir-scale { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
 .checklist { display: flex; flex-direction: column; gap: 6px; max-height: 22rem; overflow-y: auto; }
 .checkitem {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -683,6 +692,9 @@ p { margin: 0; line-height: 1.55; }
   background: var(--shell); color: var(--ink);
 }
 .setrow__num .mono { font-size: 10.5px; }
+.setrow__effort { flex: 1 1 100%; }
+.setrow__effort .rir-scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 48rem) { .setrow__effort .rir-scale { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .setrow__side {
   flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; padding: 7px 8px;
   border: 1px solid var(--line-strong); border-radius: var(--r-tile);

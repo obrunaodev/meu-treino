@@ -62,7 +62,7 @@ export function parseSkipEntry(input: string): number | null {
   return before && matchesAlias(normalizeWord(before[1]!), commandAliases.skip) ? Number(before[2]) : null
 }
 
-/** Interpreta a correção no formato exercício, carga, repetições×séries e RIR. */
+/** Interpreta a correção no formato exercício, carga, repetições×séries e esforço. */
 export function parseEditEntry(input: string): ParseResult {
   return parseExerciseEntry(input)
 }
@@ -76,7 +76,7 @@ export function parseExerciseEntry(input: string): ParseResult {
   const setReps = normalized.match(/\b(\d{1,2})\s*[x\-/]\s*(\d{1,3})\b/)
   if (!setReps) return { ok: false, reason: 'sets_reps' }
 
-  const rir = matchPair(normalized, /\b(\d{1,2})\s*(?:rir|ri|r)\b/, /(?<!\d)\b(?:rir|ri|r)\s*(\d{1,2})\b/)
+  const rir = matchRir(normalized)
   if (!rir) return { ok: false, reason: 'rir' }
 
   const withoutKnown = normalized
@@ -102,9 +102,38 @@ export function parseExerciseEntry(input: string): ParseResult {
       weightKg,
       sets,
       reps: Number(setReps[2]),
-      rir: Number(rir.values[0]),
+      rir: rir.value,
     },
   }
+}
+
+function matchRir(input: string): { match: string; value: number } | null {
+  const numeric = matchPair(input, /\b(\d{1,2})\s*(?:rir|ri|r)\b/, /(?<!\d)\b(?:rir|ri|r)\s*(\d{1,2})\b/)
+  if (numeric) return { match: numeric.match, value: Number(numeric.values[0]) }
+
+  const normalized = normalizeWord(input)
+  const phrases: Array<{ pattern: RegExp; value: number }> = [
+    { pattern: /\b(?:muito\s+pesad[oa]?|mt\s+pesad[oa]?|very\s+heavy)\b/, value: 0 },
+    { pattern: /\b(?:moderad[oa]?|moderate|mod)\b/, value: 2 },
+    { pattern: /\b(?:pesad[oa]?|heavy)\b/, value: 1 },
+    { pattern: /\b(?:leve|light)\b/, value: 4 },
+  ]
+  for (const phrase of phrases) {
+    const match = normalized.match(phrase.pattern)
+    if (match) return { match: input.slice(match.index!, match.index! + match[0].length), value: phrase.value }
+  }
+
+  const words = [...normalized.matchAll(/\b[a-z]{3,10}\b/g)]
+  const aliases = [
+    { words: ['moderado', 'moderada', 'moderate'], value: 2 },
+    { words: ['pesado', 'pesada', 'heavy'], value: 1 },
+    { words: ['leve', 'light'], value: 4 },
+  ]
+  for (const word of words) {
+    const effort = aliases.find((candidate) => matchesAlias(word[0], candidate.words))
+    if (effort) return { match: input.slice(word.index!, word.index! + word[0].length), value: effort.value }
+  }
+  return null
 }
 
 function matchWeight(input: string) {

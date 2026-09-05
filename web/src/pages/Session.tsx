@@ -17,6 +17,7 @@ import { Card, Empty, Select } from '../components/ui.js'
 import { SessionExerciseChecklist } from '../components/SessionExerciseChecklist.js'
 import type { SetLog, TemplateItem } from '../lib/types.js'
 import { routes } from '../lib/routes.js'
+import { rirLabelKey } from '../lib/domain/rir.js'
 
 export function Session() {
   const { sessionId } = useParams()
@@ -234,7 +235,7 @@ function SetHistory({ logs, items, unit, showPlates }: {
                       : [
                           formatLoad(log.weightKg, log.plateCount, unit, showPlates, sideLabel(byExercise.get(log.exerciseId), t)),
                           log.reps !== null ? `${log.reps} ${t('session.reps')}` : `${log.seconds}s`,
-                          log.rir !== null ? `RIR ${log.rir}` : null,
+                          log.rir !== null ? t(rirLabelKey(log.rir)!) : null,
                           log.hadPain ? t('session.pain') : null,
                         ].filter(Boolean).join(' · ')}
                   </span>

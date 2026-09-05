@@ -37,7 +37,7 @@ describe('SessionGate', () => {
 
     expect(screen.getByRole('heading', { name: 'Treino A' })).toBeInTheDocument()
     expect(screen.getByText('Supino reto')).toBeInTheDocument()
-    expect(screen.getByText('3 × 10–15 · RIR 2')).toBeInTheDocument()
+    expect(screen.getByText('3 × 10–15 · Moderado')).toBeInTheDocument()
     expect(startSession).not.toHaveBeenCalled()
   })
 

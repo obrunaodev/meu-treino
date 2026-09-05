@@ -13,6 +13,7 @@ import { routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { TrainingReportView } from '../components/TrainingReportView.js'
+import { RirSelector } from '../components/RirSelector.js'
 import { buildTrainingReport } from '../lib/domain/training-report.js'
 import type { PlanSnapshot, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 
@@ -206,7 +207,7 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
     await logSet({
       sessionId,
       exerciseId,
-      // Série nova amarra no item do treino, para o alvo de reps e RIR do plano
+      // Série nova amarra no item do treino, para o alvo de reps e esforço do plano
       // continuar valendo para ela.
       templateItemId: last?.templateItemId ?? itemByExercise.get(exerciseId)?.id ?? null,
       // A partir do maior índice, e não da contagem: com uma série apagada no
@@ -316,7 +317,7 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
 }
 
 /**
- * Uma série em uma linha: carga, reps, RIR, lado e as duas marcas.
+ * Uma série em uma linha: carga, reps, esforço, lado e as duas marcas.
  *
  * A carga fica em passos e não em campo livre porque em máquina de pino o
  * próximo peso é a próxima placa, não "mais 2,5 kg" — digitar um número que a
@@ -384,16 +385,13 @@ function SetRow({ log, gear, unit, showPlates, perSideLabel, label }: {
         </label>
       )}
 
-      <label className="setrow__num">
-        <input
-          type="number"
-          min={0}
-          value={log.rir ?? 0}
-          aria-label={`${label} · ${t('session.rir')}`}
-          onChange={(e) => void updateSet(log.id, { rir: clamp(e.target.value) })}
+      <div className="setrow__effort">
+        <RirSelector
+          label={`${label} · ${t('rir.label')}`}
+          value={log.rir}
+          onChange={(rir) => void updateSet(log.id, { rir })}
         />
-        <span className="mono muted">{t('session.rir')}</span>
-      </label>
+      </div>
 
       <select
         className="setrow__side"

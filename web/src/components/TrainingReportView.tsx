@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { kgToLb, type Unit } from '../lib/domain/load.js'
 import type { TrainingReport } from '../lib/domain/training-report.js'
 import { Card } from './ui.js'
+import { rirLabelKey } from '../lib/domain/rir.js'
 
 /** Resumo numérico e detalhamento por exercício compartilhado pelos três relatórios. */
 export function TrainingReportView({ report, unit }: { report: TrainingReport; unit: Unit }) {
@@ -51,13 +52,15 @@ function ExerciseBreakdown({ report, number, load, volume }: {
           </span>
         </div>
         <p className="report-exercises__target">
-          {exercise.targets.join(' · ') || '—'}{exercise.equipment.length ? ` · ${exercise.equipment.join(', ')}` : ''}
+          {exercise.targets.join(' · ') || '—'}
+          {exercise.targetRir.length ? ` · ${exercise.targetRir.map((rir) => t(rirLabelKey(rir)!)).join(' / ')}` : ''}
+          {exercise.equipment.length ? ` · ${exercise.equipment.join(', ')}` : ''}
         </p>
         <dl>
           <Datum label={t('reports.sets')} value={`${exercise.workingSets}/${exercise.plannedSets || '—'}`} />
           <Datum label={t('reports.repetitions')} value={number.format(exercise.repetitions)} />
           <Datum label={t('reports.top_load')} value={exercise.maxWeightKg === null ? '—' : load(exercise.maxWeightKg)} />
-          <Datum label={t('reports.average_rir')} value={exercise.averageRir === null ? '—' : number.format(exercise.averageRir)} />
+          <Datum label={t('reports.average_effort')} value={exercise.averageRir === null ? '—' : t(rirLabelKey(Math.round(exercise.averageRir))!)} />
           <Datum label={t('reports.volume')} value={volume(exercise.volumeKg)} />
         </dl>
       </li>)}</ul>

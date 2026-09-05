@@ -16,6 +16,13 @@ describe('parseExerciseEntry', () => {
     })
   })
 
+  it('aceita os quatro níveis de esforço e pequenos erros', () => {
+    expect(parseExerciseEntry('1 100kg 3x15 leve')).toMatchObject({ ok: true, value: { rir: 4 } })
+    expect(parseExerciseEntry('1 100kg 3x15 moderdo')).toMatchObject({ ok: true, value: { rir: 2 } })
+    expect(parseExerciseEntry('1 100kg 3x15 pesado')).toMatchObject({ ok: true, value: { rir: 1 } })
+    expect(parseExerciseEntry('1 100kg 3x15 muito pesado')).toMatchObject({ ok: true, value: { rir: 0 } })
+  })
+
   it('corrige erro de digitação curto na unidade', () => {
     expect(parseExerciseEntry('1 100kgg 3x15 1rir')).toMatchObject({
       ok: true,

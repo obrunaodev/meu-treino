@@ -36,7 +36,7 @@ export function Onboarding() {
     blockDurationWeeks: 2,
     periodDurationMonths: 1,
     cyclesPerBlock: 4,
-    rirDeltaPerBlock: -1,
+    rirDeltaPerBlock: 0,
     defaultRestSeconds: 90,
     reminderLeadMinutes: 60,
     remindersEnabled: false,
@@ -206,17 +206,7 @@ export function Onboarding() {
               />
             </label>
             <span className="mono muted">{t('onboarding.block.calendar_hint')}</span>
-            <label className="field">
-              {t('onboarding.block.rir')}
-              <input
-                type="number"
-                min={-3}
-                max={3}
-                value={draft.rirDeltaPerBlock}
-                onChange={(e) => patch({ rirDeltaPerBlock: Number(e.target.value) })}
-              />
-            </label>
-            <span className="mono muted">{t('onboarding.block.rir_hint')}</span>
+            <span className="mono muted">{t('rir.progression_rule')}</span>
             <label className="field">
               {t('onboarding.block.rest')}
               <input

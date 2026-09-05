@@ -7,6 +7,8 @@ import {
 import { useActions } from '../lib/actions.js'
 import { routes } from '../lib/routes.js'
 import { Card, Empty, Select, Stepper } from '../components/ui.js'
+import { RirSelector } from '../components/RirSelector.js'
+import { rirLabelKey } from '../lib/domain/rir.js'
 import type { Program, Template, TemplateItem } from '../lib/types.js'
 
 export function Templates() {
@@ -340,7 +342,10 @@ function ItemRow({ item, name, first, last, onMove, onSave, onRemove }: {
         <button type="button" className="item__name" onClick={() => setOpen((v) => !v)}>
           <strong>{name}</strong>
           <span className="mono muted">
-            {t('session.target', { sets: item.sets, range, rir: item.rirTarget ?? '—' })}
+            {t('session.target', {
+              sets: item.sets, range,
+              effort: rirLabelKey(item.rirTarget) ? t(rirLabelKey(item.rirTarget)!) : '—',
+            })}
           </span>
         </button>
         <div className="item__move">
@@ -366,10 +371,10 @@ function ItemRow({ item, name, first, last, onMove, onSave, onRemove }: {
             value={item.repMax ?? 0}
             onStep={(d) => onSave({ repMax: Math.max(0, (item.repMax ?? 0) + d) })}
           />
-          <Stepper
-            label={t('templates.rir')}
-            value={item.rirTarget ?? 0}
-            onStep={(d) => onSave({ rirTarget: Math.max(0, (item.rirTarget ?? 0) + d) })}
+          <RirSelector
+            label={t('rir.target_label')}
+            value={item.rirTarget}
+            onChange={(rirTarget) => onSave({ rirTarget })}
           />
           <Stepper
             label={t('templates.rest')}

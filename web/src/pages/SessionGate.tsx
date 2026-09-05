@@ -8,6 +8,7 @@ import { useActions } from '../lib/actions.js'
 import { calendarTrainingPosition, nextTemplate } from '../lib/domain/cycle.js'
 import { sessionRoute } from '../lib/routes.js'
 import { Card, Empty } from '../components/ui.js'
+import { rirLabelKey } from '../lib/domain/rir.js'
 
 /**
  * `/session` sem id: retoma a sessão aberta, ou abre a próxima do ciclo. Existe
@@ -92,7 +93,7 @@ export function SessionGate() {
                   <small>{t('session.target', {
                     sets: item.sets,
                     range: item.isTimeBased ? `${range}s` : range,
-                    rir: item.rirTarget ?? '—',
+                    effort: rirLabelKey(item.rirTarget) ? t(rirLabelKey(item.rirTarget)!) : '—',
                   })}</small>
                 </span>
               </li>

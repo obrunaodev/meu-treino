@@ -91,10 +91,7 @@ export function Dashboard() {
       {blockClosed && (
         <Card tone="quiet">
           <p>
-            {t('dashboard.block_closed', {
-              block: lastFinished?.blockNumber,
-              delta: program.rirDeltaPerBlock > 0 ? `+${program.rirDeltaPerBlock}` : program.rirDeltaPerBlock,
-            })}
+            {t('dashboard.block_closed', { block: lastFinished?.blockNumber })}
           </p>
           <div className="row">
             <Link className="button button--primary" to={routes.workouts}>

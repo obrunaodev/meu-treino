@@ -92,6 +92,9 @@ collapse, or progressively disclose it instead.
 - `Card heading` is the accessible name of an exercise, workout, or equipment.
 - `Select` keeps its label explicitly associated with the control.
 - `Stepper` is used for bounded numeric adjustments.
+- `RirSelector` records perceived effort with four words: Light, Moderate,
+  Heavy, and Very heavy. It uses a two-column grid on mobile and four columns
+  where space permits; numeric RIR remains an internal compatibility detail.
 - `Modal` uses the native dialog element and restores focus on close.
 - Toasts communicate transient notifications. Persistent unresolved sync
   conflicts remain visible until acted on.

@@ -9,6 +9,8 @@ import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '..
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
 import { Modal, Stepper } from './ui.js'
+import { RirSelector } from './RirSelector.js'
+import { rirLabelKey } from '../lib/domain/rir.js'
 
 type ChecklistItem = TemplateItem | PlanSnapshotItem
 
@@ -207,11 +209,11 @@ function ExerciseRow({ item, index, sessionId, logs }: {
             result: Math.min(resultMax, Math.max(resultMin, (draft.result ?? resultMin) + direction)),
           })}
         />
-        <Stepper
-          label={t('session.rir')}
-          value={draft.rir ?? '—'}
+        <RirSelector
+          label={t('rir.label')}
+          value={draft.rir}
           disabled={completed}
-          onStep={(direction) => updateDraft(setIndex, { rir: Math.min(10, Math.max(0, (draft.rir ?? 0) + direction)) })}
+          onChange={(rir) => updateDraft(setIndex, { rir })}
         />
       </div>
     )
@@ -237,7 +239,7 @@ function ExerciseRow({ item, index, sessionId, logs }: {
             <small>{t('session.target', {
               sets: item.sets,
               range: item.isTimeBased ? `${range}s` : range,
-              rir: item.rirTarget ?? '—',
+              effort: rirLabelKey(item.rirTarget) ? t(rirLabelKey(item.rirTarget)!) : '—',
             })}{item.restSeconds ? ` · ${t('session.rest_seconds', { count: item.restSeconds })}` : ''}</small>
           </span>
           <span aria-hidden="true">{expanded ? '−' : '+'}</span>

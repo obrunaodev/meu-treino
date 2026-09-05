@@ -37,7 +37,7 @@ describe('helpMessage', () => {
     const message = helpMessage(review)
 
     expect(message).toContain('1/2 exercícios resolvidos')
-    expect(message).toContain('*Supino* — 3 séries · 10 reps · 80 kg · RIR 2')
+    expect(message).toContain('*Supino* — 3 séries · 10 reps · 80 kg · Moderado')
     expect(message).toContain('Próximo: *2. Remada*')
     expect(message).toContain('/skip')
     expect(message).toContain('/end')
@@ -69,8 +69,8 @@ describe('helpMessage', () => {
 
     expect(message).toContain('ÚLTIMO TREINO · TREINO A')
     expect(message).toContain('23/08/2026')
-    expect(message).toContain('*Supino* — 3 séries · 10 reps · 80 kg · RIR 2')
-    expect(message).toContain('/edit 1 70kg 3x15 3r')
+    expect(message).toContain('*Supino* — 3 séries · 10 reps · 80 kg · Moderado')
+    expect(message).toContain('/edit 1 70kg 3x15 moderado')
   })
 })
 
@@ -104,9 +104,9 @@ describe('workoutMessage', () => {
     const message = workoutMessage(workout([item()]))
     const withLinks = workoutMessage(workout([item()]), { includeLinks: true })
 
-    expect(message).toContain('1. *Leg press* · 3×10–15 · RIR 2 · Carga: 100 kg')
+    expect(message).toContain('1. *Leg press* · 3×10–15 · Moderado · Carga: 100 kg')
     expect(message).not.toContain('youtu.be/exemplo')
-    expect(withLinks).toContain('1. *Leg press* · 3×10–15 · RIR 2 · Carga: 100 kg\n   Link: https://youtu.be/exemplo')
+    expect(withLinks).toContain('1. *Leg press* · 3×10–15 · Moderado · Carga: 100 kg\n   Link: https://youtu.be/exemplo')
     expect(message).toContain('Pular: `/skip 1`')
   })
 
@@ -133,7 +133,7 @@ describe('workoutMessage', () => {
     expect(message).toContain('Esta sessão já está em andamento')
     expect(message).toContain('ESTADO ATUAL · 2/3 resolvidos')
     expect(message).toContain('Próximo: *3. Flexora*')
-    expect(message).toContain('*Leg press* — 3 séries · 12 reps · 100 kg · RIR 2')
+    expect(message).toContain('*Leg press* — 3 séries · 12 reps · 100 kg · Moderado')
     expect(message).toContain('*Extensora* · pulado')
     expect(message).toContain('*Flexora* · pendente')
     expect(message).not.toContain('Para iniciar')

@@ -8,6 +8,7 @@ export interface ExerciseReport {
   warmupSets: number
   skipped: boolean
   targets: string[]
+  targetRir: number[]
   equipment: string[]
   maxWeightKg: number | null
   repetitions: number
@@ -82,8 +83,9 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
       const repetitions = item.repMin === item.repMax || item.repMax === null
         ? `${item.repMin ?? '—'}`
         : `${item.repMin ?? 0}–${item.repMax}`
-      const target = `${item.sets}×${repetitions}${item.isTimeBased ? 's' : ''} · RIR ${item.rirTarget ?? '—'}`
+      const target = `${item.sets}×${repetitions}${item.isTimeBased ? 's' : ''}`
       if (!report.targets.includes(target)) report.targets.push(target)
+      if (item.rirTarget !== null && !report.targetRir.includes(item.rirTarget)) report.targetRir.push(item.rirTarget)
       if (item.equipment && !report.equipment.includes(item.equipment.name)) report.equipment.push(item.equipment.name)
       reports.set(item.exerciseId, report)
       perSide.set(`${session.id}:${item.exerciseId}`, item.loadPerSide)
@@ -116,7 +118,7 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
 function emptyExercise(exerciseId: string, name: string): ExerciseReport {
   return {
     exerciseId, name, plannedSets: 0, workingSets: 0, warmupSets: 0, skipped: false,
-    targets: [], equipment: [], maxWeightKg: null, repetitions: 0, averageRir: null, volumeKg: 0,
+    targets: [], targetRir: [], equipment: [], maxWeightKg: null, repetitions: 0, averageRir: null, volumeKg: 0,
   }
 }
 

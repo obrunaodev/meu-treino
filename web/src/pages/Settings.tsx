@@ -118,18 +118,7 @@ export function Settings() {
           </label>
           <span className="mono muted">{t('settings.cadence_hint')}</span>
 
-          <label className="field">
-            {t('settings.block_rir')}
-            <input
-              type="number"
-              min={-3}
-              max={3}
-              value={program.rirDeltaPerBlock}
-              onChange={(event) => void updateProgram(program.id, {
-                rirDeltaPerBlock: Math.min(3, Math.max(-3, Number(event.target.value))),
-              })}
-            />
-          </label>
+          <span className="mono muted">{t('rir.progression_rule')}</span>
 
           <label className="field">
             {t('settings.rest')}
