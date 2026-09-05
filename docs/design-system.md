@@ -119,6 +119,10 @@ Exercise execution uses a focused page with one current set
 at a time; rest separates sets and returns to the overview after the final set.
 Historical sets remain grouped under their exercise.
 
+The monthly history calendar always renders six complete weeks. Days from the
+adjacent months close the grid with reduced emphasis while retaining session
+links when activity exists on those dates.
+
 ## Data visualization
 
 Single-series charts use gray context marks and the accent color for the latest

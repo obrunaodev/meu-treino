@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { usePrograms, useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
 import { groupSessionsByBlock } from '../lib/domain/cycle.js'
+import { calendarMonthDays } from '../lib/domain/calendar.js'
 
 /**
  * Calendário mensal. Ele registra o que aconteceu — não é ele que decide o
@@ -79,12 +80,7 @@ export function History() {
 
   const year = cursor.getFullYear()
   const month = cursor.getMonth()
-  const firstWeekday = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const cells: Array<{ key: string; day: number | null }> = []
-  for (let i = 0; i < firstWeekday; i++) cells.push({ key: `blank-${i}`, day: null })
-  for (let day = 1; day <= daysInMonth; day++) cells.push({ key: `d-${day}`, day })
+  const cells = calendarMonthDays(year, month)
 
   const monthLabel = cursor.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
   const weekdayKeys = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
@@ -139,8 +135,7 @@ export function History() {
                 <span key={key} className="calendar__head">{t(`weekday.${key}`)}</span>
               ))}
               {cells.map((cell) => {
-                if (cell.day === null) return <span key={cell.key} />
-                const entry = byDay.get(`${year}-${pad(month + 1)}-${pad(cell.day)}`)
+                const entry = byDay.get(cell.key)
                 const content = (
                   <>
                     <span className="calendar__n">{cell.day}</span>
@@ -149,13 +144,13 @@ export function History() {
                 )
 
                 if (!entry) {
-                  return <span key={cell.key} className="calendar__day">{content}</span>
+                  return <span key={cell.key} className={`calendar__day${cell.inCurrentMonth ? '' : ' calendar__day--outside'}`}>{content}</span>
                 }
                 return (
                   <Link
                     key={cell.key}
                     to={historyRoute(entry.id)}
-                    className={`calendar__day calendar__day--${entry.status} calendar__day--link`}
+                    className={`calendar__day calendar__day--${entry.status} calendar__day--link${cell.inCurrentMonth ? '' : ' calendar__day--outside'}`}
                     title={t('history.sets', { count: entry.sets })}
                   >
                     {content}

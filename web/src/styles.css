@@ -1064,6 +1064,8 @@ p { margin: 0; line-height: 1.55; }
 .calendar__day--concluida { background: var(--good); color: var(--shell); font-weight: 500; }
 .calendar__day--incompleta { background: var(--line-strong); color: var(--ink-2); }
 .calendar__day--em_andamento { outline: 1px solid var(--accent); }
+.calendar__day--outside { opacity: 0.42; }
+.calendar__day--outside.calendar__day--link:hover { opacity: 0.72; }
 .calendar__letter { font-size: 9px; font-weight: 600; }
 .legend { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .legend--concluida { background: var(--good); }
