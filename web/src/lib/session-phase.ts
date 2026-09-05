@@ -6,8 +6,8 @@ import type { SessionPhase } from './domain/session.js'
  *
  * É estado de UI local, não dado do usuário: não sincroniza e não vale um
  * registro no servidor. Mas precisa sobreviver a recarregar a página — o
- * usuário troca para o app de música, volta, e não pode cair de novo no
- * cronômetro de preparação no meio do treino.
+ * usuário troca para o app de música, volta, e não pode perder um descanso em
+ * andamento no meio do treino.
  *
  * localStorage e não IndexedDB de propósito: a leitura é síncrona, então a
  * primeira renderização já sai na fase certa, sem piscar a tela errada.
@@ -24,23 +24,22 @@ function read(sessionId: string): StoredPhase | null {
   try {
     const raw = localStorage.getItem(key(sessionId))
     if (!raw) return null
-    const parsed = JSON.parse(raw) as StoredPhase
-    return parsed.phase && parsed.phaseStartedAt ? parsed : null
+    const parsed = JSON.parse(raw) as { phase: SessionPhase | 'preparacao'; phaseStartedAt: string }
+    if (!parsed.phaseStartedAt) return null
+    // Migra sessões abertas pela interface antiga sem mostrar a preparação.
+    return { phase: parsed.phase === 'preparacao' ? 'exercicios' : parsed.phase, phaseStartedAt: parsed.phaseStartedAt }
   } catch {
     return null
   }
 }
 
-export function useSessionPhase(sessionId: string | undefined, hasLoggedSets: boolean) {
+export function useSessionPhase(sessionId: string | undefined) {
   const [state, setState] = useState<StoredPhase>(() => {
     const stored = sessionId ? read(sessionId) : null
     if (stored) return stored
     // Sem registro guardado, a presença de séries já diz que a preparação
     // acabou — vale para uma sessão que começou em outro dispositivo.
-    return {
-      phase: hasLoggedSets ? 'exercicios' : 'preparacao',
-      phaseStartedAt: new Date().toISOString(),
-    }
+    return { phase: 'exercicios', phaseStartedAt: new Date().toISOString() }
   })
 
   const update = useCallback((phase: SessionPhase, startedAt = new Date().toISOString()) => {

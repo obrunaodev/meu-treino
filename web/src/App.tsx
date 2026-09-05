@@ -72,6 +72,7 @@ function Authed() {
           <Route path={routes.dashboard} element={program ? <Dashboard /> : <Navigate to={routes.onboarding} replace />} />
           <Route path={routes.session} element={<SessionGate />} />
           <Route path={`${routes.session}/:sessionId`} element={<Session />} />
+          <Route path={`${routes.session}/:sessionId/exercise/:itemId`} element={<Session />} />
           <Route path={routes.workouts} element={<Templates />} />
           <Route path={routes.exercises} element={<Library />} />
           <Route path={routes.equipment} element={<Equipment />} />

@@ -7,20 +7,20 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import {
-  CARDIO_SECONDS, PREP_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
+  CARDIO_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
   groupByExercise, nextSlot, remainingSeconds,
 } from '../lib/domain/session.js'
 import { formatLoad } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
-import { SessionExerciseChecklist } from '../components/SessionExerciseChecklist.js'
+import { SessionExerciseChecklist, SessionExerciseFlow } from '../components/SessionExerciseChecklist.js'
 import type { SetLog, TemplateItem } from '../lib/types.js'
-import { routes } from '../lib/routes.js'
+import { routes, sessionExerciseRoute, sessionRoute } from '../lib/routes.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 
 export function Session() {
-  const { sessionId } = useParams()
+  const { sessionId, itemId } = useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
 
@@ -38,10 +38,7 @@ export function Session() {
   const settings = useSettings()
   const { updateSession, logCardio } = useActions()
 
-  const [{ phase, phaseStartedAt }, setPhase] = useSessionPhase(
-    sessionId,
-    logs.some((l) => !l.isWarmup),
-  )
+  const [{ phase, phaseStartedAt }, setPhase] = useSessionPhase(sessionId)
   const [now, setNow] = useState(Date.now())
   const [intensity, setIntensity] = useState<'leve' | 'moderado' | 'forte' | null>(null)
   const [cardioOptionId, setCardioOptionId] = useState('')
@@ -76,11 +73,18 @@ export function Session() {
     if (items.length > 0 && !slot && phase !== 'cardio') setPhase('cardio')
   }, [items.length, slot, phase])
 
-  // A interface antiga parava entre séries. Sessões abertas nessa versão
-  // retomam direto no checklist, que registra o exercício inteiro.
+  const selectedIndex = items.findIndex((item) => item.id === itemId)
+  const selectedItem = selectedIndex >= 0 ? items[selectedIndex]! : null
+  const selectedRest = selectedItem?.restSeconds ?? 90
+  const restRemaining = phase === 'descanso' ? remainingSeconds(phaseStartedAt, selectedRest, now) : 0
+
   useEffect(() => {
-    if (phase === 'descanso') setPhase('exercicios')
-  }, [phase])
+    if (phase === 'descanso' && restRemaining === 0) setPhase('exercicios')
+  }, [phase, restRemaining, setPhase])
+
+  useEffect(() => {
+    if (!selectedItem && phase === 'descanso') setPhase('exercicios')
+  }, [selectedItem, phase, setPhase])
 
   const progress = exerciseProgress(
     items.map((i) => ({ id: i.id, sets: i.sets, restSeconds: i.restSeconds })),
@@ -145,18 +149,27 @@ export function Session() {
         </div>
       </header>
 
-      {phase === 'preparacao' && (
-        <Card tone="hot" title={t('session.prep')}>
-          <strong className="clock">{formatClock(remainingSeconds(phaseStartedAt, PREP_SECONDS, now))}</strong>
-          <p className="muted">{t('session.prep_desc')}</p>
-          <button type="button" className="button button--primary" onClick={() => setPhase('exercicios')}>
-            {t('session.start_exercises')}
-          </button>
-        </Card>
+      {phase !== 'cardio' && selectedItem && (
+        <SessionExerciseFlow
+          sessionId={session.id}
+          item={selectedItem}
+          index={selectedIndex}
+          logs={logs.filter((log) => log.templateItemId === selectedItem.id)}
+          resting={phase === 'descanso'}
+          restRemaining={restRemaining}
+          onRest={() => setPhase('descanso')}
+          onContinue={() => setPhase('exercicios')}
+          onDone={() => { setPhase('exercicios'); navigate(sessionRoute(session.id), { replace: true }) }}
+        />
       )}
 
-      {phase !== 'cardio' && (
-        <SessionExerciseChecklist sessionId={session.id} items={items} logs={logs} />
+      {phase !== 'cardio' && !selectedItem && (
+        <SessionExerciseChecklist
+          sessionId={session.id}
+          items={items}
+          logs={logs}
+          onSelect={(selectedId) => navigate(sessionExerciseRoute(session.id, selectedId))}
+        />
       )}
 
       {items.length > 0 && (phase === 'cardio' || !slot) && (
@@ -191,11 +204,11 @@ export function Session() {
         </Card>
       )}
 
-      <SetHistory logs={logs} items={items} unit={unit} showPlates={showPlates} />
+      {!selectedItem && <SetHistory logs={logs} items={items} unit={unit} showPlates={showPlates} />}
 
-      <button type="button" className="button button--danger" onClick={() => void finish()}>
+      {!selectedItem && <button type="button" className="button button--danger" onClick={() => void finish()}>
         {t('session.finish')}
-      </button>
+      </button>}
     </div>
   )
 }

@@ -111,9 +111,10 @@ default, two from 40 rem, and never more than three from 68 rem. Exercise media
 uses a 6:5 preview ratio; full-resolution media opens in a modal. List previews
 are 7.5 rem wide on mobile and 11 rem from 40 rem.
 
-Recorded sets are grouped under their exercise. Each exercise is an accordion
-whose rows keep weight, repetitions, RIR, side, warm-up, and skipped state tied
-to that exercise.
+The live session starts with a compact exercise overview split into pending and
+completed groups. Exercise execution uses a focused page with one current set
+at a time; rest separates sets and returns to the overview after the final set.
+Historical sets remain grouped under their exercise.
 
 ## Data visualization
 

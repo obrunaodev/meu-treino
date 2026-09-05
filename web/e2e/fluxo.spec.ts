@@ -118,11 +118,16 @@ test.describe('jornada completa', () => {
     await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
     await page.getByRole('button', { name: /iniciar treino a/i }).click()
 
-    await page.getByRole('button', { name: /começar exercícios/i }).click()
+    await expect(page.getByText(/preparação/i)).toHaveCount(0)
+    await page.locator('.session-exercise__overview').click()
     await page.locator('.stepper').first().getByRole('button', { name: '+' }).click()
-    await page.getByRole('checkbox', { name: /concluir/i }).first().click()
+    for (let setIndex = 0; setIndex < 3; setIndex++) {
+      await page.getByRole('button', { name: /concluir série/i }).click()
+      if (setIndex < 2) await page.getByRole('button', { name: /começar próxima série/i }).click()
+    }
 
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /exercícios concluídos/i })).toBeVisible()
   })
 
   test('a sessão sobrevive a recarregar a página', async () => {

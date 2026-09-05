@@ -17,6 +17,7 @@ export const routes = {
 } as const
 
 export const sessionRoute = (sessionId: string) => `${routes.session}/${sessionId}`
+export const sessionExerciseRoute = (sessionId: string, itemId: string) => `${sessionRoute(sessionId)}/exercise/${itemId}`
 export const historyRoute = (sessionId: string) => `${routes.history}/${sessionId}`
 export const cycleReportRoute = (programId: string, cycleNumber: number) =>
   `${routes.history}/reports/cycle/${programId}/${cycleNumber}`

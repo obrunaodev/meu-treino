@@ -7,7 +7,7 @@
  * mentiria em toda troca de app.
  */
 
-export type SessionPhase = 'preparacao' | 'exercicios' | 'descanso' | 'cardio' | 'encerrada'
+export type SessionPhase = 'exercicios' | 'descanso' | 'cardio' | 'encerrada'
 
 export interface SessionState {
   phase: SessionPhase
@@ -21,7 +21,6 @@ export interface SessionState {
 /** 6h sem nenhum registro: a sessão fecha sozinha e é marcada incompleta. */
 export const AUTO_CLOSE_AFTER_MS = 6 * 60 * 60 * 1000
 
-export const PREP_SECONDS = 120
 export const CARDIO_SECONDS = 20 * 60
 
 export function elapsedSeconds(since: string, now: number = Date.now()): number {
