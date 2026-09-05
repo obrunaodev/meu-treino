@@ -119,9 +119,9 @@ Exercise execution uses a focused page with one current set
 at a time; rest separates sets and returns to the overview after the final set.
 Historical sets remain grouped under their exercise.
 
-The monthly history calendar always renders six complete weeks. Days from the
-adjacent months close the grid with reduced emphasis while retaining session
-links when activity exists on those dates.
+The monthly history calendar renders only the weeks required by that month.
+Adjacent dates complete a partial first or last week with reduced emphasis
+while retaining session links when activity exists on those dates.
 
 ## Data visualization
 
