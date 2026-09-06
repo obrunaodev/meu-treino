@@ -101,6 +101,8 @@ collapse, or progressively disclose it instead.
 - `Modal` uses the native dialog element and restores focus on close.
 - Toasts communicate transient notifications. Persistent unresolved sync
   conflicts remain visible until acted on.
+- Backup import presents merge as the normal action. Destructive replacement
+  requires a second explicit confirmation beside the selected file summary.
 - Forms use visible labels, tokenized focus outlines, and semantic controls.
 
 Reuse these primitives before introducing a page-local equivalent. A new

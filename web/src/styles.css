@@ -288,6 +288,16 @@ p { margin: 0; line-height: 1.55; }
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack--tight { gap: 8px; }
 .setting-summary { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.backup-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.backup-file {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 12px 0; border-block: 1px solid var(--line);
+}
+.backup-file > strong { font-size: 13px; overflow-wrap: anywhere; }
+.backup-file > p { margin: 0; max-width: 68ch; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.backup-status { color: var(--good); font-size: 12px; }
+.backup-error { color: var(--accent); font-size: 12px; }
+.backup-csv { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding-top: 4px; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 

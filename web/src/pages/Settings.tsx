@@ -4,11 +4,11 @@ import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { useActiveProgram, useEquipment, useSettings, useTemplates } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
-import { buildSetLogCsv, downloadBlob } from '../lib/export.js'
 import { localDb } from '../lib/db.js'
 import { remove } from '../lib/outbox.js'
 import { subscribeToPush, pushSupport } from '../lib/push.js'
 import { Card, Select } from '../components/ui.js'
+import { BackupCard } from '../components/BackupCard.js'
 
 export function Settings() {
   const { t, i18n } = useTranslation()
@@ -194,16 +194,7 @@ export function Settings() {
         <Link className="button button--quiet" to={routes.whatsapp}>WhatsApp</Link>
       </Card>
 
-      <Card title={t('settings.export')}>
-        <span className="mono muted">{t('settings.export_hint')}</span>
-        <button
-          type="button"
-          className="button button--quiet"
-          onClick={async () => downloadBlob(await buildSetLogCsv(), 'meu-treino-series.csv')}
-        >
-          {t('settings.export_csv')}
-        </button>
-      </Card>
+      <BackupCard />
 
       <Card title={t('settings.danger')} tone="quiet">
         <Link className="button button--quiet" to={routes.onboarding}>{t('settings.redo_onboarding')}</Link>

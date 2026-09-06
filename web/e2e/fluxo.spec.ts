@@ -289,8 +289,12 @@ test.describe('jornada completa', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
   })
 
-  test('exporta o CSV das séries', async () => {
+  test('exporta o backup completo e o CSV das séries', async () => {
     await page.getByRole('link', { name: /configurações/i }).first().click()
+
+    const backupDownload = page.waitForEvent('download')
+    await page.getByRole('button', { name: /baixar backup completo/i }).click()
+    expect((await backupDownload).suggestedFilename()).toMatch(/^meu-treino-backup-\d{4}-\d{2}-\d{2}\.json$/)
 
     const download = page.waitForEvent('download')
     await page.getByRole('button', { name: /baixar csv/i }).click()

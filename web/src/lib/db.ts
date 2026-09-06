@@ -45,7 +45,8 @@ export interface MetaEntry {
   value: unknown
 }
 
-const SYNC_STORES: SyncEntity[] = [
+/** Ordered synced stores, from parent records to their dependants. */
+export const SYNC_STORES: SyncEntity[] = [
   'gyms', 'equipment', 'cardio_options', 'exercises', 'exercise_media', 'exercise_substitutions',
   'programs', 'templates', 'template_items', 'workout_sessions', 'set_logs',
   'cardio_logs', 'pain_events', 'functional_tests', 'test_results', 'user_settings',

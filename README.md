@@ -84,7 +84,8 @@ The UI uses a four-level effort scale while retaining numeric RIR in storage for
 - Session history can be edited or deleted. Deleting a session also soft-deletes its sets, cardio, and pain records.
 - Cycle and block reports summarize adherence and training data for their scope.
 - Set history is grouped by exercise and ordered by the timestamp at which each exercise was checked.
-- Training data can be exported as CSV.
+- A versioned JSON backup exports and restores all personal records and exercise images. Imports can merge with existing data or explicitly replace it.
+- Set history can also be exported as a spreadsheet-friendly CSV.
 - Pain can be captured from selectable body regions and reviewed as a history.
 - User-defined functional tests support frequency, units, side, history, and whether higher or lower values are better.
 - Push reminders are available for scheduled weekly programs when VAPID is configured.
@@ -393,6 +394,8 @@ curl --fail https://treininho.duckdns.org/health
 Production images are built in CI so the Oracle 1 GB server does not compile Node.js, Sharp, or Vite. Configure approximately 2 GB of swap and monitor actual usage after connecting WhatsApp. Postgres, MinIO, API, bot, web, Caddy, and the operating system share the same RAM.
 
 Durable state is split between the Postgres `db-data` volume, MinIO `minio-data`, and Caddy certificate volumes. A complete restore requires mutually consistent Postgres and MinIO backups. Browser IndexedDB is an offline working replica, not a production backup.
+
+Users can create a portable personal backup from **Settings → Backup and restore**. The JSON file contains active synchronized records plus full exercise images, including locally queued changes. Export while online so private images can be downloaded through the API. Importing **Merge** updates matching records and leaves unrelated current records untouched. **Replace** is destructive: it soft-deletes current records absent from the backup before restoring the file. Imported changes enter the normal offline outbox and synchronize through the authenticated API. This personal export complements, but does not replace, infrastructure-level PostgreSQL and MinIO backups.
 
 ## Design system
 
