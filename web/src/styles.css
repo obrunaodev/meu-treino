@@ -838,8 +838,10 @@ p { margin: 0; line-height: 1.55; }
 .session-focus__sets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .session-focus__set { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r-field); background: var(--surface-hot); }
 .session-focus__set--checked { border-color: var(--good); }
-.session-focus__set-check { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; cursor: pointer; }
-.session-focus__set-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--good); cursor: pointer; }
+.session-focus__set-head { min-height: 52px; display: flex; align-items: stretch; margin: -14px -14px 0; border-bottom: 1px solid var(--line); }
+.session-focus__set-head .session-exercise__check { color: var(--dim); }
+.session-focus__set-head .eyebrow { display: flex; align-items: center; padding: 0 14px; }
+.session-focus__set--checked .session-exercise__check { background: var(--raised); color: var(--good); }
 .session-focus__fields { display: flex; flex-direction: column; gap: 14px; }
 .session-focus__specifics { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-field); background: var(--surface-hot); }
 .session-focus__specifics summary { cursor: pointer; font-weight: 600; }

@@ -213,14 +213,16 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
     <ol className="session-focus__sets">
       {drafts.map((draft, setIndex) => <li key={setIndex} className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
-        <label className="session-focus__set-check">
-          <input
-            type="checkbox"
-            checked={draft.checked}
-            onChange={(event) => updateDraft(setIndex, { checked: event.target.checked })}
-          />
-          <span>{t('session.check_set', { number: setIndex + 1 })}</span>
-        </label>
+        <div className="session-focus__set-head">
+          <button
+            type="button"
+            className="session-exercise__check"
+            aria-pressed={draft.checked}
+            aria-label={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
+            onClick={() => updateDraft(setIndex, { checked: !draft.checked })}
+          >✓</button>
+          <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+        </div>
         <div className="session-focus__fields">
           <NumberStepper
             label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}

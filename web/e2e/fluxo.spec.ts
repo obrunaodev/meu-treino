@@ -134,8 +134,8 @@ test.describe('jornada completa', () => {
     await page.getByRole('spinbutton', { name: /reps/i }).first().fill('12')
     const finishExercise = page.getByRole('button', { name: /finalizar exercício/i })
     await expect(finishExercise).toBeDisabled()
-    for (const checkbox of await page.getByRole('checkbox', { name: /série \d concluída/i }).all()) {
-      await checkbox.check()
+    for (const checkButton of await page.getByRole('button', { name: /marcar série \d como concluída/i }).all()) {
+      await checkButton.click()
     }
     await expect(finishExercise).toBeEnabled()
     await finishExercise.click()

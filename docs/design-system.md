@@ -117,7 +117,8 @@ The live session starts with a compact exercise overview split into pending,
 skipped, and completed groups. Skipped is never styled or counted as done.
 Exercise execution uses a focused page that keeps every planned set visible
 and editable at once. Rest is an optional explicit timer, never an automatic
-gate between sets. Each set card starts with a native completion checkbox, and
+gate between sets. Each set card reuses the wide green completion button from
+the exercise-card pattern at the upper-left, and
 the exercise can only be finished after every planned set is checked.
 Completing the exercise returns to the overview.
 Historical sets remain grouped under their exercise.
