@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { blockReportRoute, cycleReportRoute, historyRoute } from '../lib/routes.js'
+import { blockReportRoute, historyRoute } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { usePrograms, useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
@@ -165,7 +165,7 @@ export function History() {
             </div>
           </Card>
 
-          <Card title={t('history.by_cycle')}>
+          <Card title={t('history.by_block')}>
             <div className="history-groups">
               {sessionGroups.map((programGroup) => (
                 <section key={programGroup.id} className="history-program">
@@ -185,23 +185,14 @@ export function History() {
                               >
                                 {t('reports.view')}
                               </Link>
-                              <span className="mono muted">{t('history.cycles_count', { count: block.cycles.length })}</span>
+                              <span className="mono muted">
+                                {t('history.sessions_count', { count: block.cycles.reduce((total, cycle) => total + cycle.sessions.length, 0) })}
+                              </span>
                             </span>
                           </summary>
                           <div className="history-block__body">
-                            {block.cycles.map((cycle) => (
-                              <section key={cycle.cycleNumber} className="history-cycle">
-                                <div className="history-cycle__head">
-                                  <h4>{t('history.cycle', { number: cycle.cycleNumber })}</h4>
-                                  <Link
-                                    to={cycleReportRoute(programGroup.id, cycle.cycleNumber)}
-                                    aria-label={t('reports.open_cycle', { number: cycle.cycleNumber })}
-                                  >
-                                    {t('reports.view')}
-                                  </Link>
-                                </div>
                             <ul className="history-sessions">
-                              {cycle.sessions.map((session) => {
+                              {block.cycles.flatMap((cycle) => cycle.sessions).sort((a, b) => b.startedAt.localeCompare(a.startedAt)).map((session) => {
                                 const template = templates.find((candidate) => candidate.id === session.templateId)
                                 return (
                                   <li key={session.id}>
@@ -217,8 +208,6 @@ export function History() {
                                 )
                               })}
                             </ul>
-                              </section>
-                            ))}
                           </div>
                         </details>
                       ))}

@@ -128,6 +128,8 @@ repeat below the live exercise list; they remain grouped in session history.
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
 while retaining session links when activity exists on those dates.
+Below the calendar, history is grouped by period and block; individual sessions
+appear directly inside each block without an intermediate cycle section.
 
 Cycle and block reports use flat exercise sections rather than nested cards.
 Each section keeps aggregate metrics near the exercise heading, then lists the
