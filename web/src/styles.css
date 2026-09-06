@@ -722,7 +722,7 @@ p { margin: 0; line-height: 1.55; }
   text-transform: uppercase; color: var(--dim);
 }
 .stepper__row {
-  display: flex; align-items: center; gap: 6px;
+  position: relative; display: flex; align-items: center; gap: 6px;
   border: 1px solid var(--line-strong); border-radius: var(--r-field); padding: 4px;
 }
 .stepper__row button {
@@ -739,7 +739,11 @@ p { margin: 0; line-height: 1.55; }
   font: inherit; font-family: var(--font-mono); font-size: 14px;
 }
 .stepper__input:focus-visible { border-radius: var(--r-tile); outline: 2px solid var(--accent); }
-.stepper__suffix { flex-shrink: 0; color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
+.stepper__entry { position: relative; flex: 1; min-width: 0; }
+.stepper__suffix {
+  position: absolute; top: 50%; left: calc(50% + 28px); transform: translateY(-50%); pointer-events: none;
+  color: var(--muted); font-family: var(--font-mono); font-size: 10.5px;
+}
 
 /* ── sessão ───────────────────────────────────────────────────────────────*/
 .clock { font-family: var(--font-mono); font-size: 40px; line-height: 1; font-weight: 500; }

@@ -116,19 +116,21 @@ export function NumberStepper({ label, value, onChange, onStep, min = 0, max, st
       <label className="stepper__label" htmlFor={id}>{label}</label>
       <div className="stepper__row">
         <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-label="−">−</button>
-        <input
-          id={id}
-          className="stepper__input"
-          type="number"
-          inputMode="decimal"
-          min={min}
-          max={max}
-          step={step}
-          value={value ?? ''}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value === '' ? null : Number(event.target.value))}
-        />
-        {suffix && <span className="stepper__suffix">{suffix}</span>}
+        <span className="stepper__entry">
+          <input
+            id={id}
+            className="stepper__input"
+            type="number"
+            inputMode="decimal"
+            min={min}
+            max={max}
+            step={step}
+            value={value ?? ''}
+            disabled={disabled}
+            onChange={(event) => onChange(event.target.value === '' ? null : Number(event.target.value))}
+          />
+          {suffix && <span className="stepper__suffix">{suffix}</span>}
+        </span>
         <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-label="+">+</button>
       </div>
     </div>

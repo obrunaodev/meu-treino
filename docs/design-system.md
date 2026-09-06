@@ -93,7 +93,8 @@ collapse, or progressively disclose it instead.
 - `Select` keeps its label explicitly associated with the control.
 - `Stepper` is used for bounded numeric adjustments. `NumberStepper` combines
   those large tap targets with direct numeric entry when exact load or
-  repetition values matter.
+  repetition values matter. Its number stays geometrically centered; unit and
+  per-side suffixes are overlaid near the value and never consume layout width.
 - `RirSelector` records perceived effort with four words: Light, Moderate,
   Heavy, and Very heavy. It uses a two-column grid on mobile and four columns
   where space permits; numeric RIR remains an internal compatibility detail.

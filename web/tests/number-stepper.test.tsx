@@ -8,9 +8,12 @@ describe('NumberStepper', () => {
     const onStep = vi.fn()
     render(<NumberStepper label="Carga" value={70} suffix="kg" onChange={onChange} onStep={onStep} />)
 
-    fireEvent.change(screen.getByRole('spinbutton', { name: /carga/i }), { target: { value: '72.5' } })
+    const input = screen.getByRole('spinbutton', { name: /carga/i })
+    fireEvent.change(input, { target: { value: '72.5' } })
     fireEvent.click(screen.getByRole('button', { name: '+' }))
 
+    expect(input.parentElement).toHaveClass('stepper__entry')
+    expect(screen.getByText('kg').parentElement).toBe(input.parentElement)
     expect(onChange).toHaveBeenCalledWith(72.5)
     expect(onStep).toHaveBeenCalledWith(1)
   })
