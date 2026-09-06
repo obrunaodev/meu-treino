@@ -120,8 +120,8 @@ and editable at once. Rest is an optional explicit timer, never an automatic
 gate between sets. Each set card reuses the wide green completion button from
 the exercise-card pattern at the upper-left, and
 the exercise can only be finished after every planned set is checked.
-Completing the exercise returns to the overview.
-Historical sets remain grouped under their exercise.
+Completing the exercise returns to the overview. Recorded-set details do not
+repeat below the live exercise list; they remain grouped in session history.
 
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis

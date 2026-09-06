@@ -2,22 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  useCardioLogs, useCardioOptions, useExercises, useSessions, useSetLogs, useSettings,
-  useTemplateItems, useTemplates,
+  useCardioLogs, useCardioOptions, useSessions, useSetLogs, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import {
   CARDIO_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
-  groupByExercise, nextSlot, remainingSeconds,
+  nextSlot, remainingSeconds,
 } from '../lib/domain/session.js'
-import { formatLoad } from '../lib/domain/load.js'
-import { sideLabel } from '../lib/labels.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { SessionExerciseChecklist, SessionExerciseFlow } from '../components/SessionExerciseChecklist.js'
-import type { SetLog, TemplateItem } from '../lib/types.js'
 import { routes, sessionExerciseRoute, sessionRoute } from '../lib/routes.js'
-import { rirLabelKey } from '../lib/domain/rir.js'
 
 export function Session() {
   const { sessionId, itemId } = useParams()
@@ -34,8 +29,6 @@ export function Session() {
   const plannedCardio = cardioOptions.find((option) => option.id === template?.cardioOptionId) ?? null
   const logs = useSetLogs(session?.id)
   const cardio = useCardioLogs(session?.id)
-  const exercises = useExercises()
-  const settings = useSettings()
   const { updateSession, logCardio } = useActions()
 
   const [{ phase, phaseStartedAt }, setPhase] = useSessionPhase(sessionId)
@@ -117,9 +110,6 @@ export function Session() {
     clearSessionPhase(session!.id)
     navigate(routes.dashboard, { replace: true })
   }
-
-  const unit = settings?.unit ?? 'kg'
-  const showPlates = settings?.showPlates ?? true
 
   return (
     <div className="page session">
@@ -203,60 +193,9 @@ export function Session() {
         </Card>
       )}
 
-      {!selectedItem && <SetHistory logs={logs} items={items} unit={unit} showPlates={showPlates} />}
-
       {!selectedItem && <button type="button" className="button button--danger" onClick={() => void finish()}>
         {t('session.finish')}
       </button>}
     </div>
-  )
-}
-
-function SetHistory({ logs, items, unit, showPlates }: {
-  logs: SetLog[]
-  items: TemplateItem[]
-  unit: 'kg' | 'lb'
-  showPlates: boolean
-}) {
-  const { t } = useTranslation()
-  const exercises = useExercises()
-  if (logs.length === 0) return null
-
-  const byExercise = new Map(exercises.map((e) => [e.id, e]))
-  const snapshotNames = new Map(items.flatMap((item) => (
-    'exerciseName' in item && typeof item.exerciseName === 'string'
-      ? [[item.exerciseId, item.exerciseName] as const]
-      : []
-  )))
-  const nameOf = (id: string) => snapshotNames.get(id) ?? byExercise.get(id)?.name ?? t('library.gone')
-  const groups = groupByExercise(logs)
-
-  return (
-    <Card title={t('history.sets', { count: logs.filter((l) => !l.isWarmup).length })}>
-      <div className="session-loggroups">
-        {groups.map((group) => (
-          <section key={group.exerciseId} className="session-loggroup">
-            <h3>{nameOf(group.exerciseId)}</h3>
-            <ol className="loglist">
-              {group.logs.map((log) => (
-                <li key={log.id} className={log.skipped ? 'loglist__row loglist__row--skip' : 'loglist__row'}>
-                  <span className="mono muted">{log.isWarmup ? t('session.warmup') : t('session.set', { n: log.setIndex + 1 })}</span>
-                  <span className="mono muted">
-                    {log.skipped
-                      ? t('common.skip')
-                      : [
-                          formatLoad(log.weightKg, log.plateCount, unit, showPlates, sideLabel(byExercise.get(log.exerciseId), t)),
-                          log.reps !== null ? `${log.reps} ${t('session.reps')}` : `${log.seconds}s`,
-                          log.rir !== null ? t(rirLabelKey(log.rir)!) : null,
-                          log.hadPain ? t('session.pain') : null,
-                        ].filter(Boolean).join(' · ')}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ))}
-      </div>
-    </Card>
   )
 }

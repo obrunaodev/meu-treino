@@ -154,12 +154,7 @@ test.describe('jornada completa', () => {
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
 
     await page.setViewportSize({ width: 390, height: 844 })
-    const rowsFitViewport = await page.locator('.loglist__row').evaluateAll((rows) => rows.every((row) => {
-      const box = row.getBoundingClientRect()
-      return box.left >= 0 && box.right <= document.documentElement.clientWidth
-        && row.scrollWidth <= row.clientWidth
-    }))
-    expect(rowsFitViewport).toBe(true)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
     const bottomClearance = await page.locator('.shell__main').evaluate((main) => {
       const tabs = document.querySelector<HTMLElement>('.shell__tabs')!
       return Number.parseFloat(getComputedStyle(main).paddingBottom) - tabs.getBoundingClientRect().height

@@ -44,6 +44,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
 - Rest is optional and starts only when requested. It derives from an absolute timestamp and survives backgrounding or reloading the app.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
+- The live overview does not repeat recorded-set details; those remain available in session history.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.
 - Warm-up sets are recorded with `is_warmup` and excluded from volume and progress statistics.
 - Exercise instructions remain inside the exercise accordion. Images open in a modal, and YouTube execution links open separately.
