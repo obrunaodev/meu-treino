@@ -27,6 +27,10 @@ describe('buildTrainingReport', () => {
     const report = buildTrainingReport([session], [set('one'), set('two', { setIndex: 1, reps: 12, rir: 1 })], [], [])
     expect(report).toMatchObject({ durationSeconds: 3600, adherence: 100, workingSets: 2, volumeKg: 2200 })
     expect(report.exercises[0]).toMatchObject({ name: 'Supino', repetitions: 22, averageRir: 1.5 })
+    expect(report.exercises[0].sets).toEqual([
+      expect.objectContaining({ id: 'one', sessionName: 'Treino A', setIndex: 0, reps: 10, weightKg: 50 }),
+      expect.objectContaining({ id: 'two', sessionName: 'Treino A', setIndex: 1, reps: 12, rir: 1 }),
+    ])
   })
 
   it('separa aquecimento, cardio e dor do volume de trabalho', () => {

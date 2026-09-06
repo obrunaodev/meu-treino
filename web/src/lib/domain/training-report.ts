@@ -14,6 +14,26 @@ export interface ExerciseReport {
   repetitions: number
   averageRir: number | null
   volumeKg: number
+  sets: ExerciseSetReport[]
+}
+
+export interface ExerciseSetReport {
+  id: string
+  sessionId: string
+  sessionName: string
+  sessionStartedAt: string
+  setIndex: number
+  isWarmup: boolean
+  side: SetLog['side']
+  weightKg: number | null
+  plateCount: number | null
+  loadPerSide: boolean
+  reps: number | null
+  seconds: number | null
+  rir: number | null
+  skipped: boolean
+  hadPain: boolean
+  completedAt: string | null
 }
 
 export interface TrainingReport {
@@ -75,6 +95,7 @@ export function buildTrainingReport(
 function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNames: Map<string, string>): ExerciseReport[] {
   const reports = new Map<string, ExerciseReport>()
   const perSide = new Map<string, boolean>()
+  const sessionById = new Map(sessions.map((session) => [session.id, session]))
 
   for (const session of sessions) {
     for (const item of session.planSnapshot?.items ?? []) {
@@ -106,6 +127,25 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
       report.volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0) * (perSide.get(`${set.sessionId}:${set.exerciseId}`) ? 2 : 1)
       if (set.rir !== null) rirValues.set(set.exerciseId, [...(rirValues.get(set.exerciseId) ?? []), set.rir])
     }
+    const session = sessionById.get(set.sessionId)
+    report.sets.push({
+      id: set.id,
+      sessionId: set.sessionId,
+      sessionName: session?.planSnapshot?.templateName ?? '',
+      sessionStartedAt: session?.startedAt ?? set.createdAt ?? set.updatedAt,
+      setIndex: set.setIndex,
+      isWarmup: set.isWarmup,
+      side: set.side,
+      weightKg: set.weightKg,
+      plateCount: set.plateCount,
+      loadPerSide: perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false,
+      reps: set.reps,
+      seconds: set.seconds,
+      rir: set.rir,
+      skipped: set.skipped,
+      hadPain: set.hadPain,
+      completedAt: set.completedAt,
+    })
     reports.set(set.exerciseId, report)
   }
 
@@ -119,6 +159,7 @@ function emptyExercise(exerciseId: string, name: string): ExerciseReport {
   return {
     exerciseId, name, plannedSets: 0, workingSets: 0, warmupSets: 0, skipped: false,
     targets: [], targetRir: [], equipment: [], maxWeightKg: null, repetitions: 0, averageRir: null, volumeKg: 0,
+    sets: [],
   }
 }
 

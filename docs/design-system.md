@@ -129,6 +129,11 @@ The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
 while retaining session links when activity exists on those dates.
 
+Cycle and block reports use flat exercise sections rather than nested cards.
+Each section keeps aggregate metrics near the exercise heading, then lists the
+underlying sets by session with load, result, effort, side, time, and exception
+flags visible without disclosure controls.
+
 ## Data visualization
 
 Single-series charts use gray context marks and the accent color for the latest
