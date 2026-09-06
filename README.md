@@ -42,7 +42,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Opening an exercise shows every planned set with editable numeric weight, repetition, and effort inputs.
 - Each set is checked off independently, and the exercise can only be finished after all planned sets are checked.
 - Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
-- Rest is an optional clock card between consecutive sets and starts only when requested. Its inline countdown derives from an absolute timestamp and survives backgrounding or reloading the app.
+- Rest is an optional inline clock action between consecutive sets and starts only when requested. Its countdown derives from an absolute timestamp and survives backgrounding or reloading the app.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
 - The live overview does not repeat recorded-set details; those remain available in session history.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.

@@ -116,11 +116,11 @@ are 7.5 rem wide on mobile and 11 rem from 40 rem.
 The live session starts with a compact exercise overview split into pending,
 skipped, and completed groups. Skipped is never styled or counted as done.
 Exercise execution uses a focused page that keeps every planned set visible
-and editable at once. Rest appears as an optional clock card between consecutive
-sets; activating one runs its countdown in place and never gates input. Each
-set card reuses the wide green completion button from
-the exercise-card pattern at the upper-left, and
-the exercise can only be finished after every planned set is checked.
+and editable at once. Rest appears as an optional inline clock action between
+consecutive sets; activating one runs its countdown in place and never gates
+input. Each set card reuses the wide green completion button from the
+exercise-card pattern at the upper-left, and the exercise can only be finished
+after every planned set is checked.
 Completing the exercise returns to the overview. Recorded-set details do not
 repeat below the live exercise list; they remain grouped in session history.
 

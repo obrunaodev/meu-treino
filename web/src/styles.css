@@ -843,11 +843,12 @@ p { margin: 0; line-height: 1.55; }
 .session-focus__set-head .eyebrow { display: flex; align-items: center; padding: 0 14px; }
 .session-focus__set--checked .session-exercise__check { background: var(--raised); color: var(--good); }
 .session-rest-card { list-style: none; display: flex; justify-content: center; margin: -6px 0; }
-.session-rest-card button { min-width: 9rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--shell); color: var(--muted); cursor: pointer; }
-.session-rest-card button:hover { border-color: var(--muted); color: var(--ink); }
-.session-rest-card button > span { font-size: 18px; }
+.session-rest-card button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 4px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.session-rest-card button:hover { color: var(--ink); }
+.session-rest-card button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--r-tile); }
+.session-rest-card button > span { font-size: 16px; }
 .session-rest-card button > strong { font: 500 11px/1 var(--font-mono); }
-.session-rest-card--active button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.session-rest-card--active button { color: var(--accent); }
 .session-focus__fields { display: flex; flex-direction: column; gap: 14px; }
 .session-focus__specifics { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-field); background: var(--surface-hot); }
 .session-focus__specifics summary { cursor: pointer; font-weight: 600; }
