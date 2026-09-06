@@ -16,6 +16,7 @@ import type { SessionPhase } from './domain/session.js'
 interface StoredPhase {
   phase: SessionPhase
   phaseStartedAt: string
+  restKey: string | null
 }
 
 const key = (sessionId: string) => `treino:fase:${sessionId}`
@@ -24,10 +25,14 @@ function read(sessionId: string): StoredPhase | null {
   try {
     const raw = localStorage.getItem(key(sessionId))
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { phase: SessionPhase | 'preparacao'; phaseStartedAt: string }
+    const parsed = JSON.parse(raw) as { phase: SessionPhase | 'preparacao'; phaseStartedAt: string; restKey?: string | null }
     if (!parsed.phaseStartedAt) return null
     // Migra sessões abertas pela interface antiga sem mostrar a preparação.
-    return { phase: parsed.phase === 'preparacao' ? 'exercicios' : parsed.phase, phaseStartedAt: parsed.phaseStartedAt }
+    return {
+      phase: parsed.phase === 'preparacao' ? 'exercicios' : parsed.phase,
+      phaseStartedAt: parsed.phaseStartedAt,
+      restKey: parsed.restKey ?? null,
+    }
   } catch {
     return null
   }
@@ -39,11 +44,11 @@ export function useSessionPhase(sessionId: string | undefined) {
     if (stored) return stored
     // Sem registro guardado, a presença de séries já diz que a preparação
     // acabou — vale para uma sessão que começou em outro dispositivo.
-    return { phase: 'exercicios', phaseStartedAt: new Date().toISOString() }
+    return { phase: 'exercicios', phaseStartedAt: new Date().toISOString(), restKey: null }
   })
 
-  const update = useCallback((phase: SessionPhase, startedAt = new Date().toISOString()) => {
-    const next = { phase, phaseStartedAt: startedAt }
+  const update = useCallback((phase: SessionPhase, restKey: string | null = null, startedAt = new Date().toISOString()) => {
+    const next = { phase, phaseStartedAt: startedAt, restKey }
     setState(next)
     if (sessionId) {
       try {

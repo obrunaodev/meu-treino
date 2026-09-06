@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
@@ -73,14 +73,14 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
 interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
 
 /** One-exercise editor that keeps every planned set visible at once. */
-export function SessionExerciseFlow({ sessionId, item, index, logs, resting, restRemaining, onRest, onContinue, onDone }: {
+export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAfter, restRemaining, onRest, onContinue, onDone }: {
   sessionId: string
   item: SessionChecklistItem
   index: number
   logs: SetLog[]
-  resting: boolean
+  activeRestAfter: number | null
   restRemaining: number
-  onRest: () => void
+  onRest: (afterSetIndex: number) => void
   onContinue: () => void
   onDone: () => void
 }) {
@@ -188,13 +188,6 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     }))
   }
 
-  if (resting) return <section className="session-focus session-rest">
-    <span className="eyebrow">{t('session.optional_rest')}</span>
-    <strong className="clock">{Math.floor(restRemaining / 60)}:{String(restRemaining % 60).padStart(2, '0')}</strong>
-    <p className="muted">{name}</p>
-    <button type="button" className="button button--primary" onClick={onContinue}>{t('session.stop_rest')}</button>
-  </section>
-
   if (completed) return <section className="session-focus">
     <span className="session-focus__done">✓</span><h2>{name}</h2><p className="muted">{t('session.exercise_completed')}</p>
     <div className="row">
@@ -212,18 +205,19 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     </header>
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
     <ol className="session-focus__sets">
-      {drafts.map((draft, setIndex) => <li key={setIndex} className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
-        <div className="session-focus__set-head">
-          <button
-            type="button"
-            className="session-exercise__check"
-            aria-pressed={draft.checked}
-            aria-label={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
-            onClick={() => updateDraft(setIndex, { checked: !draft.checked })}
-          >✓</button>
-          <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
-        </div>
-        <div className="session-focus__fields">
+      {drafts.map((draft, setIndex) => <Fragment key={setIndex}>
+        <li className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
+          <div className="session-focus__set-head">
+            <button
+              type="button"
+              className="session-exercise__check"
+              aria-pressed={draft.checked}
+              aria-label={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
+              onClick={() => updateDraft(setIndex, { checked: !draft.checked })}
+            >✓</button>
+            <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+          </div>
+          <div className="session-focus__fields">
           <NumberStepper
             label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
             value={draft.kg === null ? null : settings?.unit === 'lb' ? Number(kgToLb(draft.kg).toFixed(1)) : draft.kg}
@@ -243,8 +237,21 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
             onStep={(direction) => updateDraft(setIndex, { result: Math.min(resultMax, Math.max(resultMin, (draft.result ?? resultMin) + direction * (item.isTimeBased ? 5 : 1))) })}
           />
           <RirSelector value={draft.rir} onChange={(rir) => updateDraft(setIndex, { rir })} />
-        </div>
-      </li>)}
+          </div>
+        </li>
+        {setIndex < drafts.length - 1 && <li className={`session-rest-card${activeRestAfter === setIndex ? ' session-rest-card--active' : ''}`}>
+          <button
+            type="button"
+            aria-label={t(activeRestAfter === setIndex ? 'session.stop_rest_after' : 'session.start_rest_after', { number: setIndex + 1 })}
+            onClick={() => activeRestAfter === setIndex ? onContinue() : onRest(setIndex)}
+          >
+            <span aria-hidden="true">◷</span>
+            <strong>{activeRestAfter === setIndex
+              ? `${Math.floor(restRemaining / 60)}:${String(restRemaining % 60).padStart(2, '0')}`
+              : t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</strong>
+          </button>
+        </li>}
+      </Fragment>)}
     </ol>
     {(item.notes || (exercise?.cues.length ?? 0) > 0 || description) && <details className="session-focus__specifics">
       <summary>{t('session.execution_details')}</summary>{item.notes && <p>{item.notes}</p>}
@@ -258,7 +265,6 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
       await logPain({ regionSlug, level, sessionId, setLogId: workLogs.at(-1)?.id ?? null }); setShowPain(false)
     }} /> : <div className="session-focus__actions">
       <button type="button" className="button button--primary" disabled={!allChecked} onClick={() => void completeExercise()}>{t('session.complete_exercise')}</button>
-      <button type="button" className="button button--quiet" onClick={onRest}>{t('session.start_rest')}</button>
       <button type="button" className="button button--quiet" onClick={() => void addWarmup()}>{t('session.add_warmup')}</button>
       <button type="button" className="button button--quiet" onClick={() => setShowPain(true)}>{t('session.pain')}</button>
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.skip_exercise')}</button>

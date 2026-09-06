@@ -31,7 +31,7 @@ export function Session() {
   const cardio = useCardioLogs(session?.id)
   const { updateSession, logCardio } = useActions()
 
-  const [{ phase, phaseStartedAt }, setPhase] = useSessionPhase(sessionId)
+  const [{ phase, phaseStartedAt, restKey }, setPhase] = useSessionPhase(sessionId)
   const [now, setNow] = useState(Date.now())
   const [intensity, setIntensity] = useState<'leve' | 'moderado' | 'forte' | null>(null)
   const [cardioOptionId, setCardioOptionId] = useState('')
@@ -137,9 +137,11 @@ export function Session() {
           item={selectedItem}
           index={selectedIndex}
           logs={logs.filter((log) => log.templateItemId === selectedItem.id)}
-          resting={phase === 'descanso'}
+          activeRestAfter={phase === 'descanso' && restKey?.startsWith(`${selectedItem.id}:`)
+            ? Number(restKey.split(':').at(-1))
+            : null}
           restRemaining={restRemaining}
-          onRest={() => setPhase('descanso')}
+          onRest={(afterSetIndex) => setPhase('descanso', `${selectedItem.id}:${afterSetIndex}`)}
           onContinue={() => setPhase('exercicios')}
           onDone={() => { setPhase('exercicios'); navigate(sessionRoute(session.id), { replace: true }) }}
         />
