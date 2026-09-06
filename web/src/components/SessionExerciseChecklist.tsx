@@ -72,7 +72,7 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
 
 interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null }
 
-/** One-exercise execution flow with sequential set confirmation. */
+/** One-exercise editor that keeps every planned set visible at once. */
 export function SessionExerciseFlow({ sessionId, item, index, logs, resting, restRemaining, onRest, onContinue, onDone }: {
   sessionId: string
   item: SessionChecklistItem
@@ -98,26 +98,28 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const loadPerSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
   const name = snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')
   const workLogs = logs.filter((log) => !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
-  const skippedLogs = logs.filter((log) => !log.isWarmup && log.skipped)
   const currentSession = sessions.find((entry) => entry.id === sessionId) ?? null
   const previous = useMemo(() => currentSession ? previousTemplateSession(currentSession, sessions) : null, [currentSession, sessions])
   const previousLogs = allLogs.filter((log) => log.sessionId === previous?.id && log.exerciseId === item.exerciseId && !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
-  const setIndex = workLogs.length
-  const source = previousSetForDraft(workLogs, previousLogs, setIndex, item.trackingMode ?? 'compact')
-  const sourceKey = source ? `${source.id}:${source.updatedAt}` : 'none'
-  const defaultResult = item.isTimeBased ? source?.seconds : source?.reps
-  const initialDraft = (): Draft => ({
-    kg: source?.weightKg ?? null, plate: source?.plateCount ?? null,
-    result: defaultResult ?? prescribedResult(item.repMin, item.repMax), rir: source?.rir ?? item.rirTarget,
+  const sourceKey = [...workLogs, ...previousLogs].map((log) => `${log.id}:${log.updatedAt}`).join('|')
+  const initialDrafts = (): Draft[] => Array.from({ length: item.sets }, (_, setIndex) => {
+    const current = workLogs.find((log) => log.setIndex === setIndex)
+    const source = current ?? previousSetForDraft([], previousLogs, setIndex, item.trackingMode ?? 'compact')
+    return {
+      kg: source?.weightKg ?? null,
+      plate: source?.plateCount ?? null,
+      result: (item.isTimeBased ? source?.seconds : source?.reps) ?? prescribedResult(item.repMin, item.repMax),
+      rir: source?.rir ?? item.rirTarget,
+    }
   })
-  const [draft, setDraft] = useState<Draft>(initialDraft)
+  const [drafts, setDrafts] = useState<Draft[]>(initialDrafts)
   const [showImage, setShowImage] = useState(false)
   const [showPain, setShowPain] = useState(false)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
 
-  // O histórico chega do IndexedDB depois do primeiro render; a chave garante
-  // que a primeira série seja preenchida assim que esse registro aparecer.
-  useEffect(() => setDraft(initialDraft()), [item.id, setIndex, sourceKey])
+  // O histórico chega do IndexedDB depois do primeiro render. A chave atualiza
+  // os rascunhos quando ele chega, sem depender da identidade do array Dexie.
+  useEffect(() => setDrafts(initialDrafts()), [item.id, item.sets, sourceKey])
   useEffect(() => {
     if (!exercise?.catalogExerciseId) return
     let current = true
@@ -129,15 +131,16 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
   const videoUrl = catalog?.video?.[lang] ?? catalog?.video?.pt ?? catalog?.video?.en ?? null
   const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
-  const completed = setIndex >= item.sets
+  const completed = workLogs.length >= item.sets
 
-  async function completeSet() {
-    for (const log of skippedLogs) await removeSet(log.id)
-    await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex,
-      weightKg: draft.kg, plateCount: draft.plate, reps: item.isTimeBased ? null : draft.result,
-      seconds: item.isTimeBased ? draft.result : null, rir: draft.rir })
-    if (setIndex + 1 >= item.sets) onDone()
-    else onRest()
+  async function completeExercise() {
+    for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
+    for (const [setIndex, draft] of drafts.entries()) {
+      await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex,
+        weightKg: draft.kg, plateCount: draft.plate, reps: item.isTimeBased ? null : draft.result,
+        seconds: item.isTimeBased ? draft.result : null, rir: draft.rir })
+    }
+    onDone()
   }
 
   async function skipExercise() {
@@ -149,6 +152,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   }
 
   async function addWarmup() {
+    const draft = drafts[0]!
     const warmupIndex = logs.filter((log) => log.isWarmup).length
     await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex: warmupIndex,
       isWarmup: true, weightKg: draft.kg, plateCount: draft.plate,
@@ -159,22 +163,33 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
   }
 
-  function stepLoad(direction: 1 | -1) {
-    setDraft((current) => ({ ...current, ...nextLoadStep(gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, { kg: current.kg, plate: current.plate }, direction) }))
+  function updateDraft(setIndex: number, patch: Partial<Draft>) {
+    setDrafts((current) => current.map((draft, index) => index === setIndex ? { ...draft, ...patch } : draft))
   }
 
-  function typeLoad(displayValue: number | null) {
+  function stepLoad(setIndex: number, direction: 1 | -1) {
+    const current = drafts[setIndex]!
+    updateDraft(setIndex, nextLoadStep(gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, { kg: current.kg, plate: current.plate }, direction))
+  }
+
+  function typeLoad(setIndex: number, displayValue: number | null) {
     const normalized = displayValue === null ? null : Math.min(settings?.unit === 'lb' ? 2202 : 999, Math.max(0, displayValue))
     const kg = normalized === null ? null : settings?.unit === 'lb' ? lbToKg(normalized) : normalized
     const plate = kg !== null && gear?.loadType === 'pino' ? plateForKg(gear, kg) : null
-    setDraft((current) => ({ ...current, kg, plate }))
+    setDrafts((current) => current.map((draft, index) => {
+      if (index === setIndex) return { ...draft, kg, plate }
+      // A primeira carga informada vira o padrão das séries seguintes ainda
+      // vazias, mas nunca apaga a progressão que veio do treino anterior.
+      if (index > setIndex && draft.kg === null) return { ...draft, kg, plate }
+      return draft
+    }))
   }
 
   if (resting) return <section className="session-focus session-rest">
-    <span className="eyebrow">{t('session.rest_before_set', { number: setIndex + 1 })}</span>
+    <span className="eyebrow">{t('session.optional_rest')}</span>
     <strong className="clock">{Math.floor(restRemaining / 60)}:{String(restRemaining % 60).padStart(2, '0')}</strong>
     <p className="muted">{name}</p>
-    <button type="button" className="button button--primary" onClick={onContinue}>{t('session.continue_set')}</button>
+    <button type="button" className="button button--primary" onClick={onContinue}>{t('session.stop_rest')}</button>
   </section>
 
   if (completed) return <section className="session-focus">
@@ -190,33 +205,35 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   return <section className="session-focus">
     <header className="session-focus__head">
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.back_and_skip')}</button>
-      <span className="mono muted">{String(index + 1).padStart(2, '0')} · {t('session.set_progress', { current: setIndex + 1, total: item.sets })}</span>
+      <span className="mono muted">{String(index + 1).padStart(2, '0')} · {t('session.sets_count', { count: item.sets })}</span>
     </header>
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
-    <div className="session-focus__fields">
-      <NumberStepper
-        label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
-        value={draft.kg === null ? null : settings?.unit === 'lb' ? Number(kgToLb(draft.kg).toFixed(1)) : draft.kg}
-        suffix={loadPerSide ? `${settings?.unit ?? 'kg'}/${t('session.per_side_short')}` : settings?.unit ?? 'kg'}
-        step={0.5}
-        max={settings?.unit === 'lb' ? 2202 : 999}
-        onChange={typeLoad}
-        onStep={stepLoad}
-      />
-      <NumberStepper
-        label={item.isTimeBased ? t('session.seconds') : t('session.reps')}
-        value={draft.result}
-        min={resultMin}
-        max={Number.isFinite(resultMax) ? resultMax : undefined}
-        step={item.isTimeBased ? 5 : 1}
-        onChange={(result) => setDraft((current) => ({
-          ...current,
-          result: result === null ? null : Math.min(resultMax, Math.max(resultMin, result)),
-        }))}
-        onStep={(direction) => setDraft((current) => ({ ...current, result: Math.min(resultMax, Math.max(resultMin, (current.result ?? resultMin) + direction * (item.isTimeBased ? 5 : 1))) }))}
-      />
-      <RirSelector value={draft.rir} onChange={(rir) => setDraft((current) => ({ ...current, rir }))} />
-    </div>
+    <ol className="session-focus__sets">
+      {drafts.map((draft, setIndex) => <li key={setIndex} className="session-focus__set">
+        <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+        <div className="session-focus__fields">
+          <NumberStepper
+            label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
+            value={draft.kg === null ? null : settings?.unit === 'lb' ? Number(kgToLb(draft.kg).toFixed(1)) : draft.kg}
+            suffix={loadPerSide ? `${settings?.unit ?? 'kg'}/${t('session.per_side_short')}` : settings?.unit ?? 'kg'}
+            step={0.5}
+            max={settings?.unit === 'lb' ? 2202 : 999}
+            onChange={(value) => typeLoad(setIndex, value)}
+            onStep={(direction) => stepLoad(setIndex, direction)}
+          />
+          <NumberStepper
+            label={item.isTimeBased ? t('session.seconds') : t('session.reps')}
+            value={draft.result}
+            min={resultMin}
+            max={Number.isFinite(resultMax) ? resultMax : undefined}
+            step={item.isTimeBased ? 5 : 1}
+            onChange={(result) => updateDraft(setIndex, { result: result === null ? null : Math.min(resultMax, Math.max(resultMin, result)) })}
+            onStep={(direction) => updateDraft(setIndex, { result: Math.min(resultMax, Math.max(resultMin, (draft.result ?? resultMin) + direction * (item.isTimeBased ? 5 : 1))) })}
+          />
+          <RirSelector value={draft.rir} onChange={(rir) => updateDraft(setIndex, { rir })} />
+        </div>
+      </li>)}
+    </ol>
     {(item.notes || (exercise?.cues.length ?? 0) > 0 || description) && <details className="session-focus__specifics">
       <summary>{t('session.execution_details')}</summary>{item.notes && <p>{item.notes}</p>}
       {exercise?.cues.map((cue, cueIndex) => <p key={cueIndex}>• {cue}</p>)}{description && <p>{description}</p>}
@@ -228,7 +245,8 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     {showPain ? <PainCapture onCancel={() => setShowPain(false)} onSave={async (regionSlug, level) => {
       await logPain({ regionSlug, level, sessionId, setLogId: workLogs.at(-1)?.id ?? null }); setShowPain(false)
     }} /> : <div className="session-focus__actions">
-      <button type="button" className="button button--primary" onClick={() => void completeSet()}>{t('session.complete_set')}</button>
+      <button type="button" className="button button--primary" onClick={() => void completeExercise()}>{t('session.complete_exercise', { name })}</button>
+      <button type="button" className="button button--quiet" onClick={onRest}>{t('session.start_rest')}</button>
       <button type="button" className="button button--quiet" onClick={() => void addWarmup()}>{t('session.add_warmup')}</button>
       <button type="button" className="button button--quiet" onClick={() => setShowPain(true)}>{t('session.pain')}</button>
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.skip_exercise')}</button>

@@ -115,8 +115,9 @@ are 7.5 rem wide on mobile and 11 rem from 40 rem.
 
 The live session starts with a compact exercise overview split into pending,
 skipped, and completed groups. Skipped is never styled or counted as done.
-Exercise execution uses a focused page with one current set
-at a time; rest separates sets and returns to the overview after the final set.
+Exercise execution uses a focused page that keeps every planned set visible
+and editable at once. Rest is an optional explicit timer, never an automatic
+gate between sets. Completing the exercise returns to the overview.
 Historical sets remain grouped under their exercise.
 
 The monthly history calendar renders only the weeks required by that month.

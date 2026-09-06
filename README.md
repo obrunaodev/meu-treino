@@ -39,10 +39,9 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 
 - The session entry page previews the expected workout and allows another template to be selected before starting.
 - The active session displays pending, skipped, and completed exercises.
-- Opening an exercise starts its focused set flow with editable numeric weight and repetition inputs.
-- The first set is prefilled from the latest comparable workout. Later sets inherit the preceding set's weight.
-- Compact tracking records all planned sets from one entry. Full tracking records each set separately.
-- Rest derives from an absolute timestamp and survives backgrounding or reloading the app.
+- Opening an exercise shows every planned set with editable numeric weight, repetition, and effort inputs.
+- Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
+- Rest is optional and starts only when requested. It derives from an absolute timestamp and survives backgrounding or reloading the app.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.
 - Warm-up sets are recorded with `is_warmup` and excluded from volume and progress statistics.

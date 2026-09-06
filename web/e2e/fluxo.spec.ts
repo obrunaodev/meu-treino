@@ -120,12 +120,19 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByText(/preparação/i)).toHaveCount(0)
     await page.locator('.session-exercise__overview').click()
-    await page.getByRole('spinbutton', { name: /carga/i }).fill('72.5')
-    await page.getByRole('spinbutton', { name: /reps/i }).fill('12')
-    for (let setIndex = 0; setIndex < 3; setIndex++) {
-      await page.getByRole('button', { name: /concluir série/i }).click()
-      if (setIndex < 2) await page.getByRole('button', { name: /começar próxima série/i }).click()
-    }
+    await expect(page.getByRole('spinbutton', { name: /carga/i })).toHaveCount(3)
+    await page.getByRole('button', { name: /iniciar intervalo/i }).click()
+    await expect(page.getByRole('button', { name: /encerrar intervalo/i })).toBeVisible()
+    await page.reload()
+    await expect(page.getByRole('button', { name: /encerrar intervalo/i })).toBeVisible()
+    await page.getByRole('button', { name: /encerrar intervalo/i }).click()
+
+    const loads = page.getByRole('spinbutton', { name: /carga/i })
+    await loads.first().fill('72.5')
+    await expect(loads.nth(1)).toHaveValue('72.5')
+    await expect(loads.nth(2)).toHaveValue('72.5')
+    await page.getByRole('spinbutton', { name: /reps/i }).first().fill('12')
+    await page.getByRole('button', { name: /^concluir /i }).click()
 
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
     await expect(page.getByRole('heading', { name: /exercícios concluídos/i })).toBeVisible()
