@@ -69,12 +69,14 @@ export function Session() {
   const restRemaining = phase === 'descanso' ? remainingSeconds(phaseStartedAt, selectedRest, now) : 0
 
   useEffect(() => {
-    if (phase === 'descanso' && restRemaining === 0) setPhase('exercicios')
-  }, [phase, restRemaining, setPhase])
+    if (selectedItem && phase === 'descanso' && restRemaining === 0) setPhase('exercicios')
+  }, [selectedItem, phase, restRemaining, setPhase])
 
   useEffect(() => {
-    if (!selectedItem && phase === 'descanso') setPhase('exercicios')
-  }, [selectedItem, phase, setPhase])
+    // No reload, Dexie first returns an empty list. That transient state must
+    // not cancel a persisted timer before the captured plan reaches the UI.
+    if (items.length > 0 && !selectedItem && phase === 'descanso') setPhase('exercicios')
+  }, [items.length, selectedItem, phase, setPhase])
 
   const progress = exerciseProgress(
     items.map((i) => ({ id: i.id, sets: i.sets, restSeconds: i.restSeconds })),
