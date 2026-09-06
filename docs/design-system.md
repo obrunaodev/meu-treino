@@ -123,7 +123,10 @@ input. Each set card reuses the wide green completion button from the
 exercise-card pattern at the upper-left, and the exercise can only be finished
 after every planned set is checked.
 Completing the exercise returns to the overview. Recorded-set details do not
-repeat below the live exercise list; they remain grouped in session history.
+repeat below the live exercise list. Session history presents them in flat,
+always-expanded exercise sections, with the captured prescription and equipment
+context above minimally separated editable set rows. Reports favor dividers and
+typographic hierarchy over nested cards or disclosure controls.
 
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
