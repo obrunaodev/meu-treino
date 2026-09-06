@@ -376,7 +376,7 @@
     "redo_exercise": "Refazer exercício",
     "execution_details": "Detalhes de execução",
     "edit_reps_hint": "Ajuste carga, repetições e esforço; marque o exercício somente depois de concluir todas as séries.",
-    "complete_exercise": "Concluir {{name}}",
+    "complete_exercise": "Finalizar exercício",
     "reopen_exercise": "Reabrir {{name}}",
     "skipped": "pulado",
     "rest_seconds": "{{count}}s descanso",

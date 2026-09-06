@@ -245,7 +245,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     {showPain ? <PainCapture onCancel={() => setShowPain(false)} onSave={async (regionSlug, level) => {
       await logPain({ regionSlug, level, sessionId, setLogId: workLogs.at(-1)?.id ?? null }); setShowPain(false)
     }} /> : <div className="session-focus__actions">
-      <button type="button" className="button button--primary" onClick={() => void completeExercise()}>{t('session.complete_exercise', { name })}</button>
+      <button type="button" className="button button--primary" onClick={() => void completeExercise()}>{t('session.complete_exercise')}</button>
       <button type="button" className="button button--quiet" onClick={onRest}>{t('session.start_rest')}</button>
       <button type="button" className="button button--quiet" onClick={() => void addWarmup()}>{t('session.add_warmup')}</button>
       <button type="button" className="button button--quiet" onClick={() => setShowPain(true)}>{t('session.pain')}</button>

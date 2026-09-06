@@ -376,7 +376,7 @@
     "redo_exercise": "Redo exercise",
     "execution_details": "Execution details",
     "edit_reps_hint": "Adjust load, repetitions, and effort; check the exercise only after completing every set.",
-    "complete_exercise": "Complete {{name}}",
+    "complete_exercise": "Finish exercise",
     "reopen_exercise": "Reopen {{name}}",
     "skipped": "skipped",
     "rest_seconds": "{{count}}s rest",
