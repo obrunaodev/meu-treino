@@ -590,6 +590,8 @@
     "gone_program": "Programa removido",
     "session": "Sessão",
     "status": "Status",
+    "started_at": "Início",
+    "ended_at": "Fim",
     "date": "Data e hora",
     "notes": "Anotações",
     "sets_title": "Séries registradas",
@@ -607,6 +609,7 @@
     "delete_cardio": "Apagar cardio",
     "delete_pain": "Apagar registro de dor",
     "delete_session_confirm": "Apagar sessão",
+    "edit_session": "Editar sessão",
     "add_exercise": "+ exercício",
     "all_planned_in": "Todos os exercícios do {{treino}} já estão nesta sessão."
   },

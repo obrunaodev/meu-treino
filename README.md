@@ -428,7 +428,8 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 | `/pain` | Pain history |
 | `/functional-tests` | Functional tests |
 | `/history` | Calendar and grouped history |
-| `/history/:sessionId` | Session report and editing |
+| `/history/:sessionId` | Read-only session report |
+| `/history/:sessionId/edit` | Session editing and deletion |
 | `/history/reports/cycle/:programId/:cycleNumber` | Cycle report |
 | `/history/reports/period/:periodNumber/block/:programId/:blockNumber` | Block report |
 | `/settings` | Preferences and integrations |

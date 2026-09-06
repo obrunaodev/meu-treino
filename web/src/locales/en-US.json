@@ -590,6 +590,8 @@
     "gone_program": "Removed program",
     "session": "Session",
     "status": "Status",
+    "started_at": "Started",
+    "ended_at": "Ended",
     "date": "Date and time",
     "notes": "Notes",
     "sets_title": "Recorded sets",
@@ -607,6 +609,7 @@
     "delete_cardio": "Delete cardio",
     "delete_pain": "Delete pain record",
     "delete_session_confirm": "Delete session",
+    "edit_session": "Edit session",
     "add_exercise": "+ exercise",
     "all_planned_in": "Every exercise in {{treino}} is already in this session."
   },

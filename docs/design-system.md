@@ -138,6 +138,10 @@ Each section keeps aggregate metrics near the exercise heading, then lists the
 underlying sets by session with load, result, effort, side, time, and exception
 flags visible without disclosure controls.
 
+An individual session report is read-only. Its sole action after the exercise
+breakdown links to a dedicated edit route; mutable forms and destructive
+controls never compete with report data on the same page.
+
 ## Data visualization
 
 Single-series charts use gray context marks and the accent color for the latest

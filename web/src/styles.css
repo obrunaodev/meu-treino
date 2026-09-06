@@ -917,6 +917,13 @@ p { margin: 0; line-height: 1.55; }
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px;
   padding: 10px 12px; border-radius: var(--r-tile); background: var(--shell); font-size: 12.5px;
 }
+.session-detail__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.session-detail__facts > div { min-width: 0; }
+.session-detail__facts dt { color: var(--dim); font: 400 9.5px/1.2 var(--font-mono); text-transform: uppercase; }
+.session-detail__facts dd { margin: 4px 0 0; color: var(--ink-2); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.session-detail__edit { align-self: flex-start; color: var(--ink-2); font: 500 12px/1 var(--font-mono); text-transform: uppercase; }
+.session-detail__edit:hover { color: var(--ink); }
+@media (min-width: 48rem) { .session-detail__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 30rem) {
   .history-sessions li { grid-template-columns: 1fr; gap: 4px; }
   .history-block__body { padding: 10px; }

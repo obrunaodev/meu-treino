@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockReportRoute, cycleReportRoute, historyRoute, routes, sessionExerciseRoute, sessionRoute } from '../src/lib/routes.js'
+import { blockReportRoute, cycleReportRoute, historyEditRoute, historyRoute, routes, sessionExerciseRoute, sessionRoute } from '../src/lib/routes.js'
 
 describe('canonical web routes', () => {
   it('uses stable en-US segments', () => {
@@ -25,6 +25,7 @@ describe('canonical web routes', () => {
     expect(sessionRoute('session-id')).toBe('/session/session-id')
     expect(sessionExerciseRoute('session-id', 'item-id')).toBe('/session/session-id/exercise/item-id')
     expect(historyRoute('session-id')).toBe('/history/session-id')
+    expect(historyEditRoute('session-id')).toBe('/history/session-id/edit')
     expect(cycleReportRoute('program-id', 3)).toBe('/history/reports/cycle/program-id/3')
     expect(blockReportRoute('program-id', 2, 4)).toBe('/history/reports/period/2/block/program-id/4')
   })

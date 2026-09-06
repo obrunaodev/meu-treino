@@ -20,7 +20,7 @@ import { History } from './pages/History.js'
 import { Settings } from './pages/Settings.js'
 import { Conflicts } from './pages/Conflicts.js'
 import { More } from './pages/More.js'
-import { SessionDetail } from './pages/SessionDetail.js'
+import { SessionDetail, SessionEdit } from './pages/SessionDetail.js'
 import { SessionGate } from './pages/SessionGate.js'
 import { WhatsApp } from './pages/WhatsApp.js'
 import { TrainingReport } from './pages/TrainingReport.js'
@@ -81,6 +81,7 @@ function Authed() {
           <Route path={routes.history} element={<History />} />
           <Route path={`${routes.history}/reports/cycle/:programId/:cycleNumber`} element={<TrainingReport scope="cycle" />} />
           <Route path={`${routes.history}/reports/period/:periodNumber/block/:programId/:blockNumber`} element={<TrainingReport scope="block" />} />
+          <Route path={`${routes.history}/:sessionId/edit`} element={<SessionEdit />} />
           <Route path={`${routes.history}/:sessionId`} element={<SessionDetail />} />
           <Route path={routes.settings} element={<Settings />} />
           <Route path={routes.conflicts} element={<Conflicts />} />

@@ -35,6 +35,11 @@ test.describe('jornada completa', () => {
     await page?.close()
   })
 
+  async function openSessionEditor() {
+    await page.getByRole('link', { name: /editar sessão/i }).click()
+    await expect(page).toHaveURL(/\/history\/[^/]+\/edit$/)
+  }
+
   test('entra com o acesso provisório', async () => {
     await page.goto('/')
     await page.getByLabel(/e-?mail/i).fill(`e2e-${Date.now()}@exemplo.com`)
@@ -303,7 +308,7 @@ test.describe('jornada completa', () => {
     expect(file.suggestedFilename()).toBe('meu-treino-series.csv')
   })
 
-  test('corrige uma série registrada no detalhe da sessão', async () => {
+  test('mantém o relatório somente leitura e corrige na edição', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
 
@@ -312,6 +317,10 @@ test.describe('jornada completa', () => {
     await expect(page.getByRole('heading', { name: /resumo do relatório/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /detalhamento por exercício/i })).toBeVisible()
     await expect(page.getByText('100%', { exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: /editar sessão/i })).toBeVisible()
+    await expect(page.getByLabel(/^status$/i)).toHaveCount(0)
+    await expect(page.locator('.setrow')).toHaveCount(0)
+    await openSessionEditor()
 
     // O primeiro exercício já vem aberto; subir a carga é o caso real de ter
     // registrado errado na academia.
@@ -326,6 +335,7 @@ test.describe('jornada completa', () => {
     // um teste ao anterior torna a falha ilegível quando algo muda lá em cima.
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
+    await openSessionEditor()
 
     const primeira = page.locator('.setrow').first()
     await expect(primeira).toBeVisible()
@@ -349,7 +359,7 @@ test.describe('jornada completa', () => {
 
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
-    await expect(page.locator('.setrow__value').first()).not.toContainText('/lado')
+    await expect(page.locator('.report-series').first()).not.toContainText('/lado')
   })
 
   test('o + exercício usa o plano capturado pela sessão', async () => {
@@ -365,6 +375,7 @@ test.describe('jornada completa', () => {
     const abrirPicker = async () => {
       await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
       await page.locator('.calendar__day--concluida').click()
+      await openSessionEditor()
       await page.getByRole('button', { name: /\+ exercício/i }).click()
     }
 
@@ -394,6 +405,7 @@ test.describe('jornada completa', () => {
   test('muda o status da sessão', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--concluida').click()
+    await openSessionEditor()
 
     await page.getByLabel(/^status$/i).selectOption('incompleta')
 
@@ -454,6 +466,7 @@ test.describe('jornada completa', () => {
   test('apagar a sessão leva junto as séries e o cardio', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
     await page.locator('.calendar__day--incompleta').click()
+    await openSessionEditor()
     await page.getByRole('button', { name: /apagar sessão/i }).click()
     // O gatilho some ao confirmar, então o nome pode ser o mesmo — e ser
     // explícito evita colidir com o "Apagar cardio" logo acima.

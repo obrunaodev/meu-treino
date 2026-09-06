@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   useCardioLogs, useCardioOptions, useEquipment, useExercises, usePainEvents,
   useSessions, useSetLogs, useSettings, useTemplateItems, useTemplatesEver,
@@ -9,7 +9,7 @@ import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { sideLabel } from '../lib/labels.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
-import { routes } from '../lib/routes.js'
+import { historyEditRoute, historyRoute, routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { TrainingReportView } from '../components/TrainingReportView.js'
@@ -19,30 +19,18 @@ import type { PlanSnapshot, SetLog, TemplateItem, WorkoutSession } from '../lib/
 
 const STATUSES = ['concluida', 'incompleta', 'em_andamento'] as const
 
-/**
- * Uma sessão registrada, aberta para correção.
- *
- * Existe porque o registro acontece na academia, com pressa: carga errada,
- * série a mais, treino iniciado por engano. Sem edição, o único conserto seria
- * apagar tudo — e o histórico é justamente o que o app promete guardar.
- */
 export function SessionDetail() {
   const { sessionId } = useParams()
   const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-
   const sessions = useSessions()
   const session = sessions.find((s) => s.id === sessionId) ?? null
   const templates = useTemplatesEver()
   const logs = useSetLogs(sessionId)
-  const currentPlan = useTemplateItems(session?.templateId)
-  const planned = session?.planSnapshot?.items ?? currentPlan
   const cardio = useCardioLogs(sessionId)
   const exercises = useExercises()
   const pain = usePainEvents().filter((event) => event.sessionId === sessionId)
+  const painRegions = usePainRegions()
   const settings = useSettings()
-  const { updateSession, deleteSession } = useActions()
-  const [confirming, setConfirming] = useState(false)
 
   if (!session) return <Empty message={t('history.gone')} />
 
@@ -53,16 +41,9 @@ export function SessionDetail() {
     [session], logs, cardio, pain, new Map(exercises.map((exercise) => [exercise.id, exercise.name])),
   )
 
-  async function destroy() {
-    await deleteSession(session!.id)
-    navigate(routes.history, { replace: true })
-  }
-
   return (
     <div className="page">
-      <button type="button" className="button button--ghost" onClick={() => navigate(-1)}>
-        ← {t('common.back')}
-      </button>
+      <Link className="button button--ghost" to={routes.history}>← {t('common.back')}</Link>
 
       <header className="page__title">
         <span className="eyebrow">
@@ -80,75 +61,113 @@ export function SessionDetail() {
         </span>
       </header>
 
-      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} />
-
       <Card title={t('history.session')}>
-        <Select
-          label={t('history.status')}
-          value={session.status}
-          onChange={(value) => void updateSession(session.id, { status: value as WorkoutSession['status'] })}
-        >
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>{t(`history.${status}`)}</option>
-          ))}
-        </Select>
-
-        <label className="field">
-          {t('history.date')}
-          <input
-            type="datetime-local"
-            value={toLocalInput(session.startedAt)}
-            onChange={(e) => {
-              if (!e.target.value) return
-              void updateSession(session.id, { startedAt: new Date(e.target.value).toISOString() })
-            }}
-          />
-        </label>
-
-        <label className="field">
-          {t('history.notes')}
-          <textarea
-            value={session.notes ?? ''}
-            onChange={(e) => void updateSession(session.id, { notes: e.target.value || null })}
-          />
-        </label>
-
+        <dl className="session-detail__facts">
+          <Datum label={t('history.status')} value={t(`history.${session.status}`)} />
+          <Datum label={t('history.started_at')} value={date.toLocaleString(i18n.language)} />
+          <Datum label={t('history.ended_at')} value={session.endedAt ? new Date(session.endedAt).toLocaleString(i18n.language) : '—'} />
+          <Datum label={t('history.notes')} value={session.notes || '—'} />
+          <Datum label={t('session.cardio')} value={cardioSummary(cardio, t)} />
+          <Datum label={t('reports.pain')} value={painSummary(pain, painRegions, i18n.language)} />
+        </dl>
         {session.autoClosedAt && <span className="mono muted">{t('session.auto_closed')}</span>}
       </Card>
 
-      <SetEditor
-        sessionId={session.id}
-        logs={logs}
-        planned={planned}
-        snapshot={session.planSnapshot}
-        templateName={session.planSnapshot?.templateName ?? template?.name ?? null}
-        unit={settings?.unit ?? 'kg'}
-        showPlates={settings?.showPlates ?? true}
-      />
+      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} />
 
-      <CardioEditor sessionId={session.id} logs={cardio} />
-
-      <PainList sessionId={session.id} />
-
-      <Card title={t('settings.danger')} tone="quiet">
-        <span className="mono muted">{t('history.delete_hint')}</span>
-        {confirming ? (
-          <div className="row">
-            <button type="button" className="button button--danger" onClick={() => void destroy()}>
-              {t('history.delete_session_confirm')}
-            </button>
-            <button type="button" className="button button--ghost" onClick={() => setConfirming(false)}>
-              {t('common.cancel')}
-            </button>
-          </div>
-        ) : (
-          <button type="button" className="button button--ghost" onClick={() => setConfirming(true)}>
-            {t('history.delete')}
-          </button>
-        )}
-      </Card>
+      <Link className="session-detail__edit" to={historyEditRoute(session.id)}>{t('history.edit_session')} →</Link>
     </div>
   )
+}
+
+/** Dedicated correction surface; the report route remains read-only. */
+export function SessionEdit() {
+  const { sessionId } = useParams()
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const sessions = useSessions()
+  const session = sessions.find((s) => s.id === sessionId) ?? null
+  const templates = useTemplatesEver()
+  const logs = useSetLogs(sessionId)
+  const currentPlan = useTemplateItems(session?.templateId)
+  const planned = session?.planSnapshot?.items ?? currentPlan
+  const cardio = useCardioLogs(sessionId)
+  const settings = useSettings()
+  const { updateSession, deleteSession } = useActions()
+  const [confirming, setConfirming] = useState(false)
+
+  if (!session) return <Empty message={t('history.gone')} />
+  const template = templates.find((entry) => entry.id === session.templateId)
+  const working = logs.filter((log) => !log.isWarmup && !log.skipped)
+  const name = session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')
+
+  async function destroy() {
+    await deleteSession(session!.id)
+    navigate(routes.history, { replace: true })
+  }
+
+  return <div className="page">
+    <Link className="button button--ghost" to={historyRoute(session.id)}>← {t('common.back')}</Link>
+    <header className="page__title">
+      <span className="eyebrow">{t('history.edit_session')}</span>
+      <h1>{name}</h1>
+      <span className="mono muted">
+        {new Date(session.startedAt).toLocaleString(i18n.language, { dateStyle: 'long', timeStyle: 'short' })}
+        {' · '}{t('history.sets', { count: working.length })}
+      </span>
+    </header>
+
+    <Card title={t('history.session')}>
+      <Select label={t('history.status')} value={session.status} onChange={(value) => void updateSession(session.id, { status: value as WorkoutSession['status'] })}>
+        {STATUSES.map((status) => <option key={status} value={status}>{t(`history.${status}`)}</option>)}
+      </Select>
+      <label className="field">{t('history.date')}<input type="datetime-local" value={toLocalInput(session.startedAt)} onChange={(event) => {
+        if (event.target.value) void updateSession(session.id, { startedAt: new Date(event.target.value).toISOString() })
+      }} /></label>
+      <label className="field">{t('history.notes')}<textarea value={session.notes ?? ''} onChange={(event) => void updateSession(session.id, { notes: event.target.value || null })} /></label>
+      {session.autoClosedAt && <span className="mono muted">{t('session.auto_closed')}</span>}
+    </Card>
+
+    <SetEditor sessionId={session.id} logs={logs} planned={planned} snapshot={session.planSnapshot}
+      templateName={name} unit={settings?.unit ?? 'kg'} showPlates={settings?.showPlates ?? true} />
+    <CardioEditor sessionId={session.id} logs={cardio} />
+    <PainList sessionId={session.id} />
+    <Card title={t('settings.danger')} tone="quiet">
+      <span className="mono muted">{t('history.delete_hint')}</span>
+      {confirming ? <div className="row">
+        <button type="button" className="button button--danger" onClick={() => void destroy()}>{t('history.delete_session_confirm')}</button>
+        <button type="button" className="button button--ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</button>
+      </div> : <button type="button" className="button button--ghost" onClick={() => setConfirming(true)}>{t('history.delete')}</button>}
+    </Card>
+  </div>
+}
+
+function Datum({ label, value }: { label: string; value: string }) {
+  return <div><dt>{label}</dt><dd>{value}</dd></div>
+}
+
+function cardioSummary(logs: ReturnType<typeof useCardioLogs>, t: (key: string) => string): string {
+  if (logs.length === 0) return t('history.no_cardio')
+  return logs.map((entry) => [
+    entry.modality,
+    `${Math.round(entry.durationSeconds / 60)} min`,
+    entry.perceivedIntensity ? t(`session.${entry.perceivedIntensity}`) : null,
+    entry.distanceKm !== null ? `${entry.distanceKm} km` : null,
+    entry.avgHeartRate !== null ? `${entry.avgHeartRate} bpm` : null,
+  ].filter(Boolean).join(' · ')).join(' / ')
+}
+
+function painSummary(
+  events: ReturnType<typeof usePainEvents>,
+  regions: ReturnType<typeof usePainRegions>,
+  locale: string,
+): string {
+  if (events.length === 0) return '—'
+  return events.map((event) => {
+    const region = regions.find((candidate) => candidate.slug === event.regionSlug)
+    const name = locale.startsWith('pt') ? region?.namePt : region?.nameEn
+    return `${name ?? event.regionSlug} · ${event.level}/10`
+  }).join(' / ')
 }
 
 /** `datetime-local` não aceita ISO com fuso; precisa do horário local sem Z. */
