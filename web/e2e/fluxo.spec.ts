@@ -135,8 +135,14 @@ test.describe('jornada completa', () => {
     await page.getByRole('spinbutton', { name: /reps/i }).first().fill('12')
     const finishExercise = page.getByRole('button', { name: /finalizar exercício/i })
     await expect(finishExercise).toBeDisabled()
-    for (const checkButton of await page.getByRole('button', { name: /marcar série \d como concluída/i }).all()) {
-      await checkButton.click()
+    const uncheckedSets = page.getByRole('button', { name: /marcar série \d como concluída/i })
+    await expect(uncheckedSets).toHaveCount(3)
+    for (let remaining = 3; remaining > 0; remaining--) {
+      // Cada clique muda o nome acessível para "desmarcar" e re-renderiza a
+      // lista. Consultar sempre o primeiro pendente evita reter locators nth()
+      // cujos índices deixam de existir depois da mutação anterior.
+      await uncheckedSets.first().click()
+      await expect(uncheckedSets).toHaveCount(remaining - 1)
     }
     await expect(finishExercise).toBeEnabled()
     await finishExercise.click()
