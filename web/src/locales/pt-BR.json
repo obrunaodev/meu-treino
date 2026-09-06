@@ -366,6 +366,7 @@
     "open_exercise": "Começar",
     "expected_load": "Carga",
     "sets_count": "{{count}} séries",
+    "check_set": "Série {{number}} concluída",
     "start_rest": "Iniciar intervalo",
     "optional_rest": "Intervalo opcional",
     "stop_rest": "Encerrar intervalo",

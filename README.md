@@ -40,6 +40,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - The session entry page previews the expected workout and allows another template to be selected before starting.
 - The active session displays pending, skipped, and completed exercises.
 - Opening an exercise shows every planned set with editable numeric weight, repetition, and effort inputs.
+- Each set is checked off independently, and the exercise can only be finished after all planned sets are checked.
 - Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
 - Rest is optional and starts only when requested. It derives from an absolute timestamp and survives backgrounding or reloading the app.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.

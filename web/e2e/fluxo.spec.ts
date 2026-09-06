@@ -132,7 +132,13 @@ test.describe('jornada completa', () => {
     await expect(loads.nth(1)).toHaveValue('72.5')
     await expect(loads.nth(2)).toHaveValue('72.5')
     await page.getByRole('spinbutton', { name: /reps/i }).first().fill('12')
-    await page.getByRole('button', { name: /finalizar exercício/i }).click()
+    const finishExercise = page.getByRole('button', { name: /finalizar exercício/i })
+    await expect(finishExercise).toBeDisabled()
+    for (const checkbox of await page.getByRole('checkbox', { name: /série \d concluída/i }).all()) {
+      await checkbox.check()
+    }
+    await expect(finishExercise).toBeEnabled()
+    await finishExercise.click()
 
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
     await expect(page.getByRole('heading', { name: /exercícios concluídos/i })).toBeVisible()

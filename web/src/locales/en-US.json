@@ -366,6 +366,7 @@
     "open_exercise": "Start",
     "expected_load": "Load",
     "sets_count": "{{count}} sets",
+    "check_set": "Set {{number}} completed",
     "start_rest": "Start rest timer",
     "optional_rest": "Optional rest timer",
     "stop_rest": "Stop rest timer",

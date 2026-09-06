@@ -70,7 +70,7 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
   </section>
 }
 
-interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null }
+interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
 
 /** One-exercise editor that keeps every planned set visible at once. */
 export function SessionExerciseFlow({ sessionId, item, index, logs, resting, restRemaining, onRest, onContinue, onDone }: {
@@ -110,6 +110,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
       plate: source?.plateCount ?? null,
       result: (item.isTimeBased ? source?.seconds : source?.reps) ?? prescribedResult(item.repMin, item.repMax),
       rir: source?.rir ?? item.rirTarget,
+      checked: current !== undefined,
     }
   })
   const [drafts, setDrafts] = useState<Draft[]>(initialDrafts)
@@ -132,8 +133,10 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
   const videoUrl = catalog?.video?.[lang] ?? catalog?.video?.pt ?? catalog?.video?.en ?? null
   const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
   const completed = workLogs.length >= item.sets
+  const allChecked = drafts.every((draft) => draft.checked)
 
   async function completeExercise() {
+    if (!allChecked) return
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
     for (const [setIndex, draft] of drafts.entries()) {
       await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex,
@@ -209,8 +212,15 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     </header>
     <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
     <ol className="session-focus__sets">
-      {drafts.map((draft, setIndex) => <li key={setIndex} className="session-focus__set">
-        <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+      {drafts.map((draft, setIndex) => <li key={setIndex} className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
+        <label className="session-focus__set-check">
+          <input
+            type="checkbox"
+            checked={draft.checked}
+            onChange={(event) => updateDraft(setIndex, { checked: event.target.checked })}
+          />
+          <span>{t('session.check_set', { number: setIndex + 1 })}</span>
+        </label>
         <div className="session-focus__fields">
           <NumberStepper
             label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
@@ -245,7 +255,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, resting, res
     {showPain ? <PainCapture onCancel={() => setShowPain(false)} onSave={async (regionSlug, level) => {
       await logPain({ regionSlug, level, sessionId, setLogId: workLogs.at(-1)?.id ?? null }); setShowPain(false)
     }} /> : <div className="session-focus__actions">
-      <button type="button" className="button button--primary" onClick={() => void completeExercise()}>{t('session.complete_exercise')}</button>
+      <button type="button" className="button button--primary" disabled={!allChecked} onClick={() => void completeExercise()}>{t('session.complete_exercise')}</button>
       <button type="button" className="button button--quiet" onClick={onRest}>{t('session.start_rest')}</button>
       <button type="button" className="button button--quiet" onClick={() => void addWarmup()}>{t('session.add_warmup')}</button>
       <button type="button" className="button button--quiet" onClick={() => setShowPain(true)}>{t('session.pain')}</button>
