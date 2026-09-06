@@ -7,8 +7,8 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
-import { groupByExercise } from '../lib/domain/session.js'
-import { rirLabelKey } from '../lib/domain/rir.js'
+import { sideLabel } from '../lib/labels.js'
+import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
 import { routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
@@ -159,11 +159,12 @@ function toLocalInput(iso: string): string {
 }
 
 /**
- * Relatório plano das séries, agrupado pela ordem em que os exercícios ocorreram.
+ * Séries agrupadas por exercício, um acordeão para cada.
  *
- * Nada fica escondido em acordeões: este é um relatório de conferência e
- * correção, então prescrição, equipamento e resultado precisam ser comparáveis
- * sem interação adicional.
+ * A lista plana misturava as séries de todos os exercícios e obrigava a abrir
+ * uma por uma para descobrir de quem era. Como cada exercício acontece uma vez
+ * na sessão, ele é a unidade natural de leitura — e dentro dele cada série cabe
+ * numa linha só de campos, sem precisar expandir.
  */
 function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, showPlates }: {
   sessionId: string
@@ -179,9 +180,13 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
   const equipment = useEquipment()
   const { logSet } = useActions()
   const [adding, setAdding] = useState(false)
+  const [open, setOpen] = useState<string | null>(null)
 
   const groups = groupByExercise(logs)
   const snapshotByExercise = new Map(snapshot?.items.map((item) => [item.exerciseId, item]) ?? [])
+  // `null` é "ninguém escolheu ainda" e abre o primeiro — a tela não pode
+  // aparecer só com cabeçalhos fechados. `''` é o usuário tendo fechado todos.
+  const openId = open ?? groups[0]?.exerciseId ?? null
 
   // Exercício apagado da biblioteca não apaga a série que foi feita com ele.
   const nameOf = (id: string) => snapshotByExercise.get(id)?.exerciseName ??
@@ -213,21 +218,18 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
       reps: last?.reps ?? 10,
       rir: last?.rir ?? 2,
     })
+    setOpen(exerciseId)
   }
 
   return (
-    <section className="exercise-report" aria-labelledby="exercise-report-title">
-      <header className="exercise-report__head">
-        <div>
-          <span className="eyebrow">{t('history.exercise_detail')}</span>
-          <h2 id="exercise-report-title">{t('history.sets_title')}</h2>
-          <p className="muted">{t('history.sets_hint')}</p>
-        </div>
+    <Card
+      title={t('history.sets_title')}
+      action={
         <button type="button" className="button button--ghost" onClick={() => setAdding((v) => !v)}>
           {t('history.add_exercise')}
         </button>
-      </header>
-
+      }
+    >
       {adding && (
         offered.length === 0 ? (
           <p className="muted">{t('history.all_planned_in', { treino: templateName ?? '—' })}</p>
@@ -255,89 +257,63 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
         <p className="muted">{t('history.no_sets')}</p>
       ) : (
         <div className="setgroups">
-          {groups.map((group, groupIndex) => {
+          {groups.map((group) => {
             const exercise = exercises.find((e) => e.id === group.exerciseId)
-            const captured = snapshotByExercise.get(group.exerciseId)
-            const plan = captured ?? itemByExercise.get(group.exerciseId) ?? null
-            const gear = captured?.equipment ?? equipment.find((e) => e.id === exercise?.equipmentId) ?? null
-            const perSide = captured?.loadPerSide ?? exercise?.loadPerSide ?? false
-            const laterality = captured?.laterality ?? exercise?.laterality ?? null
-            const asymmetric = captured?.unilateralAsymmetric ?? exercise?.unilateralAsymmetric ?? false
-            const working = group.logs.filter((log) => !log.isWarmup && !log.skipped)
-            const warmups = group.logs.filter((log) => log.isWarmup && !log.skipped).length
+            const snapshot = snapshotByExercise.get(group.exerciseId)
+            const gear = snapshot?.equipment ?? equipment.find((e) => e.id === exercise?.equipmentId) ?? null
+            const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
+            const isOpen = openId === group.exerciseId
+            const top = topWorkingSet(group.logs)
 
             return (
               <section key={group.exerciseId} className="setgroup">
-                <header className="setgroup__head">
-                  <span className="setgroup__index mono">{String(groupIndex + 1).padStart(2, '0')}</span>
-                  <div className="setgroup__identity">
-                    <h3>{nameOf(group.exerciseId)}</h3>
-                    <span className="mono muted">{exercisePlanLine(plan, t)}</span>
-                  </div>
-                  <dl className="setgroup__facts">
-                    <div>
-                      <dt>{t('history.equipment')}</dt>
-                      <dd>{gear ? `${gear.name} · ${t(`equipment.${gear.loadType}`)}` : t('library.no_equipment')}</dd>
-                    </div>
-                    <div><dt>{t('history.execution')}</dt><dd>{exerciseExecutionLine(laterality, asymmetric, perSide, t)}</dd></div>
-                    <div><dt>{t('history.result')}</dt><dd>{t('history.working_sets', { count: working.length })}{warmups ? ` · ${t('history.warmup_sets', { count: warmups })}` : ''}</dd></div>
-                  </dl>
-                  {plan?.notes && <p className="setgroup__notes">{plan.notes}</p>}
-                </header>
-
-                <ol className="setrows">
-                  {group.logs.map((log) => (
-                    <SetRow
-                      key={log.id}
-                      log={log}
-                      gear={gear}
-                      unit={unit}
-                      showPlates={showPlates}
-                      perSideLabel={perSide ? t('session.per_side_short') : null}
-                      label={`${nameOf(group.exerciseId)} · ${t('session.set', { n: log.setIndex + 1 })}`}
-                    />
-                  ))}
-                </ol>
-                <button type="button" className="setgroup__add" onClick={() => void appendSet(group.exerciseId)}>
-                  {t('session.add_set')}
+                <button
+                  type="button"
+                  className="setgroup__head"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpen(isOpen ? '' : group.exerciseId)}
+                >
+                  <span className="setgroup__name">{nameOf(group.exerciseId)}</span>
+                  <span className="mono muted">
+                    {[
+                      t('history.sets', { count: group.logs.length }),
+                      top ? formatLoad(top.weightKg, top.plateCount, unit, showPlates, perSide ? t('session.per_side_short') : null) : null,
+                    ].filter(Boolean).join(' · ')}
+                  </span>
+                  <span className="setgroup__mark mono" aria-hidden="true">{isOpen ? '−' : '+'}</span>
                 </button>
+
+                {isOpen && (
+                  <div className="setgroup__body">
+                    <ol className="setrows">
+                      {group.logs.map((log) => (
+                        <SetRow
+                          key={log.id}
+                          log={log}
+                          gear={gear}
+                          unit={unit}
+                          showPlates={showPlates}
+                          perSideLabel={perSide ? t('session.per_side_short') : null}
+                          label={`${nameOf(group.exerciseId)} · ${t('session.set', { n: log.setIndex + 1 })}`}
+                        />
+                      ))}
+                    </ol>
+                    <button
+                      type="button"
+                      className="button button--ghost"
+                      onClick={() => void appendSet(group.exerciseId)}
+                    >
+                      {t('session.add_set')}
+                    </button>
+                  </div>
+                )}
               </section>
             )
           })}
         </div>
       )}
-    </section>
+    </Card>
   )
-}
-
-function exercisePlanLine(
-  plan: TemplateItem | null,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
-  if (!plan) return t('history.no_plan_snapshot')
-  const range = plan.isTimeBased
-    ? `${plan.repMax ?? plan.repMin ?? '—'} ${t('session.seconds')}`
-    : plan.repMin === plan.repMax || plan.repMax === null
-      ? `${plan.repMin ?? '—'} ${t('session.reps')}`
-      : `${plan.repMin ?? 0}–${plan.repMax} ${t('session.reps')}`
-  const effortKey = rirLabelKey(plan.rirTarget)
-  return [
-    `${plan.sets} × ${range}`,
-    effortKey ? t(effortKey) : null,
-    plan.restSeconds !== null ? t('session.rest_seconds', { count: plan.restSeconds }) : null,
-  ].filter(Boolean).join(' · ')
-}
-
-function exerciseExecutionLine(
-  laterality: string | null,
-  asymmetric: boolean,
-  perSide: boolean,
-  t: (key: string) => string,
-): string {
-  const parts = [laterality ? t(`library.${laterality}`) : null]
-  if (asymmetric) parts.push(t('library.asymmetric'))
-  if (perSide) parts.push(t('library.per_side'))
-  return parts.filter(Boolean).join(' · ') || '—'
 }
 
 /**
@@ -355,7 +331,7 @@ function SetRow({ log, gear, unit, showPlates, perSideLabel, label }: {
   perSideLabel: string | null
   label: string
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { updateSet, removeSet } = useActions()
 
   const classes = ['setrow']
@@ -364,14 +340,7 @@ function SetRow({ log, gear, unit, showPlates, perSideLabel, label }: {
 
   return (
     <li className={classes.join(' ')}>
-      <div className="setrow__meta">
-        <strong>{t('session.set', { n: log.setIndex + 1 })}</strong>
-        <span className="mono muted">
-          {log.completedAt
-            ? t('history.recorded_at', { time: new Date(log.completedAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) })
-            : t('history.not_timestamped')}
-        </span>
-      </div>
+      <span className="setrow__n mono">{log.setIndex + 1}</span>
 
       <div className="setrow__load">
         <button
@@ -444,8 +413,6 @@ function SetRow({ log, gear, unit, showPlates, perSideLabel, label }: {
         />
         <span>{t('session.warmup')}</span>
       </label>
-
-      {log.hadPain && <span className="setrow__pain">{t('history.pain_marked')}</span>}
 
       <label className="setrow__flag">
         <input
