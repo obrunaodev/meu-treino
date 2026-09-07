@@ -11,6 +11,23 @@ import { Card, Empty, Modal, Select } from '../components/ui.js'
 import { MediaImage } from '../components/MediaImage.js'
 import type { CatalogExercise, Exercise } from '../lib/types.js'
 
+type ImageFilter = 'all' | 'with' | 'without'
+
+/** Applies the library's text and image-presence filters together. */
+export function filterLibraryExercises(
+  exercises: Exercise[],
+  illustrated: Set<string>,
+  imageFilter: ImageFilter,
+  query: string,
+) {
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  return exercises.filter((exercise) => {
+    const matchesImage = imageFilter === 'all'
+      || illustrated.has(exercise.id) === (imageFilter === 'with')
+    return matchesImage && (!normalizedQuery || exercise.name.toLocaleLowerCase().includes(normalizedQuery))
+  })
+}
+
 export function Library() {
   const { t } = useTranslation()
   const exercises = useExercises()
@@ -19,7 +36,8 @@ export function Library() {
   const pending = usePendingUploads()
   const [detailId, setDetailId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
-  const [imageFilter, setImageFilter] = useState<'all' | 'with' | 'without'>('all')
+  const [query, setQuery] = useState('')
+  const [imageFilter, setImageFilter] = useState<ImageFilter>('all')
   const [view, setView] = useState<'grid' | 'list'>(() =>
     localStorage.getItem('library-view') === 'list' ? 'list' : 'grid',
   )
@@ -28,16 +46,16 @@ export function Library() {
     () => new Set(media.map((m) => m.exerciseId)),
     [media],
   )
-  const visibleExercises = useMemo(() => exercises.filter((exercise) => {
-    if (imageFilter === 'all') return true
-    return illustrated.has(exercise.id) === (imageFilter === 'with')
-  }), [exercises, illustrated, imageFilter])
+  const visibleExercises = useMemo(
+    () => filterLibraryExercises(exercises, illustrated, imageFilter, query),
+    [exercises, illustrated, imageFilter, query],
+  )
 
   const detail = exercises.find((e) => e.id === detailId) ?? null
   if (detail) return <ExerciseDetail exercise={detail} onBack={() => setDetailId(null)} />
 
   return (
-    <div className="page">
+    <div className="page library-page">
       <div className="page__head">
         <div className="page__title">
           <h1>{t('library.title')}</h1>
@@ -48,41 +66,56 @@ export function Library() {
         </button>
       </div>
 
-      <div className="library__toolbar">
-        <span className="mono muted">
-          {t('library.illustrated', { done: illustrated.size, total: exercises.length })}
-          {pending.length > 0 && ` · ${t('library.queued', { count: pending.length })}`}
-        </span>
-        <div className="library__controls">
-          <div className="view-switch" role="group" aria-label={t('library.image_filter')}>
-            {(['all', 'with', 'without'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={imageFilter === option}
-                onClick={() => setImageFilter(option)}
-              >
-                {t(`library.image_${option}`)}
-              </button>
-            ))}
-          </div>
-          <div className="view-switch" role="group" aria-label={t('library.view')}>
-            {(['grid', 'list'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view === option}
-                onClick={() => {
-                  setView(option)
-                  localStorage.setItem('library-view', option)
-                }}
-              >
-                {t(`library.${option}`)}
-              </button>
-            ))}
+      <section className="library-command" aria-label={t('library.controls')}>
+        <div className="library-command__summary">
+          <strong>{exercises.length}</strong>
+          <span>{t('library.exercise_count', { count: exercises.length })}</span>
+          <span className="library-command__illustrated">
+            {t('library.illustrated', { done: illustrated.size, total: exercises.length })}
+          </span>
+          {pending.length > 0 && <span>{t('library.queued', { count: pending.length })}</span>}
+        </div>
+        <div className="library-command__tools">
+          <label className="library-search">
+            <span>{t('common.search')}</span>
+            <input
+              type="search"
+              value={query}
+              placeholder={t('library.search_placeholder')}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <div className="library__controls">
+            <div className="view-switch" role="group" aria-label={t('library.image_filter')}>
+              {(['all', 'with', 'without'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={imageFilter === option}
+                  onClick={() => setImageFilter(option)}
+                >
+                  {t(`library.image_${option}`)}
+                </button>
+              ))}
+            </div>
+            <div className="view-switch" role="group" aria-label={t('library.view')}>
+              {(['grid', 'list'] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={view === option}
+                  onClick={() => {
+                    setView(option)
+                    localStorage.setItem('library-view', option)
+                  }}
+                >
+                  {t(`library.${option}`)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {importing && <CatalogImport onClose={() => setImporting(false)} />}
 
@@ -107,6 +140,7 @@ export function Library() {
                   <span className="tile__name">{exercise.name}</span>
                   <span className="tile__meta">{machine?.name ?? t('library.no_equipment')}</span>
                 </span>
+                <span className="tile__arrow" aria-hidden="true">→</span>
               </button>
             )
           })}
