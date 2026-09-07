@@ -301,6 +301,45 @@ p { margin: 0; line-height: 1.55; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
+.cardio-equipment__intro {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.cardio-equipment__intro p {
+  max-width: 52ch; margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45;
+}
+.cardio-equipment__count {
+  flex: 0 0 auto; padding: 5px 9px; border-radius: var(--r-chip); background: var(--raised);
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap;
+}
+.cardio-equipment__grid { display: grid; gap: 8px; }
+.cardio-equipment__item {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  min-width: 0; padding: 8px 9px 8px 12px; border: 1px solid var(--line); border-radius: var(--r-tile);
+  background: var(--surface-hot);
+}
+.cardio-equipment__index {
+  font-family: var(--font-mono); font-size: 10px; color: var(--dim); letter-spacing: 0.08em;
+}
+.cardio-equipment__item input {
+  min-width: 0; padding: 7px 8px; border-color: transparent; background: transparent; font-weight: 600;
+}
+.cardio-equipment__item input:hover, .cardio-equipment__item input:focus { border-color: var(--line-strong); }
+.cardio-equipment__remove {
+  width: 30px; height: 30px; padding: 0; border: 0; border-radius: var(--r-chip);
+  background: transparent; color: var(--dim); font-size: 19px; line-height: 1; cursor: pointer;
+}
+.cardio-equipment__remove:hover { background: var(--raised); color: var(--ink); }
+.cardio-equipment__add {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 12px; border: 1px dashed var(--line-strong); border-radius: var(--r-tile);
+  background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+}
+.cardio-equipment__add > span:first-child { font-size: 18px; line-height: 1; color: var(--ink-2); }
+.cardio-equipment__add:hover { border-color: var(--muted); background: var(--surface-hot); color: var(--ink); }
+.cardio-equipment__empty { margin: 0; color: var(--muted); font-size: 12.5px; }
+@media (min-width: 46rem) { .cardio-equipment__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 .grid { display: grid; gap: 14px; }
 @media (min-width: 46rem) { .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 72rem) {

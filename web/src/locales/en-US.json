@@ -518,8 +518,12 @@
     "notes": "Notes",
     "cardio_title": "Cardio machines",
     "cardio_add": "New cardio",
+    "cardio_hint": "Organize the available options to select in your workouts.",
+    "cardio_count": "{{count}} machine",
+    "cardio_count_other": "{{count}} machines",
     "cardio_empty": "No cardio machines registered at this gym.",
-    "cardio_name": "Cardio machine name"
+    "cardio_name": "Cardio machine name",
+    "cardio_delete": "Delete {{name}}"
   },
   "cardio_options": {
     "esteira": "Treadmill",

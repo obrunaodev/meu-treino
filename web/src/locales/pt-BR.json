@@ -518,8 +518,12 @@
     "notes": "Observações",
     "cardio_title": "Aparelhos de cardio",
     "cardio_add": "Novo cardio",
+    "cardio_hint": "Organize as opções disponíveis para selecionar nos seus treinos.",
+    "cardio_count": "{{count}} aparelho",
+    "cardio_count_other": "{{count}} aparelhos",
     "cardio_empty": "Nenhum aparelho de cardio cadastrado nesta academia.",
-    "cardio_name": "Nome do aparelho de cardio"
+    "cardio_name": "Nome do aparelho de cardio",
+    "cardio_delete": "Apagar {{name}}"
   },
   "cardio_options": {
     "esteira": "Esteira",

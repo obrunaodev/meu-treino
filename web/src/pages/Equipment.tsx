@@ -52,28 +52,22 @@ export function Equipment() {
         ))
       )}
 
-      <Card
-        title={t('equipment.cardio_title')}
-        action={
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={() => void saveCardioOption({
-              gymId: gyms[0]?.id ?? null,
-              name: t('equipment.cardio_add'),
-              notes: null,
-            })}
-          >
-            {t('equipment.cardio_add')}
-          </button>
-        }
-      >
+      <Card title={t('equipment.cardio_title')}>
+        <div className="cardio-equipment__intro">
+          <p>{t('equipment.cardio_hint')}</p>
+          <span className="cardio-equipment__count">
+            {t('equipment.cardio_count', { count: cardio.length })}
+          </span>
+        </div>
         {cardio.length === 0 ? (
-          <p className="muted">{t('equipment.cardio_empty')}</p>
+          <p className="cardio-equipment__empty">{t('equipment.cardio_empty')}</p>
         ) : (
-          <div className="stack stack--tight">
-            {cardio.map((option) => (
-              <div className="row-between" key={option.id}>
+          <div className="cardio-equipment__grid">
+            {cardio.map((option, index) => (
+              <div className="cardio-equipment__item" key={option.id}>
+                <span className="cardio-equipment__index" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <input
                   aria-label={t('equipment.cardio_name')}
                   value={option.name}
@@ -81,15 +75,28 @@ export function Equipment() {
                 />
                 <button
                   type="button"
-                  className="button button--ghost"
+                  className="cardio-equipment__remove"
+                  aria-label={t('equipment.cardio_delete', { name: option.name })}
                   onClick={() => void removeCardioOption(option.id)}
                 >
-                  {t('common.delete')}
+                  ×
                 </button>
               </div>
             ))}
           </div>
         )}
+        <button
+          type="button"
+          className="cardio-equipment__add"
+          onClick={() => void saveCardioOption({
+            gymId: gyms[0]?.id ?? null,
+            name: t('equipment.cardio_add'),
+            notes: null,
+          })}
+        >
+          <span aria-hidden="true">+</span>
+          <span>{t('equipment.cardio_add')}</span>
+        </button>
       </Card>
     </div>
   )
