@@ -111,6 +111,7 @@ jobs:
         run: |
           npm run db:migrate --prefix api
           npm run catalog:import --prefix api
+          npm run presets:seed --prefix api
           npm run dev --prefix api > /tmp/meu-treino-api.log 2>&1 &
           PORT=3100 npm run dev --prefix bot > /tmp/meu-treino-bot.log 2>&1 &
           npm run dev --prefix web > /tmp/meu-treino-web.log 2>&1 &

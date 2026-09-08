@@ -147,6 +147,7 @@ cp .env.example .env
 docker compose up -d
 docker compose exec api npm run db:migrate
 docker compose exec api npm run catalog:import
+docker compose exec api npm run presets:seed
 ```
 
 | Service | Default URL |

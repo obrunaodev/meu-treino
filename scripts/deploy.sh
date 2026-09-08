@@ -45,6 +45,7 @@ compose "$TAG" up -d --no-build --wait db minio
 compose "$TAG" run --rm minio-init
 compose "$TAG" run --rm --no-deps api node dist/src/db/migrate.js
 compose "$TAG" run --rm --no-deps api node dist/scripts/import-catalog.js
+compose "$TAG" run --rm --no-deps api node dist/scripts/seed-presets.js
 
 if ! compose "$TAG" up -d --no-build --remove-orphans --wait --wait-timeout 180 \
   api whatsapp-bot web proxy; then
