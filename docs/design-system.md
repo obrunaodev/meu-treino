@@ -111,6 +111,13 @@ visual role.
 
 ## Domain layouts
 
+Onboarding begins with a choice between a blank plan and a curated beginner
+preset. Preset controls use the existing segmented view switch, remain stacked
+on narrow screens, and show one complete read-only plan review before creation.
+Compatibility statuses sit beside each exercise; only ambiguous substitutions
+introduce a select control. Applying a preset creates an editable user-owned
+copy, so the review never suggests that later catalog edits alter the plan.
+
 The exercise library supports grid and list views. Grid cards are one column by
 default, two from 40 rem, and never more than three from 68 rem. Exercise media
 uses the `370:277` source ratio with `object-fit: contain`, so uploaded reference

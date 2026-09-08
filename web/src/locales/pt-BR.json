@@ -243,7 +243,8 @@
     "yes": "Sim",
     "no": "Não",
     "skip": "pular",
-    "undo": "Desfazer"
+    "undo": "Desfazer",
+    "select": "Selecione"
   },
   "weekday": {
     "dom": "dom",
@@ -257,6 +258,28 @@
   "onboarding": {
     "step": "Configuração · {{current}} de {{total}}",
     "finish": "Criar meu programa",
+    "modelo": {
+      "title": "Como você quer começar?",
+      "desc": "Comece do zero ou use um plano iniciante pronto e editável."
+    },
+    "revisao": {
+      "title": "Revise seu plano",
+      "desc": "Confira os treinos e resolva apenas os aparelhos sem correspondência direta."
+    },
+    "preset": {
+      "blank": "Plano em branco",
+      "blank_hint": "Monte cada treino e exercício manualmente.",
+      "preset": "Usar um modelo",
+      "preset_hint": "Receba um plano completo baseado no seu objetivo e tempo.",
+      "split": "Divisão do treino",
+      "focus": "Objetivo",
+      "strength": "Força",
+      "hypertrophy": "Hipertrofia",
+      "duration": "Duração por treino",
+      "auto_swap": "Alternativa compatível",
+      "unavailable": "Sem aparelho compatível",
+      "choose_swap": "Escolha uma alternativa"
+    },
     "programa": {
       "title": "Seu programa",
       "desc": "Dê um nome. Tudo aqui pode mudar depois."

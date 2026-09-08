@@ -6,8 +6,12 @@ import { routes } from '../lib/routes.js'
 import { useActions, type ProgramDraft } from '../lib/actions.js'
 import { Card } from '../components/ui.js'
 import type { CatalogStation } from '../lib/types.js'
+import type { PresetSummary } from '../lib/presets.js'
+import { localizedPresetText } from '../lib/presets.js'
+import { PresetReview } from '../components/PresetReview.js'
+import { runSync } from '../lib/sync.js'
 
-const STEPS = ['programa', 'ritmo', 'ciclo', 'bloco', 'academia', 'lembretes'] as const
+const STEPS = ['modelo', 'programa', 'ritmo', 'ciclo', 'bloco', 'academia', 'revisao', 'lembretes'] as const
 type Step = (typeof STEPS)[number]
 
 const WEEKDAY_KEYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
@@ -19,14 +23,21 @@ function defaultTemplateNames(count: number, prefix: string): string[] {
 }
 
 export function Onboarding() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { createProgram } = useActions()
 
-  const [step, setStep] = useState<Step>('programa')
+  const [step, setStep] = useState<Step>('modelo')
   const [saving, setSaving] = useState(false)
   const [stations, setStations] = useState<CatalogStation[]>([])
   const [stationsError, setStationsError] = useState(false)
+  const [presets, setPresets] = useState<PresetSummary[]>([])
+  const [presetMode, setPresetMode] = useState<'blank' | 'preset'>('blank')
+  const [presetSplit, setPresetSplit] = useState<'ab' | 'abc' | 'abcd'>('ab')
+  const [presetFocus, setPresetFocus] = useState<'strength' | 'hypertrophy'>('hypertrophy')
+  const [presetDuration, setPresetDuration] = useState<30 | 45 | 60>(45)
+  const [presetChoices, setPresetChoices] = useState<Record<string, number>>({})
+  const [presetReady, setPresetReady] = useState(false)
 
   const [draft, setDraft] = useState<ProgramDraft>({
     name: t('onboarding.program.default'),
@@ -51,13 +62,29 @@ export function Onboarding() {
       .catch(() => setStationsError(true))
   }, [])
 
-  const index = STEPS.indexOf(step)
+  useEffect(() => {
+    void apiFetch<{ presets: PresetSummary[] }>('/api/presets')
+      .then((body) => setPresets(body.presets))
+      .catch(() => setPresets([]))
+  }, [])
+
+  const activeSteps: readonly Step[] = presetMode === 'preset'
+    ? STEPS
+    : STEPS.filter((item) => item !== 'revisao')
+  const index = activeSteps.indexOf(step)
+  const selectedPreset = presets.find((preset) => preset.split === presetSplit
+    && preset.focus === presetFocus && preset.durationMinutes === presetDuration) ?? null
   const patch = (values: Partial<ProgramDraft>) => setDraft((d) => ({ ...d, ...values }))
 
   const selected = useMemo(
     () => new Set(draft.stations.map((s) => s.code)),
     [draft.stations],
   )
+
+  useEffect(() => {
+    setPresetChoices({})
+    setPresetReady(false)
+  }, [selectedPreset?.slug])
 
   function toggleStation(station: CatalogStation) {
     patch({
@@ -85,7 +112,25 @@ export function Onboarding() {
   async function finish() {
     setSaving(true)
     try {
-      await createProgram(draft)
+      if (presetMode === 'preset' && selectedPreset) {
+        await apiFetch(`/api/presets/${selectedPreset.slug}/materialize`, {
+          method: 'POST',
+          body: JSON.stringify({
+            programName: draft.name, gymName: draft.gymName,
+            stationCodes: draft.stations.map((station) => station.code),
+            cardioNames: draft.cardioNames, choices: presetChoices,
+            scheduleMode: draft.scheduleMode, weekdays: draft.weekdays,
+            blockDurationWeeks: draft.blockDurationWeeks,
+            periodDurationMonths: draft.periodDurationMonths,
+            defaultRestSeconds: draft.defaultRestSeconds,
+            reminderLeadMinutes: draft.reminderLeadMinutes,
+            remindersEnabled: draft.remindersEnabled,
+          }),
+        })
+        await runSync()
+      } else {
+        await createProgram(draft)
+      }
       navigate(routes.dashboard, { replace: true })
     } finally {
       setSaving(false)
@@ -96,16 +141,41 @@ export function Onboarding() {
     <main className="onboarding">
       <header className="onboarding__head">
         <span className="eyebrow">
-          {t('onboarding.step', { current: index + 1, total: STEPS.length })}
+          {t('onboarding.step', { current: index + 1, total: activeSteps.length })}
         </span>
         <h1>{t(`onboarding.${step}.title`)}</h1>
         <p className="muted">{t(`onboarding.${step}.desc`)}</p>
         <div className="progress">
-          <div className="progress__fill" style={{ width: `${((index + 1) / STEPS.length) * 100}%` }} />
+          <div className="progress__fill" style={{ width: `${((index + 1) / activeSteps.length) * 100}%` }} />
         </div>
       </header>
 
       <Card>
+        {step === 'modelo' && <div className="stack">
+          <div className="choices">
+            {(['blank', 'preset'] as const).map((mode) => <button key={mode} type="button"
+              className={`choice${presetMode === mode ? ' choice--on' : ''}`} onClick={() => setPresetMode(mode)}>
+              <strong>{t(`onboarding.preset.${mode}`)}</strong>
+              <span className="muted">{t(`onboarding.preset.${mode}_hint`)}</span>
+            </button>)}
+          </div>
+          {presetMode === 'preset' && <div className="preset-picker">
+            <div className="view-switch" role="group" aria-label={t('onboarding.preset.split')}>
+              {(['ab', 'abc', 'abcd'] as const).map((value) => <button key={value} type="button"
+                aria-pressed={presetSplit === value} onClick={() => setPresetSplit(value)}>{value.toUpperCase()}</button>)}
+            </div>
+            <div className="view-switch" role="group" aria-label={t('onboarding.preset.focus')}>
+              {(['strength', 'hypertrophy'] as const).map((value) => <button key={value} type="button"
+                aria-pressed={presetFocus === value} onClick={() => setPresetFocus(value)}>{t(`onboarding.preset.${value}`)}</button>)}
+            </div>
+            <div className="view-switch" role="group" aria-label={t('onboarding.preset.duration')}>
+              {([30, 45, 60] as const).map((value) => <button key={value} type="button"
+                aria-pressed={presetDuration === value} onClick={() => setPresetDuration(value)}>~{value} min</button>)}
+            </div>
+            {selectedPreset && <strong className="preset-picker__selection">{localizedPresetText(selectedPreset.name, i18n.language)}</strong>}
+          </div>}
+        </div>}
+
         {step === 'programa' && (
           <label className="field">
             {t('onboarding.program.label')}
@@ -313,6 +383,14 @@ export function Onboarding() {
             )}
           </div>
         )}
+
+        {step === 'revisao' && selectedPreset && <PresetReview
+          slug={selectedPreset.slug}
+          stations={draft.stations.map((station) => station.code)}
+          choices={presetChoices}
+          onChoices={setPresetChoices}
+          onReady={setPresetReady}
+        />}
       </Card>
 
       <footer className="onboarding__foot">
@@ -320,13 +398,16 @@ export function Onboarding() {
           type="button"
           className="button button--ghost"
           disabled={index === 0}
-          onClick={() => setStep(STEPS[index - 1]!)}
+          onClick={() => setStep(activeSteps[index - 1]!)}
         >
           {t('common.back')}
         </button>
 
-        {index < STEPS.length - 1 ? (
-          <button type="button" className="button button--primary" onClick={() => setStep(STEPS[index + 1]!)}>
+        {index < activeSteps.length - 1 ? (
+          <button type="button" className="button button--primary"
+            disabled={(step === 'modelo' && presetMode === 'preset' && !selectedPreset)
+              || (step === 'revisao' && !presetReady)}
+            onClick={() => setStep(activeSteps[index + 1]!)}>
             {t('common.next')}
           </button>
         ) : (

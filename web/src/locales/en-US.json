@@ -243,7 +243,8 @@
     "yes": "Yes",
     "no": "No",
     "skip": "skip",
-    "undo": "Undo"
+    "undo": "Undo",
+    "select": "Select"
   },
   "weekday": {
     "dom": "sun",
@@ -257,6 +258,28 @@
   "onboarding": {
     "step": "Setup · {{current}} of {{total}}",
     "finish": "Create my program",
+    "modelo": {
+      "title": "How do you want to start?",
+      "desc": "Start from scratch or use a ready-to-edit beginner plan."
+    },
+    "revisao": {
+      "title": "Review your plan",
+      "desc": "Check every workout and resolve only equipment without a direct match."
+    },
+    "preset": {
+      "blank": "Blank plan",
+      "blank_hint": "Build every workout and exercise manually.",
+      "preset": "Use a template",
+      "preset_hint": "Get a complete plan based on your goal and available time.",
+      "split": "Workout split",
+      "focus": "Goal",
+      "strength": "Strength",
+      "hypertrophy": "Hypertrophy",
+      "duration": "Workout duration",
+      "auto_swap": "Compatible alternative",
+      "unavailable": "No compatible equipment",
+      "choose_swap": "Choose an alternative"
+    },
     "programa": {
       "title": "Your program",
       "desc": "Give it a name. Everything here can change later."

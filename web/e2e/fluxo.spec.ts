@@ -50,6 +50,7 @@ test.describe('jornada completa', () => {
   })
 
   test('monta o programa no onboarding', async () => {
+    await page.getByRole('button', { name: /continuar/i }).click()   // programa
     await page.getByRole('button', { name: /continuar/i }).click()   // ritmo
     await page.getByRole('button', { name: /continuar/i }).click()   // ciclo
     await page.getByRole('button', { name: /continuar/i }).click()   // bloco

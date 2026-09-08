@@ -588,6 +588,31 @@ p { margin: 0; line-height: 1.55; }
 .onboarding__head .eyebrow { letter-spacing: 0.2em; }
 .onboarding__foot { display: flex; align-items: center; gap: 14px; }
 .onboarding__foot .button--primary { margin-left: auto; }
+.preset-picker { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.preset-picker .view-switch { max-width: 100%; }
+.preset-picker__selection { color: var(--ink-2); font-size: 14px; }
+.preset-review { display: flex; flex-direction: column; gap: 18px; }
+.preset-review__workout { display: flex; flex-direction: column; gap: 8px; }
+.preset-review__workout > header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+}
+.preset-review__workout > header span,
+.preset-review__workout li > div span {
+  color: var(--muted); font: 11px var(--font-mono);
+}
+.preset-review__workout ol { display: flex; flex-direction: column; gap: 0; margin: 0; padding-left: 28px; }
+.preset-review__workout li { padding: 10px 0 10px 4px; border-bottom: 1px solid var(--line); }
+.preset-review__workout li > div { display: flex; flex-direction: column; gap: 3px; }
+.preset-review__ok,
+.preset-review__warning { display: block; margin-top: 7px; font: 10px var(--font-mono); }
+.preset-review__ok { color: var(--good); }
+.preset-review__warning { color: var(--accent); }
+.preset-review__workout .field { margin-top: 8px; }
+@media (max-width: 30rem) {
+  .preset-picker .view-switch { display: flex; width: 100%; }
+  .preset-picker .view-switch button { flex: 1; min-width: 0; padding-inline: 7px; }
+}
 
 /* ── login ────────────────────────────────────────────────────────────────*/
 .login { min-height: 100dvh; display: grid; }
