@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { verifyAccessToken } from '../lib/tokens.js'
-import { unauthorized } from '../lib/http-error.js'
+import { forbidden, unauthorized } from '../lib/http-error.js'
+import { userHasRole } from '../lib/admin-roles.js'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -20,5 +21,14 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     next()
   } catch {
     next(unauthorized('token_invalido'))
+  }
+}
+
+/** Authorizes an authenticated request against a current database role assignment. */
+export function requireRole(roleCode: string) {
+  return async (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.userId) return next(unauthorized())
+    if (!await userHasRole(req.userId, roleCode)) return next(forbidden())
+    next()
   }
 }

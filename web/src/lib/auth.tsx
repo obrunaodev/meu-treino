@@ -9,6 +9,7 @@ export interface CurrentUser {
   name: string
   pictureUrl: string | null
   locale: string
+  roles: string[]
   onboardedAt: string | null
 }
 

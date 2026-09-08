@@ -13,6 +13,7 @@ import { mediaRouter } from './routes/media.js'
 import { catalogRouter } from './routes/catalog.js'
 import { pushRouter } from './routes/push.js'
 import { whatsappRouter } from './routes/whatsapp.js'
+import { adminRouter } from './routes/admin.js'
 
 export function createApp() {
   const app = express()
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/api/media', mediaRouter)
   app.use('/api/catalog', catalogRouter)
   app.use('/api/push', pushRouter)
+  app.use('/api/admin', adminRouter)
   // A tela do WhatsApp faz polling de 2s enquanto espera o QR; o teto precisa
   // caber nisso e ainda assim barrar quem martela connect/disconnect.
   app.use('/api/whatsapp', rateLimit({ windowMs: 60_000, max: 120 }), whatsappRouter)

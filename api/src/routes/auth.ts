@@ -3,7 +3,7 @@ import { Router, type Request, type Response } from 'express'
 import { and, eq, gt, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db/index.js'
-import { authSessions, users, userSettings } from '../db/schema.js'
+import { authSessions, userRoles, users, userSettings } from '../db/schema.js'
 import { buildAuthUrl, exchangeCode, verifyIdToken } from '../lib/google.js'
 import {
   ACCESS_TTL_SECONDS, REFRESH_TTL_DAYS, hashRefreshToken, newRefreshToken, signAccessToken,
@@ -72,6 +72,11 @@ async function upsertUser(identity: Identity) {
     .insert(userSettings)
     .values({ id: randomUUID(), ownerId: user.id, locale: user.locale })
     .onConflictDoNothing({ target: userSettings.ownerId })
+
+  await db
+    .insert(userRoles)
+    .values({ userId: user.id, roleCode: 'user' })
+    .onConflictDoNothing()
 
   return user
 }
@@ -261,6 +266,10 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     .from(userSettings)
     .where(eq(userSettings.ownerId, user.id))
     .limit(1)
+  const assignedRoles = await db
+    .select({ code: userRoles.roleCode })
+    .from(userRoles)
+    .where(eq(userRoles.userId, user.id))
 
   res.json({
     id: user.id,
@@ -268,6 +277,7 @@ authRouter.get('/me', requireAuth, async (req, res) => {
     name: user.name,
     pictureUrl: user.pictureUrl,
     locale: user.locale,
+    roles: assignedRoles.map((role) => role.code),
     onboardedAt: settings?.onboardedAt ?? null,
   })
 })

@@ -198,7 +198,25 @@ The callback paths have different responsibilities:
 - `/auth/google/callback` is the API endpoint registered with Google.
 - `/auth/callback` is the React route reached after the API establishes the application session.
 
-Authentication uses Authorization Code with PKCE. Refresh credentials are stored in an HTTP-only cookie, while the short-lived access token stays in memory. Any valid Google account is accepted; there is no trainer or administrator account type.
+Authentication uses Authorization Code with PKCE. Refresh credentials are stored in an HTTP-only cookie, while the short-lived access token stays in memory. Any valid Google account is accepted; there is no trainer account type and administrators use the same Google login as every other user.
+
+### Administrator authorization
+
+The application stores role assignments, not login credentials. Google owns authentication and the API reads current database roles for every administrative request, so grants and revocations take effect without issuing a new access token.
+
+Sign in once with the Google account that will become the first administrator, then bootstrap it through SSH:
+
+```bash
+docker compose exec api npm run admin:grant -- btex88@gmail.com
+```
+
+The address must belong to exactly one registered account. The command is idempotent and records its source in `authorization_audit_events`. Revoke an administrator with:
+
+```bash
+docker compose exec api npm run admin:revoke -- user@example.com
+```
+
+The final administrator cannot be revoked. Subsequent role changes can use the protected admin API. `GET /auth/me` exposes the current account's roles for interface gating, but the API middleware remains the security boundary.
 
 ### Temporary development login
 
@@ -448,6 +466,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 | `/api/media/*` | Authenticated upload, stream, replacement, and deletion |
 | `/api/push/*` | Push configuration and subscriptions |
 | `/api/whatsapp/*` | WhatsApp state, QR connection, groups, and selection |
+| `/api/admin/*` | Role-protected user and administrator management |
 
 ## Known limitations
 

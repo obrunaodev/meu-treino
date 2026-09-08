@@ -10,6 +10,8 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "catalog:import": "tsx scripts/import-catalog.ts",
     "catalog:import-user": "tsx scripts/import-catalog-for-user.ts",
+    "admin:grant": "node dist/scripts/admin-role.js grant",
+    "admin:revoke": "node dist/scripts/admin-role.js revoke",
     "test": "vitest run --exclude \"tests/integration/**\"",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
