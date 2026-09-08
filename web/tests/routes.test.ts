@@ -18,6 +18,7 @@ describe('canonical web routes', () => {
       conflicts: '/conflicts',
       whatsapp: '/whatsapp',
       more: '/more',
+      adminPresets: '/admin/presets',
     })
   })
 

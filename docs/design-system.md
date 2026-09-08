@@ -117,6 +117,9 @@ on narrow screens, and show one complete read-only plan review before creation.
 Compatibility statuses sit beside each exercise; only ambiguous substitutions
 introduce a select control. Applying a preset creates an editable user-owned
 copy, so the review never suggests that later catalog edits alter the plan.
+Preset administration uses the same flat form language. Workouts are bordered
+sections and exercise rows become a two-column field grid on mobile; catalog
+content is edited through named controls, never a raw JSON document.
 
 The exercise library supports grid and list views. Grid cards are one column by
 default, two from 40 rem, and never more than three from 68 rem. Exercise media

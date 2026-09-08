@@ -24,6 +24,7 @@ import { SessionDetail, SessionEdit } from './pages/SessionDetail.js'
 import { SessionGate } from './pages/SessionGate.js'
 import { WhatsApp } from './pages/WhatsApp.js'
 import { TrainingReport } from './pages/TrainingReport.js'
+import { AdminPresets } from './pages/AdminPresets.js'
 import { routes } from './lib/routes.js'
 
 /**
@@ -87,6 +88,7 @@ function Authed() {
           <Route path={routes.conflicts} element={<Conflicts />} />
           <Route path={routes.whatsapp} element={<WhatsApp />} />
           <Route path={routes.more} element={<More />} />
+          <Route path={routes.adminPresets} element={<AdminPresets />} />
           <Route path="*" element={<Navigate to={routes.dashboard} replace />} />
         </Route>
       </Routes>

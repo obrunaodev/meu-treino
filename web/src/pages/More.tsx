@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/auth.js'
 
 /**
  * Portal mobile para recursos e sistema que não cabem entre os quatro destinos
@@ -20,6 +21,7 @@ const GROUPS = [
 
 export function More() {
   const { t } = useTranslation()
+  const { user } = useAuth()
 
   return (
     <div className="page">
@@ -38,6 +40,14 @@ export function More() {
           ))}
         </section>)}
       </nav>
+      {user?.roles.includes('admin') && <nav className="menu menu--grouped">
+        <section className="menu__group">
+          <span className="eyebrow">{t('nav.groups.admin')}</span>
+          <Link to={routes.adminPresets} className="menu__item">
+            <span>{t('nav.admin_presets')}</span><span aria-hidden="true">→</span>
+          </Link>
+        </section>
+      </nav>}
     </div>
   )
 }

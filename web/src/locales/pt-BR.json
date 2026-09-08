@@ -37,10 +37,12 @@
     "history_short": "Histórico",
     "workouts": "Treinos",
     "more": "Mais",
+    "admin_presets": "Modelos de Treino",
     "groups": {
       "training": "Treino",
       "resources": "Recursos",
-      "system": "Sistema"
+      "system": "Sistema",
+      "admin": "Administração"
     }
   },
   "pages": {
@@ -737,6 +739,32 @@
     "period_months": "Período completo (meses)",
     "cadence_hint": "Mudanças valem para as próximas sessões. O histórico mantém os números já registrados.",
     "block_rir": "Mudança de RIR ao fechar o bloco"
+  },
+  "admin_presets": {
+    "title": "Modelos de Treino",
+    "description": "Crie e mantenha os planos iniciantes disponíveis para todos os usuários.",
+    "create": "Criar modelo",
+    "edit": "Editar modelo",
+    "empty": "Nenhum modelo cadastrado.",
+    "slug": "Identificador",
+    "name_pt": "Nome em português",
+    "name_en": "Nome em inglês",
+    "split": "Divisão",
+    "focus": "Objetivo",
+    "focus_pt": "Foco em português",
+    "focus_en": "Foco em inglês",
+    "duration": "Duração",
+    "published": "Publicado",
+    "draft": "Rascunho",
+    "workout": "Treino {{number}}",
+    "exercise": "Exercício do catálogo",
+    "sets": "Séries",
+    "rep_min": "Repetições mínimas",
+    "rep_max": "Repetições máximas",
+    "rest": "Descanso (segundos)",
+    "add_exercise": "+ adicionar exercício",
+    "add_workout": "+ adicionar treino",
+    "delete_confirm": "Apagar o modelo {{name}}?"
   },
   "conflicts": {
     "title": "Conflitos de sincronização",

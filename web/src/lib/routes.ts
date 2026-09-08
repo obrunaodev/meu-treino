@@ -14,6 +14,7 @@ export const routes = {
   conflicts: '/conflicts',
   whatsapp: '/whatsapp',
   more: '/more',
+  adminPresets: '/admin/presets',
 } as const
 
 export const sessionRoute = (sessionId: string) => `${routes.session}/${sessionId}`

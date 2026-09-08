@@ -37,10 +37,12 @@
     "history_short": "History",
     "workouts": "Workouts",
     "more": "More",
+    "admin_presets": "Workout Presets",
     "groups": {
       "training": "Training",
       "resources": "Resources",
-      "system": "System"
+      "system": "System",
+      "admin": "Administration"
     }
   },
   "pages": {
@@ -737,6 +739,32 @@
     "period_months": "Complete period (months)",
     "cadence_hint": "Changes apply to future sessions. History keeps its recorded numbering.",
     "block_rir": "RIR change when the block closes"
+  },
+  "admin_presets": {
+    "title": "Workout Presets",
+    "description": "Create and maintain the beginner plans available to every user.",
+    "create": "Create preset",
+    "edit": "Edit preset",
+    "empty": "No presets registered.",
+    "slug": "Identifier",
+    "name_pt": "Portuguese name",
+    "name_en": "English name",
+    "split": "Split",
+    "focus": "Goal",
+    "focus_pt": "Portuguese focus",
+    "focus_en": "English focus",
+    "duration": "Duration",
+    "published": "Published",
+    "draft": "Draft",
+    "workout": "Workout {{number}}",
+    "exercise": "Catalog exercise",
+    "sets": "Sets",
+    "rep_min": "Minimum repetitions",
+    "rep_max": "Maximum repetitions",
+    "rest": "Rest (seconds)",
+    "add_exercise": "+ add exercise",
+    "add_workout": "+ add workout",
+    "delete_confirm": "Delete the {{name}} preset?"
   },
   "conflicts": {
     "title": "Sync conflicts",

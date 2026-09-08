@@ -80,6 +80,10 @@ export function AppShell() {
                 ))}
               </section>
             ))}
+            {user?.roles.includes('admin') && <section className="shell__nav-group">
+              <span className="shell__nav-label">{t('nav.groups.admin')}</span>
+              <NavLink to={routes.adminPresets} className="shell__link">{t('nav.admin_presets')}</NavLink>
+            </section>}
           </div>
 
           <div className="shell__foot">
