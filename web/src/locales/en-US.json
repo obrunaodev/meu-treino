@@ -768,6 +768,9 @@
     "rep_min": "Minimum repetitions",
     "rep_max": "Maximum repetitions",
     "rest": "Rest (seconds)",
+    "effort": "Target effort",
+    "tracking": "Tracking",
+    "per_side": "Load per side",
     "add_exercise": "+ add exercise",
     "add_workout": "+ add workout",
     "delete_confirm": "Delete the {{name}} preset?"

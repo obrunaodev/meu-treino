@@ -88,6 +88,18 @@ export function AdminPresetEditor({ value, catalog, saving, onChange, onSave, on
             onChange={(event) => patchItem(workoutIndex, itemIndex, { repMax: Number(event.target.value) })} /></label>
           <label className="field">{t('admin_presets.rest')}<input type="number" min="15" max="600" step="15" required value={item.restSeconds}
             onChange={(event) => patchItem(workoutIndex, itemIndex, { restSeconds: Number(event.target.value) })} /></label>
+          <Select label={t('admin_presets.effort')} value={String(item.rirTarget)}
+            onChange={(rir) => patchItem(workoutIndex, itemIndex, { rirTarget: Number(rir) })}>
+            <option value="4">{t('rir.light')}</option><option value="2">{t('rir.moderate')}</option>
+            <option value="1">{t('rir.heavy')}</option><option value="0">{t('rir.very_heavy')}</option>
+          </Select>
+          <Select label={t('admin_presets.tracking')} value={item.trackingMode}
+            onChange={(mode) => patchItem(workoutIndex, itemIndex, { trackingMode: mode as AdminPresetItem['trackingMode'] })}>
+            <option value="compact">{t('templates.tracking_compact')}</option>
+            <option value="full">{t('templates.tracking_full')}</option>
+          </Select>
+          <label className="field field--row">{t('admin_presets.per_side')}<input type="checkbox" checked={item.loadPerSide}
+            onChange={(event) => patchItem(workoutIndex, itemIndex, { loadPerSide: event.target.checked })} /></label>
           <button type="button" className="text-action" onClick={() => patchWorkout(workoutIndex, {
             items: workout.items.filter((_, current) => current !== itemIndex),
           })}>{t('common.delete')}</button>

@@ -768,6 +768,9 @@
     "rep_min": "Repetições mínimas",
     "rep_max": "Repetições máximas",
     "rest": "Descanso (segundos)",
+    "effort": "Esforço alvo",
+    "tracking": "Registro",
+    "per_side": "Carga por lado",
     "add_exercise": "+ adicionar exercício",
     "add_workout": "+ adicionar treino",
     "delete_confirm": "Apagar o modelo {{name}}?"

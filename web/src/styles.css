@@ -618,9 +618,10 @@ p { margin: 0; line-height: 1.55; }
 }
 .admin-preset-items { display: flex; flex-direction: column; gap: 8px; }
 .admin-preset-item {
-  display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, minmax(70px, 0.35fr)) auto;
+  display: grid; grid-template-columns: repeat(4, minmax(70px, 1fr));
   align-items: end; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line);
 }
+.admin-preset-item .field:first-child { grid-column: span 2; }
 @media (min-width: 52rem) { .admin-preset-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 48rem) {
   .admin-preset-item { grid-template-columns: repeat(2, minmax(0, 1fr)); }
