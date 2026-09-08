@@ -354,6 +354,12 @@
     "very_heavy": "Very heavy",
     "progression_rule": "Reached the top of the range at Moderate: increase the load."
   },
+  "progression": {
+    "increase": "Suggestion: increase the load",
+    "progress_reps": "Suggestion: keep the load and progress repetitions",
+    "maintain": "Suggestion: keep the load",
+    "reduce": "Suggestion: reduce the load"
+  },
   "session": {
     "title": "Today's Workout",
     "prep": "Prep",

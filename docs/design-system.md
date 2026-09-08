@@ -137,6 +137,10 @@ exercise-card pattern at the upper-left, and the exercise can only be finished
 after every planned set is checked.
 Completing the exercise returns to the overview. Recorded-set details do not
 repeat below the live exercise list; they remain grouped in session history.
+Before an exercise begins, progression guidance appears as a quiet textual line
+inside its overview. Increase and reduction recommendations add positive or
+accent color, but the action remains explicit in text and is never applied
+automatically.
 
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis

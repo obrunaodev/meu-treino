@@ -354,6 +354,12 @@
     "very_heavy": "Muito pesado",
     "progression_rule": "Fechou o topo da faixa em Moderado: suba a carga."
   },
+  "progression": {
+    "increase": "Sugestão: subir a carga",
+    "progress_reps": "Sugestão: manter a carga e avançar nas repetições",
+    "maintain": "Sugestão: manter a carga",
+    "reduce": "Sugestão: reduzir a carga"
+  },
   "session": {
     "title": "Treino de Hoje",
     "prep": "Preparação",

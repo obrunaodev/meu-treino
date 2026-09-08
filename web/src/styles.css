@@ -859,6 +859,9 @@ p { margin: 0; line-height: 1.55; }
 .session-checklist__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .session-checklist__head h2 { font-size: 18px; }
 .session-checklist__head p { margin: 0; font-size: 12px; }
+.progression-hint { color: var(--ink-2) !important; }
+.progression-hint--increase { color: var(--good) !important; }
+.progression-hint--reduce { color: var(--accent) !important; }
 .session-checklist__list {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: 10px;

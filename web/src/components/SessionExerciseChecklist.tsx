@@ -5,6 +5,7 @@ import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
 import { exerciseExecutionStatus, prescribedResult, previousSetForDraft, previousTemplateSession } from '../lib/domain/session.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
+import { progressionAction } from '../lib/domain/progression.js'
 import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
@@ -29,6 +30,10 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
   const settings = useSettings()
   const session = sessions.find((entry) => entry.id === sessionId) ?? null
   const previous = useMemo(() => session ? previousTemplateSession(session, sessions) : null, [session, sessions])
+  const sessionsBefore = sessions.filter((entry) => (
+    session && entry.templateId === session.templateId && entry.startedAt < session.startedAt
+  )).sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+  const previousPrevious = sessionsBefore[1] ?? null
   const currentByItem = new Map(items.map((item) => [item.id, logs.filter((log) => log.templateItemId === item.id && !log.isWarmup)]))
   const statusOf = (item: SessionChecklistItem) => exerciseExecutionStatus(item, currentByItem.get(item.id) ?? [])
   const sections = [
@@ -48,6 +53,12 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
           log.sessionId === previous?.id && log.exerciseId === item.exerciseId && !log.isWarmup && !log.skipped
         )).sort((a, b) => a.setIndex - b.setIndex)
         const representative = current.find((log) => !log.skipped) ?? previousLogs.at(-1) ?? null
+        const previousPreviousLogs = allLogs.filter((log) => (
+          log.sessionId === previousPrevious?.id && log.exerciseId === item.exerciseId
+        ))
+        const recommendation = current.length === 0
+          ? progressionAction(previousLogs, previousPreviousLogs, item.repMax)
+          : null
         const snapshot = 'exerciseName' in item ? item : null
         const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
         const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
@@ -61,6 +72,9 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
               <strong>{snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')}</strong>
               <small>{item.sets} × {range} · {effort === null ? '—' : t(rirLabelKey(effort)!)}</small>
               <small>{t('session.expected_load')}: {formatLoad(representative?.weightKg ?? null, representative?.plateCount ?? null, settings?.unit ?? 'kg', settings?.showPlates ?? true, perSide ? t('session.per_side_short') : null)}{gear?.name ? ` · ${gear.name}` : ''}</small>
+              {recommendation && <small className={`progression-hint progression-hint--${recommendation}`}>
+                {t(`progression.${recommendation}`)}
+              </small>}
             </span>
             <span className="session-exercise__state">{status === 'done' ? '✓' : status === 'skipped' ? t('session.skipped') : t('session.open_exercise')}</span>
           </button>
