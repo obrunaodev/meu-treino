@@ -31,14 +31,15 @@ async function loadSource(slug: string) {
   if (!preset) throw notFound('preset_not_found')
   const workouts = await db.select().from(presetWorkouts)
     .where(eq(presetWorkouts.presetId, preset.id)).orderBy(presetWorkouts.position)
-  const items = await db.select().from(presetItems)
+  const items = workouts.length === 0 ? [] : await db.select().from(presetItems)
     .where(inArray(presetItems.workoutId, workouts.map((workout) => workout.id)))
     .orderBy(presetItems.position)
   const requiredIds = items.map((item) => item.catalogExerciseId)
-  const related = await db.select().from(catalogRelated)
+  const related = requiredIds.length === 0 ? [] : await db.select().from(catalogRelated)
     .where(inArray(catalogRelated.exerciseId, requiredIds))
   const ids = [...new Set([...requiredIds, ...related.map((row) => row.relatedId)])]
-  const catalog = await db.select().from(catalogExercises).where(inArray(catalogExercises.id, ids))
+  const catalog = ids.length === 0 ? [] : await db.select().from(catalogExercises)
+    .where(inArray(catalogExercises.id, ids))
   return { preset, workouts, items, related, catalog }
 }
 
@@ -68,9 +69,12 @@ export async function materializePreset(input: MaterializePresetInput) {
   const resolved = resolveCatalogIds(source, input)
   const selectedIds = [...new Set(resolved.values())]
   const selectedCatalog = source.catalog.filter((exercise) => selectedIds.includes(exercise.id))
-  const stations = await db.select().from(catalogStations)
+  const stations = input.stationCodes.length === 0 ? [] : await db.select().from(catalogStations)
     .where(inArray(catalogStations.code, input.stationCodes))
   if (stations.length !== new Set(input.stationCodes).size) throw badRequest('unknown_equipment')
+  const [settings] = await db.select({ locale: userSettings.locale }).from(userSettings)
+    .where(eq(userSettings.ownerId, input.ownerId)).limit(1)
+  const locale = settings?.locale === 'en-US' ? 'en-US' : 'pt-BR'
 
   return db.transaction(async (tx) => {
     const [gym] = await tx.insert(gyms).values({ id: randomUUID(), ownerId: input.ownerId, name: input.gymName })
@@ -100,12 +104,18 @@ export async function materializePreset(input: MaterializePresetInput) {
     ))
     const exerciseByCatalog = new Map(existingExercises
       .filter((item) => item.catalogExerciseId).map((item) => [item.catalogExerciseId!, item.id]))
+    const perSideByCatalog = new Map<number, boolean>()
+    for (const item of source.items) {
+      const catalogId = resolved.get(item.id)!
+      perSideByCatalog.set(catalogId, (perSideByCatalog.get(catalogId) ?? false) || item.loadPerSide)
+    }
     for (const catalog of selectedCatalog) {
       if (exerciseByCatalog.has(catalog.id)) continue
       const [created] = await tx.insert(exercises).values({
         id: randomUUID(), ownerId: input.ownerId, catalogExerciseId: catalog.id,
         equipmentId: catalog.stationCode ? equipmentByStation.get(catalog.stationCode) ?? null : null,
         name: catalog.name, laterality: catalog.laterality ?? 'bilateral', cues: [],
+        loadPerSide: perSideByCatalog.get(catalog.id) ?? false,
       }).returning({ id: exercises.id })
       exerciseByCatalog.set(catalog.id, created!.id)
     }
@@ -127,8 +137,8 @@ export async function materializePreset(input: MaterializePresetInput) {
     for (const workout of source.workouts) {
       const [template] = await tx.insert(templates).values({
         id: randomUUID(), ownerId: input.ownerId, programId: program!.id,
-        position: workout.position, name: workout.name['pt-BR'] ?? Object.values(workout.name)[0]!,
-        focus: workout.focus['pt-BR'] ?? null,
+        position: workout.position, name: workout.name[locale] ?? Object.values(workout.name)[0]!,
+        focus: workout.focus[locale] ?? null,
       }).returning({ id: templates.id })
       const workoutItems = source.items.filter((item) => item.workoutId === workout.id)
       await tx.insert(templateItems).values(workoutItems.map((item) => ({
