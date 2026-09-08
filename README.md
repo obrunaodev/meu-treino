@@ -27,13 +27,17 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 
 ### Programs and workouts
 
-- Onboarding creates the user's first program and ordered workout templates.
+- Onboarding can create a blank program or materialize a curated beginner preset into editable user-owned workouts.
+- The global library contains 18 presets: AB upper/lower, ABC push/pull/legs, and ABCD chest plus triceps/back plus biceps/legs/shoulders, each offered for strength or hypertrophy at approximately 30, 45, or 60 minutes of lifting.
+- Preset review shows the complete plan before creation. Direct equipment matches are automatic, a sole compatible alternative is substituted automatically, and ambiguous matches require the user to choose.
+- Preset provenance and version are retained on the program, but later preset edits never change the user's copy or historical sessions.
 - A cycle is one complete pass through the workout sequence. For example, Workout A followed by Workout B is one cycle.
 - Block duration is configurable in weeks, and period duration is configurable in months.
 - Programs can run continuously or follow selected weekdays.
 - Workout templates can be created, renamed, reordered, edited, and removed.
 - Each template configures exercise order, target sets, repetition range or timed duration, target effort, rest interval, tracking mode, and optional cardio.
 - Cardio is selected from the equipment configured for the user's gym instead of entered as unrestricted text.
+- Progression remains manual. The live overview recommends increasing load after reaching the top of the repetition range at moderate effort, progressing repetitions below the ceiling, or reducing after maximal or repeatedly heavy effort.
 
 ### Live workout
 
@@ -219,6 +223,8 @@ docker compose exec api npm run admin:revoke -- user@example.com
 
 The final administrator cannot be revoked. Subsequent role changes can use the protected admin API. `GET /auth/me` exposes the current account's roles for interface gating, but the API middleware remains the security boundary.
 
+Administrators also receive **Administration → Workout Presets** in the navigation. The structured editor creates, reads, updates, publishes, unpublishes, and deletes complete bilingual presets with their workouts and catalog exercise rows. Normal users can only read published presets. New presets begin unpublished so incomplete content cannot appear during onboarding.
+
 ### Temporary development login
 
 This is an authentication bypass and is disabled by default:
@@ -317,6 +323,18 @@ The cycle determines the next workout. Calendar grouping measures longer-term pr
 Starting a session captures an immutable `plan_snapshot`, preventing future template edits from changing historical meaning. It includes the template identity and name, exercise identity and order, set and repetition targets, target RIR, equipment and load mode, rest interval, unilateral and per-side configuration, and tracking mode. History and reports use this snapshot instead of rebuilding an old workout from the current template.
 
 Weights are stored internally in kilograms and converted for display. A per-side exercise stores the load mounted on one side. Volume calculations use the captured load mode rather than current exercise settings.
+
+### Curated presets
+
+Preset definitions live in global Postgres tables and are seeded idempotently after the catalog. They reference global catalog exercise IDs rather than user records. Materialization validates every equipment choice again at the API boundary and creates the gym, equipment, exercises, program, workouts, and workout items in one transaction.
+
+Run the seed manually when needed:
+
+```bash
+docker compose exec api npm run presets:seed
+```
+
+The seed is insert-only. Administrative edits are therefore preserved instead of being overwritten on the next deployment.
 
 ## Catalog import
 
@@ -455,6 +473,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 | `/conflicts` | Manual sync conflict resolution |
 | `/whatsapp` | WhatsApp connection and guide |
 | `/more` | Mobile secondary navigation |
+| `/admin/presets` | Administrator workout preset management |
 
 ### HTTP
 
@@ -468,6 +487,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 | `/api/push/*` | Push configuration and subscriptions |
 | `/api/whatsapp/*` | WhatsApp state, QR connection, groups, and selection |
 | `/api/admin/*` | Role-protected user and administrator management |
+| `/api/presets/*` | Published preset discovery, compatibility preview, and atomic materialization |
 
 ## Known limitations
 

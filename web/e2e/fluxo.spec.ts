@@ -46,7 +46,7 @@ test.describe('jornada completa', () => {
     await page.getByLabel(/token/i).fill(TOKEN)
     await page.getByRole('button', { name: /^entrar$/i }).click()
 
-    await expect(page.getByRole('heading', { name: /seu programa/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /como você quer começar/i })).toBeVisible()
   })
 
   test('monta o programa no onboarding', async () => {
