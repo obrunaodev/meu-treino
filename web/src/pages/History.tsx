@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { usePrograms, useSessions, useSetLogs, useTemplatesEver } from '../lib/repo.js'
 import { Card, Empty } from '../components/ui.js'
 import { groupSessionsByBlock } from '../lib/domain/cycle.js'
-import { calendarMonthDays } from '../lib/domain/calendar.js'
+import { calendarDayKey, calendarMonthDays } from '../lib/domain/calendar.js'
 
 /**
  * Calendário mensal. Ele registra o que aconteceu — não é ele que decide o
@@ -37,7 +37,7 @@ export function History() {
       setsBySession.set(set.sessionId, (setsBySession.get(set.sessionId) ?? 0) + 1)
     }
     for (const session of sessions) {
-      const key = localDayKey(session.startedAt)
+      const key = calendarDayKey(new Date(session.startedAt))
       const template = templates.find((x) => x.id === session.templateId)
       const name = session.planSnapshot?.templateName ?? template?.name
       map.set(key, {
@@ -81,6 +81,7 @@ export function History() {
   const year = cursor.getFullYear()
   const month = cursor.getMonth()
   const cells = calendarMonthDays(year, month)
+  const todayKey = calendarDayKey(new Date())
 
   const monthLabel = cursor.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
   const weekdayKeys = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
@@ -136,6 +137,8 @@ export function History() {
               ))}
               {cells.map((cell) => {
                 const entry = byDay.get(cell.key)
+                const isToday = cell.key === todayKey
+                const dayClass = `calendar__day${isToday ? ' calendar__day--today' : ''}${cell.inCurrentMonth ? '' : ' calendar__day--outside'}`
                 const content = (
                   <>
                     <span className="calendar__n">{cell.day}</span>
@@ -144,13 +147,14 @@ export function History() {
                 )
 
                 if (!entry) {
-                  return <span key={cell.key} className={`calendar__day${cell.inCurrentMonth ? '' : ' calendar__day--outside'}`}>{content}</span>
+                  return <span key={cell.key} className={dayClass} aria-current={isToday ? 'date' : undefined}>{content}</span>
                 }
                 return (
                   <Link
                     key={cell.key}
                     to={historyRoute(entry.id)}
-                    className={`calendar__day calendar__day--${entry.status} calendar__day--link${cell.inCurrentMonth ? '' : ' calendar__day--outside'}`}
+                    className={`${dayClass} calendar__day--${entry.status} calendar__day--link`}
+                    aria-current={isToday ? 'date' : undefined}
                     title={t('history.sets', { count: entry.sets })}
                   >
                     {content}
@@ -221,15 +225,4 @@ export function History() {
       )}
     </div>
   )
-}
-
-const pad = (value: number) => String(value).padStart(2, '0')
-
-/**
- * Chave do dia no fuso local. Usar a data UTC jogaria um treino da noite para
- * o dia seguinte no calendário de quem está a oeste de Greenwich.
- */
-function localDayKey(iso: string): string {
-  const date = new Date(iso)
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }

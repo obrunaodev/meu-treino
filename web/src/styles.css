@@ -1182,6 +1182,12 @@ p { margin: 0; line-height: 1.55; }
 .calendar__day--concluida { background: var(--good); color: var(--shell); font-weight: 500; }
 .calendar__day--incompleta { background: var(--line-strong); color: var(--ink-2); }
 .calendar__day--em_andamento { outline: 1px solid var(--accent); }
+.calendar__day--today { position: relative; outline: 2px solid var(--accent); outline-offset: -2px; color: var(--ink); }
+.calendar__day--today::after {
+  content: ''; position: absolute; right: 5px; bottom: 5px;
+  width: 4px; height: 4px; border-radius: var(--r-chip); background: var(--accent);
+}
+.calendar__day--today.calendar__day--concluida::after { background: var(--shell); }
 .calendar__day--outside { opacity: 0.42; }
 .calendar__day--outside.calendar__day--link:hover { opacity: 0.72; }
 .calendar__letter { font-size: 9px; font-weight: 600; }
@@ -1333,6 +1339,7 @@ p { margin: 0; line-height: 1.55; }
 
 .calendar__day--link { text-decoration: none; cursor: pointer; }
 .calendar__day--link:hover { outline: 1px solid var(--accent); color: inherit; }
+.calendar__day--link.calendar__day--today:hover { outline-width: 2px; outline-offset: -2px; }
 .loglist__link { color: var(--ink); text-decoration: none; }
 .loglist__link:hover { color: var(--accent); }
 .item--muted { opacity: 0.55; }

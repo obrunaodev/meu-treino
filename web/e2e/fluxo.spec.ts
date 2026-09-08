@@ -271,6 +271,8 @@ test.describe('jornada completa', () => {
 
   test('o histórico mostra a sessão concluída', async () => {
     await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
+    await expect(page.locator('[aria-current="date"]')).toHaveCount(1)
+    await expect(page.locator('[aria-current="date"]')).toHaveClass(/calendar__day--today/)
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
     await expect(page.getByRole('heading', { name: 'Período 1' })).toBeVisible()
     await expect(page.getByText('Bloco 1', { exact: true })).toBeVisible()

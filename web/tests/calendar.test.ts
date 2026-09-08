@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { calendarMonthDays } from '../src/lib/domain/calendar.js'
+import { calendarDayKey, calendarMonthDays } from '../src/lib/domain/calendar.js'
 
 describe('calendarMonthDays', () => {
+  it('identifies a day using local calendar fields', () => {
+    expect(calendarDayKey(new Date(2026, 8, 8, 23, 59))).toBe('2026-09-08')
+  })
+
   it('fills the leading and trailing weeks with adjacent months', () => {
     const days = calendarMonthDays(2026, 8)
 
