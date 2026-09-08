@@ -47,4 +47,30 @@ suite('training preset API', () => {
     expect(body.workouts[0]!.items.map((item) => item.exercise.id)).toEqual([165, 95, 240, 111])
     expect(body.workouts[0]!.items.every((item) => item.match.status === 'direct')).toBe(true)
   })
+
+  it('atomically materializes a preset as user-owned training data', async () => {
+    const response = await fetch(`${API}/api/presets/ab-strength-30-beginner-v1/materialize`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        programName: 'Meu AB', gymName: 'Academia do teste',
+        stationCodes: ['35', '26', '15', '28', '21', '11', '08'],
+        cardioNames: ['Esteira'], choices: {}, scheduleMode: 'continuous', weekdays: [],
+        blockDurationWeeks: 2, periodDurationMonths: 1, defaultRestSeconds: 90,
+        reminderLeadMinutes: 60, remindersEnabled: false,
+      }),
+    })
+    expect(response.status).toBe(201)
+    const { programId } = await response.json() as { programId: string }
+    const { rows } = await pool.query(
+      `select p.source_preset_slug,
+        (select count(*)::int from templates t where t.program_id=p.id) templates,
+        (select count(*)::int from template_items i join templates t on t.id=i.template_id where t.program_id=p.id) items
+       from programs p where p.id=$1`,
+      [programId],
+    )
+    expect(rows[0]).toMatchObject({
+      source_preset_slug: 'ab-strength-30-beginner-v1', templates: 2, items: 8,
+    })
+  })
 })

@@ -8,6 +8,8 @@ import { notFound } from '../lib/http-error.js'
 import { matchPresetExercise } from '../lib/preset-matching.js'
 import { param } from '../lib/params.js'
 import { requireAuth } from '../middleware/auth.js'
+import { z } from 'zod'
+import { materializePreset } from '../lib/materialize-preset.js'
 
 export const presetsRouter = Router()
 presetsRouter.use(requireAuth)
@@ -60,4 +62,29 @@ presetsRouter.get('/:slug', async (req, res) => {
       }),
     })),
   })
+})
+
+const materializeBody = z.object({
+  programName: z.string().trim().min(1).max(120),
+  gymName: z.string().trim().min(1).max(120),
+  stationCodes: z.array(z.string().min(1).max(20)).max(200),
+  cardioNames: z.array(z.string().trim().min(1).max(80)).max(30),
+  choices: z.record(z.string().uuid(), z.number().int().positive()).default({}),
+  scheduleMode: z.enum(['continuous', 'weekly']),
+  weekdays: z.array(z.number().int().min(0).max(6)).max(7),
+  blockDurationWeeks: z.number().int().min(1).max(12),
+  periodDurationMonths: z.number().int().min(1).max(12),
+  defaultRestSeconds: z.number().int().min(15).max(600),
+  reminderLeadMinutes: z.number().int().min(5).max(1440),
+  remindersEnabled: z.boolean(),
+})
+
+presetsRouter.post('/:slug/materialize', async (req, res) => {
+  const input = materializeBody.parse(req.body)
+  const result = await materializePreset({
+    ...input,
+    slug: param(req, 'slug'),
+    ownerId: req.userId!,
+  })
+  res.status(201).json(result)
 })
