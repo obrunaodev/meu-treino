@@ -189,6 +189,51 @@ export const painRegions = pgTable('pain_regions', {
   catalogSlug: text('catalog_slug'),
 })
 
+// ─── modelos globais de treino (admin gerencia, usuário só lê) ───────────
+
+export const trainingPresets = pgTable('training_presets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: jsonb('name').$type<Record<string, string>>().notNull(),
+  split: text('split').notNull(),
+  focus: text('focus').notNull(),
+  durationMinutes: smallint('duration_minutes').notNull(),
+  level: text('level').notNull().default('beginner'),
+  version: integer('version').notNull().default(1),
+  isPublished: boolean('is_published').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('training_presets_discovery_idx').on(t.level, t.split, t.focus, t.durationMinutes)])
+
+export const presetWorkouts = pgTable('preset_workouts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  presetId: uuid('preset_id').notNull().references(() => trainingPresets.id, { onDelete: 'cascade' }),
+  position: smallint('position').notNull(),
+  name: jsonb('name').$type<Record<string, string>>().notNull(),
+  focus: jsonb('focus').$type<Record<string, string>>().notNull().default({}),
+}, (t) => [unique('preset_workouts_position_uniq').on(t.presetId, t.position)])
+
+export const presetItems = pgTable('preset_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  workoutId: uuid('workout_id').notNull().references(() => presetWorkouts.id, { onDelete: 'cascade' }),
+  position: smallint('position').notNull(),
+  catalogExerciseId: integer('catalog_exercise_id').notNull().references(() => catalogExercises.id),
+  sets: smallint('sets').notNull(),
+  repMin: smallint('rep_min').notNull(),
+  repMax: smallint('rep_max').notNull(),
+  rirTarget: smallint('rir_target').notNull(),
+  restSeconds: integer('rest_seconds').notNull(),
+  trackingMode: text('tracking_mode').notNull().default('compact'),
+  loadPerSide: boolean('load_per_side').notNull().default(false),
+  notes: jsonb('notes').$type<Record<string, string>>().notNull().default({}),
+}, (t) => [unique('preset_items_position_uniq').on(t.workoutId, t.position)])
+
+export const presetItemAlternatives = pgTable('preset_item_alternatives', {
+  presetItemId: uuid('preset_item_id').notNull().references(() => presetItems.id, { onDelete: 'cascade' }),
+  catalogExerciseId: integer('catalog_exercise_id').notNull().references(() => catalogExercises.id),
+  priority: smallint('priority').notNull().default(1),
+}, (t) => [primaryKey({ columns: [t.presetItemId, t.catalogExerciseId] })])
+
 // ─── dados do usuário (sincronizados) ──────────────────────────────────────
 
 export const gyms = pgTable('gyms', {
@@ -294,6 +339,8 @@ export const exerciseSubstitutions = pgTable('exercise_substitutions', {
 export const programs = pgTable('programs', {
   ...syncCols,
   name: text('name').notNull(),
+  sourcePresetSlug: text('source_preset_slug'),
+  sourcePresetVersion: integer('source_preset_version'),
   scheduleMode: text('schedule_mode').notNull().default('continuous'),
   sessionsPerCycle: smallint('sessions_per_cycle').notNull().default(2),
   blockDurationWeeks: smallint('block_duration_weeks').notNull().default(2),

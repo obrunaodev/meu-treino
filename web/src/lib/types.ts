@@ -66,6 +66,8 @@ export interface ExerciseSubstitution extends Base {
 
 export interface Program extends Base {
   name: string
+  sourcePresetSlug?: string | null
+  sourcePresetVersion?: number | null
   scheduleMode: 'continuous' | 'weekly'
   sessionsPerCycle: number
   blockDurationWeeks?: number
