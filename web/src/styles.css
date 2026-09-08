@@ -1094,9 +1094,12 @@ p { margin: 0; line-height: 1.55; }
   background: var(--surface); color: var(--ink); overflow: hidden;
 }
 .tile:hover { border-color: var(--line-strong); background: var(--surface-hot); }
-.tile img, .tile > .media-image--loading {
-  grid-column: 1 / -1; display: block; width: 100%; aspect-ratio: 6 / 5; object-fit: contain;
-  border-radius: var(--r-tile); background: var(--shell);
+.tile__media {
+  grid-column: 1 / -1; display: block; width: 100%; aspect-ratio: 370 / 277;
+  overflow: hidden; border-radius: var(--r-tile); background: var(--shell);
+}
+.tile__media img, .tile__media > .media-image--loading {
+  display: block; width: 100%; height: 100%; object-fit: contain;
 }
 .tile__copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; padding: 5px 4px 4px; }
 .tile__name { overflow: hidden; text-overflow: ellipsis; font-size: 14.5px; font-weight: 600; line-height: 1.3; }
@@ -1104,8 +1107,7 @@ p { margin: 0; line-height: 1.55; }
 .tile__arrow { align-self: center; padding-right: 5px; color: var(--dim); font-family: var(--font-mono); font-size: 15px; }
 .tile--no-image { min-height: 76px; align-items: center; }
 .exercise-gallery--list .tile { grid-template-columns: 7.5rem minmax(0, 1fr) auto; align-items: center; }
-.exercise-gallery--list .tile img,
-.exercise-gallery--list .tile > .media-image--loading { grid-column: auto; aspect-ratio: 6 / 5; }
+.exercise-gallery--list .tile__media { grid-column: auto; }
 .exercise-gallery--list .tile--no-image { grid-template-columns: minmax(0, 1fr) auto; }
 
 @media (min-width: 40rem) {
@@ -1118,15 +1120,17 @@ p { margin: 0; line-height: 1.55; }
   .exercise-gallery--grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .media-preview {
-  display: block; width: min(100%, 30rem); padding: 0; border: 0; border-radius: var(--r-tile);
+  display: block; width: min(100%, 23.125rem); aspect-ratio: 370 / 277;
+  padding: 0; border: 0; border-radius: var(--r-tile);
   background: transparent; overflow: hidden; cursor: zoom-in;
 }
 .media-preview img {
-  display: block; width: 100%; aspect-ratio: 6 / 5; object-fit: cover;
+  display: block; width: 100%; height: 100%; object-fit: contain; background: var(--shell);
   transition: transform 160ms ease;
 }
+.media-preview > .media-image--loading { display: block; width: 100%; height: 100%; background: var(--shell); }
 .media-preview:hover img { transform: scale(1.025); }
-.media-single { position: relative; width: min(100%, 30rem); }
+.media-single { position: relative; width: min(100%, 23.125rem); }
 .media-single .media-preview { width: 100%; }
 .media-single__delete {
   position: absolute; top: 8px; right: 8px; z-index: 1;

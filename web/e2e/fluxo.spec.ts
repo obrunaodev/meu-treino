@@ -101,9 +101,12 @@ test.describe('jornada completa', () => {
     await expect(removeImage).toBeVisible({ timeout: 15_000 })
     await page.getByRole('button', { name: /voltar/i }).click()
     await expect(page.locator('.tile')).not.toHaveClass(/tile--no-image/)
+    await expect(page.locator('.tile__media')).toHaveCSS('aspect-ratio', '370 / 277')
     await expect(page.locator('.tile img')).toHaveCSS('object-fit', 'contain')
 
     await page.locator('.tile').click()
+    await expect(page.locator('.media-preview')).toHaveCSS('aspect-ratio', '370 / 277')
+    await expect(page.locator('.media-preview img')).toHaveCSS('object-fit', 'contain')
     await removeImage.click()
     await expect(removeImage).toHaveCount(0)
   })
