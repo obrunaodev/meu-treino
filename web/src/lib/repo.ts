@@ -13,7 +13,7 @@ import type {
  * O filtro de `deletedAt` mora aqui, num lugar só: soft delete é obrigatório
  * para o sync, mas a UI não deveria ter que lembrar disso em toda consulta.
  */
-function live<T>(entity: SyncEntity, deps: unknown[] = []): T[] | undefined {
+function useLive<T>(entity: SyncEntity, deps: unknown[] = []): T[] | undefined {
   return useLiveQuery(
     async () => {
       const rows = await localDb.table_(entity).toArray()
@@ -27,16 +27,16 @@ const byPosition = <T extends { position: number }>(rows: T[]) =>
   [...rows].sort((a, b) => a.position - b.position)
 
 export function useGyms() {
-  return live<Gym>('gyms') ?? []
+  return useLive<Gym>('gyms') ?? []
 }
 
 export function useEquipment() {
-  const rows = live<Equipment>('equipment') ?? []
+  const rows = useLive<Equipment>('equipment') ?? []
   return [...rows].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export function useCardioOptions() {
-  const rows = live<CardioOption>('cardio_options') ?? []
+  const rows = useLive<CardioOption>('cardio_options') ?? []
   return [...rows].sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -45,7 +45,7 @@ export function useEquipmentById(id: string | null | undefined) {
 }
 
 export function useExercises() {
-  const rows = live<Exercise>('exercises') ?? []
+  const rows = useLive<Exercise>('exercises') ?? []
   return [...rows].sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -54,7 +54,7 @@ export function useExerciseById(id: string | null | undefined) {
 }
 
 export function useMedia() {
-  return byPosition(live<ExerciseMedia>('exercise_media') ?? [])
+  return byPosition(useLive<ExerciseMedia>('exercise_media') ?? [])
 }
 
 export function useMediaFor(exerciseId: string | null | undefined) {
@@ -62,12 +62,12 @@ export function useMediaFor(exerciseId: string | null | undefined) {
 }
 
 export function useSubstitutions() {
-  return live<ExerciseSubstitution>('exercise_substitutions') ?? []
+  return useLive<ExerciseSubstitution>('exercise_substitutions') ?? []
 }
 
 /** Um programa ativo por vez; os outros ficam guardados como histórico. */
 export function usePrograms(): Program[] {
-  return live<Program>('programs') ?? []
+  return useLive<Program>('programs') ?? []
 }
 
 export function useActiveProgram(): Program | null {
@@ -76,7 +76,7 @@ export function useActiveProgram(): Program | null {
 }
 
 export function useTemplates(programId: string | null | undefined) {
-  const rows = live<Template>('templates') ?? []
+  const rows = useLive<Template>('templates') ?? []
   return byPosition(rows.filter((t) => t.programId === programId))
 }
 
@@ -92,16 +92,16 @@ export function useTemplatesEver(): Template[] {
 }
 
 export function useTemplateItems(templateId: string | null | undefined) {
-  const rows = live<TemplateItem>('template_items') ?? []
+  const rows = useLive<TemplateItem>('template_items') ?? []
   return byPosition(rows.filter((i) => i.templateId === templateId))
 }
 
 export function useAllTemplateItems() {
-  return live<TemplateItem>('template_items') ?? []
+  return useLive<TemplateItem>('template_items') ?? []
 }
 
 export function useSessions() {
-  const rows = live<WorkoutSession>('workout_sessions') ?? []
+  const rows = useLive<WorkoutSession>('workout_sessions') ?? []
   return [...rows].sort((a, b) => a.startedAt.localeCompare(b.startedAt))
 }
 
@@ -111,34 +111,34 @@ export function useOpenSession(): WorkoutSession | null {
 }
 
 export function useSetLogs(sessionId?: string | null) {
-  const rows = live<SetLog>('set_logs') ?? []
+  const rows = useLive<SetLog>('set_logs') ?? []
   const filtered = sessionId ? rows.filter((s) => s.sessionId === sessionId) : rows
   return [...filtered].sort((a, b) => a.setIndex - b.setIndex)
 }
 
 export function useCardioLogs(sessionId?: string | null) {
-  const rows = live<CardioLog>('cardio_logs') ?? []
+  const rows = useLive<CardioLog>('cardio_logs') ?? []
   return sessionId ? rows.filter((c) => c.sessionId === sessionId) : rows
 }
 
 export function usePainEvents() {
-  const rows = live<PainEvent>('pain_events') ?? []
+  const rows = useLive<PainEvent>('pain_events') ?? []
   return [...rows].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
 }
 
 export function useFunctionalTests() {
-  const rows = live<FunctionalTest>('functional_tests') ?? []
+  const rows = useLive<FunctionalTest>('functional_tests') ?? []
   return [...rows].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export function useTestResults(testId?: string | null) {
-  const rows = live<TestResult>('test_results') ?? []
+  const rows = useLive<TestResult>('test_results') ?? []
   const filtered = testId ? rows.filter((r) => r.testId === testId) : rows
   return [...filtered].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))
 }
 
 export function useSettings(): UserSettings | null {
-  return (live<UserSettings>('user_settings') ?? [])[0] ?? null
+  return (useLive<UserSettings>('user_settings') ?? [])[0] ?? null
 }
 
 /**

@@ -8,7 +8,7 @@ import { rirLabelKey } from '../lib/domain/rir.js'
 
 /** Resumo numérico e detalhamento por exercício compartilhado pelos três relatórios. */
 export function TrainingReportView({ report, unit }: { report: TrainingReport; unit: Unit }) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
   const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 })
   const load = (kg: number) => `${number.format(unit === 'lb' ? kgToLb(kg) : kg)} ${unit}`
   const volume = (kg: number) => `${load(kg)}·rep`

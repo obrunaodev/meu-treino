@@ -157,7 +157,7 @@ export function WhatsApp() {
           <p>{t('whatsapp.guide_intro')}</p>
         </header>
 
-        <div className="whatsapp__flow" aria-label={t('whatsapp.flow_label')}>
+        <div className="whatsapp__flow" role="group" aria-label={t('whatsapp.flow_label')}>
           {['preview', 'start', 'record', 'complete'].map((stage, index) => (
             <div className="whatsapp__flow-step" key={stage}>
               <span>{String(index + 1).padStart(2, '0')}</span>

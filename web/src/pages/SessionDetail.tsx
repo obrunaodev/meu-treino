@@ -7,7 +7,6 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
-import { sideLabel } from '../lib/labels.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
 import { historyEditRoute, historyRoute, routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'

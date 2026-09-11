@@ -4,7 +4,6 @@ import { forbidden, unauthorized } from '../lib/http-error.js'
 import { userHasRole } from '../lib/admin-roles.js'
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       userId?: string

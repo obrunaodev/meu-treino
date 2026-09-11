@@ -33,6 +33,7 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.project }}/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run typecheck
       - run: npm run build

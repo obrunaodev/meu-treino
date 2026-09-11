@@ -116,7 +116,7 @@ export function AdminPresetEditor({ value, catalog, saving, onChange, onSave, on
     }] })}>{t('admin_presets.add_workout')}</button>
     <div className="row-actions">
       <button type="button" className="button button--ghost" onClick={onCancel}>{t('common.cancel')}</button>
-      <button className="button button--primary" disabled={saving || value.workouts.some((workout) => workout.items.length === 0)}>
+      <button type="submit" className="button button--primary" disabled={saving || value.workouts.some((workout) => workout.items.length === 0)}>
         {saving ? t('common.saving') : t('common.save')}
       </button>
     </div>

@@ -14,6 +14,7 @@
     "admin:grant": "node dist/scripts/admin-role.js grant",
     "admin:revoke": "node dist/scripts/admin-role.js revoke",
     "test": "vitest run --exclude \"tests/integration/**\"",
+    "lint": "biome lint .",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "test:integration": "vitest run tests/integration"
@@ -35,6 +36,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.13",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",

@@ -17,7 +17,7 @@ function fakeRes(statusCode = 200) {
     setHeader: vi.fn(),
     on: (event: string, fn: () => void) => { if (event === 'finish') listeners.push(fn) },
   } as unknown as Response & { finish: () => void }
-  ;(res as unknown as { finish: () => void }).finish = () => listeners.forEach((fn) => fn())
+  ;(res as unknown as { finish: () => void }).finish = () => { for (const fn of listeners) fn() }
   return res as Response & { finish: () => void; setHeader: ReturnType<typeof vi.fn> }
 }
 
@@ -75,7 +75,7 @@ describe('rateLimit', () => {
 
     expect(bloqueado?.status).toBe(429)
     expect(res.setHeader).toHaveBeenCalledWith('Retry-After', expect.any(String))
-    expect((bloqueado?.details as { retryAfter: number }).retryAfter).toBeGreaterThan(0)
+    expect((bloqueado!.details as { retryAfter: number }).retryAfter).toBeGreaterThan(0)
   })
 
   it('devolve o código configurado', () => {

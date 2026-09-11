@@ -1,13 +1,15 @@
 import { useEffect, useState, type ImgHTMLAttributes } from 'react'
 import { fetchMediaBlob } from '../lib/api.js'
 
-interface MediaImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
+interface MediaImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'alt'> {
   mediaId: string
   variant?: 'full' | 'thumb'
+  /** Obrigatório: `''` para imagem decorativa que já tem rótulo ao lado. */
+  alt: string
 }
 
 /** Exibe mídia privada sem expor o token na URL. */
-export function MediaImage({ mediaId, variant = 'full', className, ...props }: MediaImageProps) {
+export function MediaImage({ mediaId, variant = 'full', className, alt, ...props }: MediaImageProps) {
   const [source, setSource] = useState<string | null>(null)
 
   useEffect(() => {
@@ -24,5 +26,5 @@ export function MediaImage({ mediaId, variant = 'full', className, ...props }: M
   }, [mediaId, variant])
 
   if (!source) return <span className={`${className ?? ''} media-image--loading`.trim()} aria-hidden="true" />
-  return <img {...props} className={className} src={source} />
+  return <img {...props} className={className} src={source} alt={alt} />
 }

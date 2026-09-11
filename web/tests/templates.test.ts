@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { v7 as uuidv7 } from 'uuid'
 import { localDb } from '../src/lib/db'
 import { mutate } from '../src/lib/outbox'
 import { makeActions } from '../src/lib/actions'

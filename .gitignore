@@ -9,3 +9,4 @@ playwright-report/
 test-results/
 .deploy-tag
 .deploy-lock/
+dev-dist/

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": ["**/src/**", "**/tests/**", "**/e2e/**", "**/scripts/**"]
+  },
+
+  // Formatador desligado de propósito.
+  //
+  // O estilo já é consistente à mão — sem ponto e vírgula, aspas simples,
+  // indentação de 2 —, mas 526 linhas passam de 100 colunas por escolha: JSX
+  // denso e queries encadeadas se leem melhor inteiros. Ligar o formatador
+  // reescreveria essas linhas e o diff enterraria a mudança real embaixo do
+  // ruído. Se um dia valer a pena, que seja um commit sozinho e deliberado.
+  "formatter": { "enabled": false },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "style": {
+        // 175 ocorrências, e nenhuma é descuido: `!` aparece em acesso
+        // indexado que o TypeScript não consegue provar não-vazio. A troca
+        // sugerida (`?.`) INSERE checagem em runtime onde o tipo já responde
+        // — é o oposto do que este código faz em todo o resto.
+        "noNonNullAssertion": "off",
+
+        // 46 ocorrências em `styles.css`, todas em folha escrita à mão onde a
+        // ordem da cascata é o próprio mecanismo. Reordenar para agradar a
+        // regra arrisca regressão visual em tela que ninguém pediu para mexer.
+        "noDescendingSpecificity": "off"
+      },
+
+      "complexity": {
+        // Não há regra de "altura" no Biome; o teto de tamanho deste projeto
+        // é de revisão humana, não de linter. Ver CLAUDE.md.
+        "noExcessiveCognitiveComplexity": "off"
+      },
+
+      "a11y": {
+        // A silhueta do mapa corporal é decorativa e `<g>` não é focável:
+        // `aria-hidden` ali está certo, e o comentário no componente explica.
+        "noAriaHiddenOnFocusable": "off",
+
+        // Dívida declarada, não regra desligada — ver nota abaixo.
+        "useSemanticElements": "warn",
+        "noStaticElementInteractions": "warn",
+        "noNoninteractiveElementInteractions": "warn",
+        "useKeyWithClickEvents": "warn",
+        "noAutofocus": "warn"
+      },
+
+      "correctness": {
+        // Dívida declarada, não regra desligada — ver nota abaixo.
+        "useExhaustiveDependencies": "warn"
+      },
+
+      "suspicious": {
+        // Dívida declarada, não regra desligada — ver nota abaixo.
+        "noArrayIndexKey": "warn"
+      }
+    }
+  },
+
+  // As regras em "warn" acima são dívida conhecida, não decisão de estilo.
+  //
+  // São 14 arrays de dependência de hook, 7 chaves de lista por índice e ~10
+  // pontos de a11y que já existiam quando o linter entrou. Cada um pede
+  // julgamento e verificação no navegador — corrigir tudo junto com a adoção
+  // do linter esconderia regressão de comportamento dentro de um commit de
+  // ferramenta. Ficam visíveis em toda rodada e saem em passes próprios.
+  //
+  // O CI falha só em "error": o que está em "warn" não trava a esteira, mas
+  // qualquer violação NOVA das outras regras trava.
+
+  "assist": { "enabled": false }
+}
