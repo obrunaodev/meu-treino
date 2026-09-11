@@ -99,14 +99,14 @@ jobs:
             -p 9000:9000 \
             -e MINIO_ROOT_USER=treino \
             -e MINIO_ROOT_PASSWORD=integration-minio-password \
-            minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
           for attempt in $(seq 1 30); do
             curl --fail --silent http://127.0.0.1:9000/minio/health/live && break
             test "$attempt" -lt 30
             sleep 2
           done
           docker run --rm --network host --entrypoint /bin/sh \
-            minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z \
             -c 'mc alias set local http://127.0.0.1:9000 treino integration-minio-password && mc mb --ignore-existing local/treino-media'
       - name: Prepare database and services
         run: |
