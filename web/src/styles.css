@@ -355,6 +355,12 @@ p { margin: 0; line-height: 1.55; }
 
 .empty { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; padding: 8px 0; }
 
+/* Fallback de erro de render. `.centered` já dá a moldura de tela cheia; aqui
+   só o teto de largura, a quebra da mensagem crua e a fila de ações. */
+.error-boundary { max-width: 28rem; }
+.error-boundary__detail { overflow-wrap: anywhere; }
+.error-boundary__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 /* Dashboard nasce em uma coluna; os grids só aparecem quando há espaço real. */
 .dashboard__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .dashboard__history { display: none; }

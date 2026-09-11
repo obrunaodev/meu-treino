@@ -6,6 +6,7 @@ import { useActiveProgram, useSettings } from './lib/repo.js'
 import { useBootstrapped } from './lib/sync.js'
 import { SyncProvider } from './lib/sync-context.js'
 import { AppShell } from './components/AppShell.js'
+import { ErrorBoundary } from './components/ErrorBoundary.js'
 import { Login } from './pages/Login.js'
 import { AuthCallback } from './pages/AuthCallback.js'
 import { Onboarding } from './pages/Onboarding.js'
@@ -120,9 +121,14 @@ function Routed() {
 export function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routed />
-      </AuthProvider>
+      {/* Dentro do router e por fora do AuthProvider: pega também a exceção
+          que nasce na própria subida da sessão, que é quando a tela branca
+          seria mais difícil de diagnosticar. */}
+      <ErrorBoundary>
+        <AuthProvider>
+          <Routed />
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

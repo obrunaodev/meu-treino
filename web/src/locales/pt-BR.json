@@ -3,6 +3,12 @@
     "name": "Meu Treino",
     "tagline": "Um plano, seu ciclo, sem improviso"
   },
+  "error_boundary": {
+    "title": "Algo quebrou nesta tela",
+    "body": "O treino registrado está salvo neste aparelho e a fila de sincronização continua intacta. O erro foi só na exibição.",
+    "retry": "Tentar de novo",
+    "reload": "Recarregar o app"
+  },
   "login": {
     "title": "Entrar",
     "google": "Continuar com Google",

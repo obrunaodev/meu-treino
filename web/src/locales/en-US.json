@@ -3,6 +3,12 @@
     "name": "My Workout",
     "tagline": "One plan, your cycle, no guesswork"
   },
+  "error_boundary": {
+    "title": "Something broke on this screen",
+    "body": "Your recorded workout is saved on this device and the sync queue is intact. Only the display failed.",
+    "retry": "Try again",
+    "reload": "Reload the app"
+  },
   "login": {
     "title": "Sign in",
     "google": "Continue with Google",
