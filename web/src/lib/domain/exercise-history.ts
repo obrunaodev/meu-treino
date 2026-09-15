@@ -7,6 +7,8 @@ export interface HistorySet extends ExerciseSetReport {
   /** Carga total movida (o lado registrado × 2 quando é por lado): base de e1RM e volume. */
   totalKg: number | null
   e1rmKg: number | null
+  /** Equipamento de peso corporal: a carga registrada é só o lastro extra. */
+  bodyweight: boolean
 }
 
 export interface ExerciseSessionHistory {
@@ -98,6 +100,7 @@ export function exerciseSessionHistory(
         totalKg,
         // Peso corporal não é guardado: a carga registrada ali é só o lastro extra.
         e1rmKg: mode.bodyweight ? null : estimateOneRepMax(totalKg, set.reps),
+        bodyweight: mode.bodyweight,
       }
     }).sort(compareHistorySets)
     return summarize(session, history)
