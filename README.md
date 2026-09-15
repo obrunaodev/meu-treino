@@ -48,6 +48,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Values are prefilled from the latest session of the same workout that recorded the exercise. When the workout has no such session, only the load comes from the exercise's latest session in any workout, labelled with that workout and how long ago it was; repetitions and effort follow the current prescription. A newly entered load is copied into later empty sets without replacing historical progression.
 - Rest is an optional inline clock action between consecutive sets and starts only when requested. Its countdown derives from an absolute timestamp and survives backgrounding or reloading the app.
 - The screen stays awake while an open session is displayed, where the browser supports the Screen Wake Lock API.
+- A checked set that beats every earlier session is flagged as a record: top load, estimated 1RM (Epley, up to 12 repetitions), most repetitions at a load, longest time, or session volume. Records are derived from history on read and never stored, so editing an old session updates them.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
 - The live overview does not repeat recorded-set details; those remain available in session history.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.
@@ -89,7 +90,7 @@ The UI uses a four-level effort scale while retaining numeric RIR in storage for
 - Session history can be edited or deleted. Deleting a session also soft-deletes its sets, cardio, and pain records.
 - Cycle and block reports summarize adherence and training data for their scope.
 - Set history is grouped by exercise and ordered by the timestamp at which each exercise was checked.
-- Each exercise has a read-only history page with every logged set, grouped by session and month, and a chart of top load, estimated 1RM, volume, or best repetitions or time.
+- Each exercise has a read-only history page with every logged set, grouped by session and month, and a chart of top load, estimated 1RM, volume, or best repetitions or time. It also lists personal records, the best load at each repetition count, and marks the sets that set them.
 - A versioned JSON backup exports and restores all personal records and exercise images. Imports can merge with existing data or explicitly replace it.
 - Set history can also be exported as a spreadsheet-friendly CSV.
 - Pain can be captured from selectable body regions and reviewed as a history.
@@ -255,7 +256,7 @@ Recommended setup:
 3. Open `/whatsapp`, connect, and scan the QR Code from WhatsApp linked devices.
 4. Select the training group in the application.
 
-The bot accepts common Portuguese and English aliases plus a one-character typo in command names. Replies are currently Portuguese-first.
+The bot accepts common Portuguese and English aliases plus a one-character typo in command names. Replies are currently Portuguese-first. When a recorded exercise beats earlier sessions, the reply adds a record line using the same rules as the app.
 
 | Command | Purpose |
 |---|---|
