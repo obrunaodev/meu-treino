@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { calendarDayKey, calendarMonthDays } from '../src/lib/domain/calendar.js'
+import { calendarDayKey, calendarDaysBetween, calendarMonthDays } from '../src/lib/domain/calendar.js'
+
+describe('calendarDaysBetween', () => {
+  it('conta dias de calendário local, não períodos de 24 horas', () => {
+    expect(calendarDaysBetween(new Date(2026, 8, 15, 8, 0).toISOString(), new Date(2026, 8, 15, 22, 0))).toBe(0)
+    expect(calendarDaysBetween(new Date(2026, 8, 15, 23, 50).toISOString(), new Date(2026, 8, 16, 0, 10))).toBe(1)
+    expect(calendarDaysBetween(new Date(2026, 8, 12, 18, 0).toISOString(), new Date(2026, 8, 15, 7, 0))).toBe(3)
+  })
+})
 
 describe('calendarMonthDays', () => {
   it('identifies a day using local calendar fields', () => {
