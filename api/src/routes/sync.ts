@@ -3,7 +3,9 @@ import { z } from 'zod'
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { syncConflicts, syncDevices, syncOperations } from '../db/schema.js'
-import { SYNC_ENTITIES, SYNC_TABLES, isSyncEntity, type SyncEntity } from '../db/sync-tables.js'
+import {
+  SERVER_CREATED_ENTITIES, SYNC_ENTITIES, SYNC_TABLES, isSyncEntity, type SyncEntity,
+} from '../db/sync-tables.js'
 import { requireAuth } from '../middleware/auth.js'
 import { threeWayMerge, resolveDeleteVsEdit, type Row } from '../lib/merge.js'
 import { badRequest, notFound } from '../lib/http-error.js'
@@ -66,6 +68,9 @@ async function applyOperation(tx: Executor, op: Operation, ownerId: string) {
   const current = await loadRow(tx, entity, ownerId, op.entityId)
 
   if (!current) {
+    if (SERVER_CREATED_ENTITIES.has(entity)) {
+      return { entityId: op.entityId, status: 'rejected' as const }
+    }
     await tx.insert(table).values(incoming as never).onConflictDoNothing()
     return { entityId: op.entityId, status: 'created' as const }
   }
