@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '../lib/api.js'
 import {
   useAllTemplateItems, useEquipment, useExercises, useMedia, useSetLogs, useTemplatesEver,
@@ -10,6 +11,7 @@ import { runSync } from '../lib/sync.js'
 import { Card, Empty, Modal, Select } from '../components/ui.js'
 import { MediaImage } from '../components/MediaImage.js'
 import type { CatalogExercise, Exercise } from '../lib/types.js'
+import { exerciseHistoryRoute } from '../lib/routes.js'
 
 type ImageFilter = 'all' | 'with' | 'without'
 
@@ -319,6 +321,9 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
             {t('library.video')}
           </a>
         )}
+        <Link className="button button--quiet" to={exerciseHistoryRoute(exercise.id)}>
+          {t('exercise_history.open')}
+        </Link>
       </Card>
 
       <Card title={t('library.cues')}>
