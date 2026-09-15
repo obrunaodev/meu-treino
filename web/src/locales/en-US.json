@@ -801,5 +801,25 @@
     "period": "Period",
     "show_table": "view table",
     "show_chart": "view chart"
+  },
+  "exercise_history": {
+    "eyebrow": "Exercise history",
+    "open": "View history",
+    "summary_one": "{{count}} session · {{sets}} working sets since {{since}}",
+    "summary_other": "{{count}} sessions · {{sets}} working sets since {{since}}",
+    "progress": "Progress",
+    "metric_label": "Metric",
+    "metric_top_load": "Top load",
+    "metric_e1rm": "Estimated 1RM",
+    "metric_volume": "Volume",
+    "metric_best_reps": "Most reps",
+    "metric_best_seconds": "Longest time",
+    "range_label": "Range",
+    "range_recent": "Recent sessions",
+    "range_all": "All time, by month",
+    "e1rm_hint": "Epley estimate from sets of up to 12 reps; bodyweight is excluded.",
+    "sessions": "Sessions",
+    "show_older": "Show older sessions",
+    "empty": "No sets logged for this exercise yet."
   }
 }

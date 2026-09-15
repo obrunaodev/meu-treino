@@ -1047,6 +1047,9 @@ p { margin: 0; line-height: 1.55; }
 .report-exercises dt { font: 400 9.5px/1.2 var(--font-mono); color: var(--dim); text-transform: uppercase; }
 .report-exercises dd { margin: 3px 0 0; overflow-wrap: anywhere; font: 400 12px/1.3 var(--font-mono); color: var(--ink-2); }
 .report-series { display: flex; flex-direction: column; gap: 14px; margin: 18px 0 0 38px; }
+/* Na história do exercício a série não fica sob um cabeçalho numerado: sem o recuo, que sobra a 390 px. */
+.exercise-history__month { display: flex; flex-direction: column; gap: 10px; }
+.report-series.exercise-history__series { margin: 0; }
 .report-series__session > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 7px; border-bottom: 1px solid var(--line); }
 .report-series__session > header > div { display: flex; flex-direction: column; gap: 2px; }
 .report-series__session > header strong { font-size: 12px; }

@@ -801,5 +801,25 @@
     "period": "Período",
     "show_table": "ver tabela",
     "show_chart": "ver gráfico"
+  },
+  "exercise_history": {
+    "eyebrow": "Histórico do exercício",
+    "open": "Ver histórico",
+    "summary_one": "{{count}} sessão · {{sets}} séries de trabalho desde {{since}}",
+    "summary_other": "{{count}} sessões · {{sets}} séries de trabalho desde {{since}}",
+    "progress": "Evolução",
+    "metric_label": "Métrica",
+    "metric_top_load": "Maior carga",
+    "metric_e1rm": "1RM estimado",
+    "metric_volume": "Volume",
+    "metric_best_reps": "Mais repetições",
+    "metric_best_seconds": "Maior tempo",
+    "range_label": "Período",
+    "range_recent": "Últimos treinos",
+    "range_all": "Tudo, por mês",
+    "e1rm_hint": "Estimativa de Epley com séries de até 12 repetições; peso corporal fica de fora.",
+    "sessions": "Sessões",
+    "show_older": "Mostrar sessões mais antigas",
+    "empty": "Nenhuma série registrada para este exercício ainda."
   }
 }
