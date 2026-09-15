@@ -106,14 +106,114 @@ interface SessionReference {
   startedAt: string
 }
 
-/** Sessão anterior do mesmo treino, usando a data do treino e não a última edição. */
-export function previousTemplateSession<T extends SessionReference>(current: T, sessions: T[]): T | null {
-  return sessions
-    .filter((session) => (
-      session.id !== current.id && session.templateId === current.templateId
-      && session.startedAt < current.startedAt
-    ))
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null
+interface HistoryLog {
+  sessionId: string
+  exerciseId: string
+  setIndex: number
+  isWarmup: boolean
+  skipped: boolean
+}
+
+export interface PrefillSource<S, L> {
+  /** `template`: histórico do mesmo treino. `other_workout`: outro treino, e só a carga vale. */
+  origin: 'template' | 'other_workout'
+  session: S
+  /** Séries de trabalho do exercício nessa sessão, em ordem. */
+  sets: L[]
+  /** O mesmo na sessão anterior do mesmo treino com o exercício — base do conselho de progressão. */
+  earlierSets: L[]
+}
+
+/**
+ * De onde vêm os valores pré-preenchidos de um exercício.
+ *
+ * Primeiro o mesmo treino, pulando sessões em que o exercício não foi feito:
+ * um pulo não pode apagar o histórico. Sem nenhuma, a última vez em qualquer
+ * treino. Sempre antes da sessão atual, pela data do treino e não da edição.
+ *
+ * Não é simplesmente "a mais recente": Treino A com 80 kg × 6 e Treino B com
+ * 60 kg × 12 no mesmo exercício sobrescreveriam um ao outro a cada sessão.
+ */
+export function prefillSource<S extends SessionReference, L extends HistoryLog>(
+  current: S,
+  sessions: S[],
+  logs: L[],
+  exerciseId: string,
+): PrefillSource<S, L> | null {
+  const bySession = workingSetsBySession(logs, exerciseId)
+  const earlier = sessions
+    .filter((session) => session.id !== current.id && session.startedAt < current.startedAt && bySession.has(session.id))
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+  const [latest, older] = earlier.filter((session) => session.templateId === current.templateId)
+  if (latest) {
+    return { origin: 'template', session: latest, sets: bySession.get(latest.id)!, earlierSets: older ? bySession.get(older.id)! : [] }
+  }
+  const other = earlier[0]
+  return other ? { origin: 'other_workout', session: other, sets: bySession.get(other.id)!, earlierSets: [] } : null
+}
+
+function workingSetsBySession<L extends HistoryLog>(logs: L[], exerciseId: string): Map<string, L[]> {
+  const bySession = new Map<string, L[]>()
+  for (const log of logs) {
+    if (log.exerciseId !== exerciseId || log.isWarmup || log.skipped) continue
+    bySession.set(log.sessionId, [...(bySession.get(log.sessionId) ?? []), log])
+  }
+  for (const sets of bySession.values()) sets.sort((a, b) => a.setIndex - b.setIndex)
+  return bySession
+}
+
+export interface SetDraft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
+
+interface DraftItem {
+  repMin: number | null
+  repMax: number | null
+  rirTarget: number | null
+  isTimeBased: boolean
+  trackingMode?: 'compact' | 'full'
+}
+
+interface DraftLog {
+  setIndex: number
+  weightKg: number | null
+  plateCount: number | null
+  reps: number | null
+  seconds: number | null
+  rir: number | null
+}
+
+/**
+ * Rascunho de uma série ao abrir o exercício.
+ *
+ * O que já foi feito hoje vence. Do mesmo treino vêm carga, resultado e
+ * esforço, como sempre. De outro treino vem só a carga: repetições e esforço
+ * de outra prescrição — outra faixa, outro alvo — pareceriam um histórico que
+ * nunca existiu, e salvar sem editar os gravaria.
+ */
+export function initialSetDraft(
+  item: DraftItem,
+  setIndex: number,
+  current: DraftLog | undefined,
+  source: PrefillSource<unknown, DraftLog> | null,
+): SetDraft {
+  const prescribed = prescribedResult(item.repMin, item.repMax)
+  if (current) return draftFromLog(item, current, prescribed, true)
+  if (source?.origin === 'other_workout') {
+    const last = source.sets.at(-1)!
+    return { kg: last.weightKg, plate: last.plateCount, result: prescribed, rir: item.rirTarget, checked: false }
+  }
+  const previous = source ? previousSetForDraft([], source.sets, setIndex, item.trackingMode ?? 'compact') : null
+  if (previous) return draftFromLog(item, previous, prescribed, false)
+  return { kg: null, plate: null, result: prescribed, rir: item.rirTarget, checked: false }
+}
+
+function draftFromLog(item: DraftItem, log: DraftLog, prescribed: number | null, checked: boolean): SetDraft {
+  return {
+    kg: log.weightKg,
+    plate: log.plateCount,
+    result: (item.isTimeBased ? log.seconds : log.reps) ?? prescribed,
+    rir: log.rir ?? item.rirTarget,
+    checked,
+  }
 }
 
 /**
