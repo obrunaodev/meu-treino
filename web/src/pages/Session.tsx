@@ -54,7 +54,8 @@ export function Session() {
   }, [])
 
   const slot = useMemo(() => nextSlot(
-    items.map((i) => ({ id: i.id, sets: i.sets, restSeconds: i.restSeconds })),
+    // O grupo entra só aqui: é a ordem de execução que ele muda, não a contagem.
+    items.map((i) => ({ id: i.id, sets: i.sets, restSeconds: i.restSeconds, supersetGroup: i.supersetGroup })),
     logs.map((l) => ({
       templateItemId: l.templateItemId, setIndex: l.setIndex, isWarmup: l.isWarmup, skipped: l.skipped,
     })),
