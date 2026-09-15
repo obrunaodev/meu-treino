@@ -100,30 +100,40 @@ function ExerciseSets({ sets, load, locale }: {
           </div>
           <Link to={historyRoute(first.sessionId)}>{t('reports.open_session')}</Link>
         </header>
-        <ol>{sessionSets.map((set) => <li className={set.skipped ? 'report-series__row report-series__row--off' : 'report-series__row'} key={set.id}>
-          <div className="report-series__set">
-            <strong>{set.isWarmup ? t('reports.warmup_set', { number: set.setIndex + 1 }) : t('session.set', { n: set.setIndex + 1 })}</strong>
-            <span className="mono muted">{set.completedAt ? new Date(set.completedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-          </div>
-          <Datum label={t('session.load')} value={set.weightKg === null ? '—' : `${load(set.weightKg)}${set.loadPerSide ? `/${t('session.per_side_short')}` : ''}${set.plateCount !== null ? ` · ${t('reports.plate_position', { number: set.plateCount })}` : ''}`} />
-          <Datum label={set.seconds !== null ? t('session.seconds') : t('session.reps')} value={set.seconds ?? set.reps ?? '—'} />
-          <Datum label={t('rir.label')} value={set.rir === null ? '—' : t(rirLabelKey(set.rir)!)} />
-          <Datum label={t('session.side')} value={t(`session.side_${set.side === 'ambos' ? 'both' : set.side === 'D' ? 'right' : 'left'}`)} />
-          <div className="report-series__flags">
-            {set.skipped && <span>{t('reports.skipped')}</span>}
-            {set.hadPain && <span>{t('reports.pain_marked')}</span>}
-          </div>
-        </li>)}</ol>
+        <ol>{sessionSets.map((set) => <ReportSetRow key={set.id} set={set} load={load} locale={locale} />)}</ol>
       </section>
     })}
   </div>
+}
+
+/** Uma série dentro de uma sessão, como os relatórios e a história do exercício mostram. */
+export function ReportSetRow({ set, load, locale }: {
+  set: ExerciseSetReport
+  load: (kg: number) => string
+  locale: string
+}) {
+  const { t } = useTranslation()
+  return <li className={set.skipped ? 'report-series__row report-series__row--off' : 'report-series__row'}>
+    <div className="report-series__set">
+      <strong>{set.isWarmup ? t('reports.warmup_set', { number: set.setIndex + 1 }) : t('session.set', { n: set.setIndex + 1 })}</strong>
+      <span className="mono muted">{set.completedAt ? new Date(set.completedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+    </div>
+    <Datum label={t('session.load')} value={set.weightKg === null ? '—' : `${load(set.weightKg)}${set.loadPerSide ? `/${t('session.per_side_short')}` : ''}${set.plateCount !== null ? ` · ${t('reports.plate_position', { number: set.plateCount })}` : ''}`} />
+    <Datum label={set.seconds !== null ? t('session.seconds') : t('session.reps')} value={set.seconds ?? set.reps ?? '—'} />
+    <Datum label={t('rir.label')} value={set.rir === null ? '—' : t(rirLabelKey(set.rir)!)} />
+    <Datum label={t('session.side')} value={t(`session.side_${set.side === 'ambos' ? 'both' : set.side === 'D' ? 'right' : 'left'}`)} />
+    <div className="report-series__flags">
+      {set.skipped && <span>{t('reports.skipped')}</span>}
+      {set.hadPain && <span>{t('reports.pain_marked')}</span>}
+    </div>
+  </li>
 }
 
 function Metric({ label, value, hint }: { label: string; value: string | number; hint: string }) {
   return <div className="report-metric"><span>{label}</span><strong>{value}</strong><small>{hint}</small></div>
 }
 
-function Datum({ label, value }: { label: string; value: string | number }) {
+export function Datum({ label, value }: { label: string; value: string | number }) {
   return <div><dt>{label}</dt><dd>{value}</dd></div>
 }
 
