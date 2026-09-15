@@ -13,6 +13,7 @@ import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { SessionExerciseChecklist, SessionExerciseFlow } from '../components/SessionExerciseChecklist.js'
 import { routes, sessionExerciseRoute, sessionRoute } from '../lib/routes.js'
+import { useScreenWakeLock } from '../lib/wake-lock.js'
 
 export function Session() {
   const { sessionId, itemId } = useParams()
@@ -33,6 +34,8 @@ export function Session() {
   const { updateSession, logCardio } = useActions()
 
   const [{ phase, phaseStartedAt, restKey }, setPhase] = useSessionPhase(sessionId)
+  // Encerrar, apagar ou o /end do WhatsApp tiram a sessão de andamento e soltam o lock.
+  useScreenWakeLock(session?.status === 'em_andamento')
   const [now, setNow] = useState(Date.now())
   const [intensity, setIntensity] = useState<'leve' | 'moderado' | 'forte' | null>(null)
   const [cardioOptionId, setCardioOptionId] = useState('')
