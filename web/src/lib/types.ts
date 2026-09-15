@@ -206,6 +206,8 @@ export interface UserSettings extends Base {
   theme: string
   locale: string
   remindersEnabled: boolean
+  /** Ausente em clientes antigos e em backups anteriores: vale como desligado. */
+  restAutoStart?: boolean
   onboardedAt: string | null
 }
 

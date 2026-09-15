@@ -483,6 +483,8 @@ export const userSettings = pgTable('user_settings', {
   theme: text('theme').notNull().default('dark'),
   locale: text('locale').notNull().default('pt-BR'),
   remindersEnabled: boolean('reminders_enabled').notNull().default(false),
+  /** Inicia o descanso ao marcar a série. Desligado por padrão: o manual é o documentado. */
+  restAutoStart: boolean('rest_auto_start').notNull().default(false),
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
 }, (t) => [unique('user_settings_owner_uniq').on(t.ownerId)])
 
