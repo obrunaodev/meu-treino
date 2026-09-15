@@ -217,7 +217,8 @@
     "no_program": "Você ainda não tem um programa.",
     "create_program": "Criar programa",
     "exercises": "{{count}} exercício",
-    "exercises_other": "{{count}} exercícios"
+    "exercises_other": "{{count}} exercícios",
+    "deload_hint": "O bloco {{block}} fechou pesado. Considere uma semana mais leve, com menos carga ou menos séries. Nada muda sozinho."
   },
   "errors": {
     "nao_autenticado": "Sessão expirada. Entre novamente.",
@@ -843,5 +844,11 @@
     "col_load": "Carga",
     "col_e1rm": "1RM est.",
     "col_date": "Quando"
+  },
+  "deload": {
+    "reason_effort": "{{percent}}% das séries de trabalho acima do esforço alvo (limite {{limit}}%)",
+    "reason_pain_one": "Dor nível {{level}} ou mais em {{count}} sessão do bloco",
+    "reason_pain_other": "Dor nível {{level}} ou mais em {{count}} sessões do bloco",
+    "open_report": "Ver relatório do bloco"
   }
 }
