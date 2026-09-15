@@ -869,6 +869,10 @@ p { margin: 0; line-height: 1.55; }
 .session-exercise__copy small.progression-hint { color: var(--ink-2); }
 .session-exercise__copy small.progression-hint--increase { color: var(--good); }
 .session-exercise__copy small.progression-hint--reduce { color: var(--accent); }
+/* Recorde: linha curta no verde de "bom", sempre com texto — a cor nunca é o único sinal. */
+.record-flag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--good); }
+.session-focus__set-head .record-flag { display: flex; align-items: center; margin-left: auto; padding: 0 14px; min-width: 0; text-align: right; }
+.session-focus__actions .record-flag { flex-basis: 100%; margin: 0; }
 .session-checklist__list {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: 10px;

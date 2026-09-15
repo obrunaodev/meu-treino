@@ -7,4 +7,8 @@ describe('paridade de idiomas', () => {
   it('a história do exercício tem as mesmas chaves em pt-BR e en-US', () => {
     expect(Object.keys(enUS.exercise_history).sort()).toEqual(Object.keys(ptBR.exercise_history).sort())
   })
+
+  it('os recordes têm as mesmas chaves em pt-BR e en-US', () => {
+    expect(Object.keys(enUS.records).sort()).toEqual(Object.keys(ptBR.records).sort())
+  })
 })

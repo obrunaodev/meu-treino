@@ -821,5 +821,14 @@
     "sessions": "Sessões",
     "show_older": "Mostrar sessões mais antigas",
     "empty": "Nenhuma série registrada para este exercício ainda."
+  },
+  "records": {
+    "new": "Recorde: {{kinds}}",
+    "kind_top_load": "maior carga",
+    "kind_e1rm": "1RM estimado",
+    "kind_rep_max": "mais repetições nessa carga",
+    "kind_session_volume": "maior volume numa sessão",
+    "kind_longest_set": "maior tempo",
+    "volume_new": "Recorde: maior volume numa sessão"
   }
 }

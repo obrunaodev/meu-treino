@@ -141,6 +141,10 @@ Before an exercise begins, progression guidance appears as a quiet textual line
 inside its overview. Increase and reduction recommendations add positive or
 accent color, but the action remains explicit in text and is never applied
 automatically.
+A set that beats every earlier session is flagged as a record at the right of
+its card head, in positive color with the record kinds written out, and a
+session-volume record appears above the actions once every set is checked.
+Records are computed from history on read and never change the plan.
 
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
@@ -177,7 +181,7 @@ lightness when changing it and validate the palette before merging.
 - Use concise pt-BR copy by default and provide the equivalent en-US key.
 - Images require useful alternative text when informative and empty alt text
   when decorative.
-- Error, completion, warm-up, and skipped states must have a textual cue in
+- Error, completion, record, warm-up, and skipped states must have a textual cue in
   addition to color.
 
 ## Agent workflow

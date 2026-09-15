@@ -821,5 +821,14 @@
     "sessions": "Sessions",
     "show_older": "Show older sessions",
     "empty": "No sets logged for this exercise yet."
+  },
+  "records": {
+    "new": "Record: {{kinds}}",
+    "kind_top_load": "top load",
+    "kind_e1rm": "estimated 1RM",
+    "kind_rep_max": "most reps at this load",
+    "kind_session_volume": "biggest session volume",
+    "kind_longest_set": "longest time",
+    "volume_new": "Record: biggest session volume"
   }
 }
