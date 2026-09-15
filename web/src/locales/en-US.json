@@ -706,7 +706,15 @@
     "block_title": "Block {{number}} report",
     "block_description": "Consolidated results within this interval of weeks.",
     "included_sessions": "Included sessions",
-    "not_found": "No sessions found for this report."
+    "not_found": "No sessions found for this report.",
+    "effort_title": "Effort reading",
+    "effort_heavy": "Sets harder than target",
+    "effort_heavy_hint": "{{heavy}} of {{rated}} rated sets · suggests from {{limit}}%",
+    "effort_pain": "Sessions with pain",
+    "effort_pain_hint": "level {{level}} or higher · suggests from {{sessions}}",
+    "effort_suggests": "The block closed heavy: consider a lighter week.",
+    "effort_ok": "Nothing indicates the block closed heavy.",
+    "effort_insufficient": "Fewer than {{sessions}} finished sessions: the block’s effort cannot be read yet."
   },
   "settings": {
     "title": "Settings",

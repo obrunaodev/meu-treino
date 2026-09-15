@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { TrainingReportView } from '../components/TrainingReportView.js'
+import { BlockEffortCard } from '../components/BlockEffortCard.js'
+import { blockEffort } from '../lib/domain/deload.js'
 import { buildTrainingReport } from '../lib/domain/training-report.js'
 import { historyRoute, routes } from '../lib/routes.js'
 import { useCardioLogs, useExercises, usePainEvents, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
@@ -36,6 +38,8 @@ export function TrainingReport({ scope }: { scope: 'cycle' | 'block' }) {
       </header>
 
       <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} />
+
+      {scope === 'block' && <BlockEffortCard effort={blockEffort(sessions, sets, pain)} />}
 
       <Card title={t('reports.included_sessions')}>
         <ul className="history-sessions">
