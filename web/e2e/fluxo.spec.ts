@@ -329,6 +329,23 @@ test.describe('jornada completa', () => {
     await page.setViewportSize({ width: 1280, height: 800 })
   })
 
+  test('abre a história do exercício pela biblioteca', async () => {
+    await page.getByRole('link', { name: /^exercícios$/i }).first().click()
+    await page.locator('.tile').first().click()
+    await page.getByRole('link', { name: /ver histórico/i }).click()
+
+    await expect(page).toHaveURL(/\/history\/exercises\/[^/]+$/)
+    await expect(page.getByText(/1 sessão · 3 séries de trabalho desde/i)).toBeVisible()
+    // A série registrada na sessão, na linha e na tabela do gráfico.
+    await expect(page.locator('.report-series__row').filter({ hasText: '72,5 kg' }).first()).toBeVisible()
+    await page.getByRole('button', { name: /ver tabela/i }).click()
+    await expect(page.getByRole('table')).toContainText('72.5')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+    await page.setViewportSize({ width: 1280, height: 800 })
+  })
+
   test('exporta o backup completo e o CSV das séries', async () => {
     await page.getByRole('link', { name: /configurações/i }).first().click()
 
