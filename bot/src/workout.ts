@@ -273,15 +273,38 @@ async function completeIfAllExercisesLogged(
   return { finished: result.rowCount === 1, incomplete }
 }
 
+/** Item capturado pelo app web: traz `exerciseName` e nenhum dado de histórico. */
+type AppSnapshotItem = Omit<WorkoutItem, 'name' | 'previousWeightKg' | 'videoUrl'> & { exerciseName: string }
+
 interface SessionRow {
   id: string
   template_id: string
   template_name: string
-  plan_snapshot: { templateName: string; items: WorkoutItem[] } | null
+  plan_snapshot: { templateName: string; items: Array<WorkoutItem | AppSnapshotItem> } | null
 }
 
-function itemsForSession(session: { plan_snapshot?: SessionRow['plan_snapshot'] }, fallback: WorkoutItem[]) {
-  return session.plan_snapshot?.items ?? fallback
+/**
+ * O plano vem do snapshot, mas ele tem duas origens. O do bot copia o
+ * `WorkoutItem` inteiro; o do app só tem o que o plano precisa. Sem completar,
+ * uma sessão iniciada no app quebrava o /today e o /start: o nome saía
+ * `undefined` e a carga anterior estourava no `toFixed`. Carga e vídeo são
+ * histórico e catálogo, não plano — vêm dos itens vivos, pelo exercício.
+ */
+function itemsForSession(session: { plan_snapshot?: SessionRow['plan_snapshot'] }, live: WorkoutItem[]): WorkoutItem[] {
+  const captured = session.plan_snapshot?.items
+  if (!captured) return live
+  const liveByExercise = new Map(live.map((item) => [item.exerciseId, item]))
+  return captured.map((item) => {
+    if ('name' in item) return item
+    const { exerciseName, ...plan } = item
+    const current = liveByExercise.get(item.exerciseId)
+    return {
+      ...plan,
+      name: exerciseName,
+      previousWeightKg: current?.previousWeightKg ?? null,
+      videoUrl: current?.videoUrl ?? null,
+    }
+  })
 }
 
 function createPlanSnapshot(templateId: string, templateName: string, ownerId: string, items: WorkoutItem[]) {
