@@ -753,7 +753,9 @@
     "block_weeks": "Duração do bloco (semanas)",
     "period_months": "Período completo (meses)",
     "cadence_hint": "Mudanças valem para as próximas sessões. O histórico mantém os números já registrados.",
-    "block_rir": "Mudança de RIR ao fechar o bloco"
+    "block_rir": "Mudança de RIR ao fechar o bloco",
+    "rest_auto_start": "Iniciar o descanso ao marcar a série",
+    "rest_auto_start_hint": "Não inicia depois da última série do exercício."
   },
   "admin_presets": {
     "title": "Modelos de Treino",

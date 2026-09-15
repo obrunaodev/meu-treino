@@ -753,7 +753,9 @@
     "block_weeks": "Block length (weeks)",
     "period_months": "Complete period (months)",
     "cadence_hint": "Changes apply to future sessions. History keeps its recorded numbering.",
-    "block_rir": "RIR change when the block closes"
+    "block_rir": "RIR change when the block closes",
+    "rest_auto_start": "Start rest when a set is checked",
+    "rest_auto_start_hint": "Never starts after the exercise’s last set."
   },
   "admin_presets": {
     "title": "Workout Presets",

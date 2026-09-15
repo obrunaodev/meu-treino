@@ -136,6 +136,19 @@ export function Settings() {
           <label className="field field--inline">
             <input
               type="checkbox"
+              checked={settings?.restAutoStart ?? false}
+              onChange={(e) => void saveSettings({ restAutoStart: e.target.checked })}
+            />
+            <span>
+              {t('settings.rest_auto_start')}
+              <br />
+              <span className="mono muted">{t('settings.rest_auto_start_hint')}</span>
+            </span>
+          </label>
+
+          <label className="field field--inline">
+            <input
+              type="checkbox"
               checked={settings?.remindersEnabled ?? false}
               onChange={async (e) => {
                 if (e.target.checked) {
