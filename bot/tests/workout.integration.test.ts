@@ -188,6 +188,32 @@ integration('registro completo pelo WhatsApp', () => {
     expect(await endOpenWorkout(ownerId)).toBe(true)
   })
 
+  it('mostra a carga do mesmo treino mesmo com outro treino mais recente no exercício', async () => {
+    const { previewTodayWorkout } = await import('../src/workout.js')
+    // Treino B divide o exercício 1 com o Treino A e foi feito por último, com outra carga.
+    const templateB = randomUUID()
+    const itemB = randomUUID()
+    const sessionA = randomUUID()
+    const sessionB = randomUUID()
+    await client.query(`insert into templates (id,owner_id,program_id,position,name)
+      values ($1,$2,$3,1,'Treino B')`, [templateB, ownerId, programId])
+    await client.query(`insert into template_items
+      (id,owner_id,template_id,position,exercise_id,sets,rep_min,rep_max,rir_target)
+      values ($1,$2,$3,0,$4,5,4,6,1)`, [itemB, ownerId, templateB, exerciseIds[0]])
+    await client.query(`insert into workout_sessions (id,owner_id,program_id,template_id,status,started_at)
+      values ($1,$2,$3,$4,'concluida',now() + interval '30 minutes'),
+             ($5,$2,$3,$6,'concluida',now() + interval '1 hour')`,
+    [sessionA, ownerId, programId, templateId, sessionB, templateB])
+    await client.query(`insert into set_logs (id,owner_id,session_id,template_item_id,exercise_id,set_index,weight_kg,reps)
+      values ($1,$2,$3,$4,$5,1,77,12), ($6,$2,$7,$8,$5,1,200,5)`,
+    [randomUUID(), ownerId, sessionA, itemIds[0], exerciseIds[0], randomUUID(), sessionB, itemB])
+
+    // A última sessão é do B, então a sugestão é o A — e a carga do A é 77, não os 200 do B.
+    const preview = await previewTodayWorkout(ownerId)
+    expect(preview?.alreadyStarted).toBe(false)
+    expect(preview?.items[0]).toMatchObject({ exerciseId: exerciseIds[0], previousWeightKg: 77 })
+  })
+
   it('persiste e revoga mensagens conhecidas do grupo', async () => {
     const { clearTrackedMessages, trackGroupMessage } = await import('../src/chat-cleaner.js')
     const jid = 'grupo-teste@g.us'
