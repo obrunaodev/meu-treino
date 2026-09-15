@@ -364,7 +364,11 @@
     "increase": "Suggestion: increase the load",
     "progress_reps": "Suggestion: keep the load and progress repetitions",
     "maintain": "Suggestion: keep the load",
-    "reduce": "Suggestion: reduce the load"
+    "reduce": "Suggestion: reduce the load",
+    "timed_raise_target": "Suggestion: raise the target duration in the workout",
+    "timed_progress": "Suggestion: extend the duration toward the top of the range",
+    "timed_maintain": "Suggestion: keep the duration",
+    "timed_reduce": "Suggestion: shorten the duration"
   },
   "session": {
     "title": "Today's Workout",

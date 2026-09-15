@@ -364,7 +364,11 @@
     "increase": "Sugestão: subir a carga",
     "progress_reps": "Sugestão: manter a carga e avançar nas repetições",
     "maintain": "Sugestão: manter a carga",
-    "reduce": "Sugestão: reduzir a carga"
+    "reduce": "Sugestão: reduzir a carga",
+    "timed_raise_target": "Sugestão: aumentar a duração-alvo no treino",
+    "timed_progress": "Sugestão: avançar na duração até o topo da faixa",
+    "timed_maintain": "Sugestão: manter a duração",
+    "timed_reduce": "Sugestão: reduzir a duração"
   },
   "session": {
     "title": "Treino de Hoje",
