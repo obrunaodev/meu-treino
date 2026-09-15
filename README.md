@@ -45,7 +45,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - The active session displays pending, skipped, and completed exercises.
 - Opening an exercise shows every planned set with editable numeric weight, repetition, and effort inputs.
 - Each set is checked off independently, and the exercise can only be finished after all planned sets are checked.
-- Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
+- Values are prefilled from the latest session of the same workout that recorded the exercise. When the workout has no such session, only the load comes from the exercise's latest session in any workout, labelled with that workout and how long ago it was; repetitions and effort follow the current prescription. A newly entered load is copied into later empty sets without replacing historical progression.
 - Rest is an optional inline clock action between consecutive sets and starts only when requested. Its countdown derives from an absolute timestamp and survives backgrounding or reloading the app.
 - The screen stays awake while an open session is displayed, where the browser supports the Screen Wake Lock API.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
