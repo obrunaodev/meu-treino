@@ -47,6 +47,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Each set is checked off independently, and the exercise can only be finished after all planned sets are checked.
 - Values are prefilled from the latest comparable workout. A newly entered load is copied into later empty sets without replacing historical progression.
 - Rest is an optional inline clock action between consecutive sets and starts only when requested. Its countdown derives from an absolute timestamp and survives backgrounding or reloading the app.
+- The screen stays awake while an open session is displayed, where the browser supports the Screen Wake Lock API.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
 - The live overview does not repeat recorded-set details; those remain available in session history.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.
@@ -495,4 +496,5 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 - Push reminders require a weekly schedule, VAPID keys, and browser permission. iOS requires an installed Home Screen PWA.
 - Reminder scheduling uses the installation-wide `REMINDER_TIMEZONE`, not a per-user timezone.
 - WhatsApp depends on an unofficial protocol implementation and can be disrupted by upstream changes.
+- Installed iOS Home Screen apps keep the screen awake during a session only on iOS and iPadOS 18.4 or later; before that, Wake Lock did not work in Home Screen web apps (WebKit bug 254545).
 - The Oracle 1 GB target has little memory headroom and must be monitored, particularly with WhatsApp connected and image processing active.
