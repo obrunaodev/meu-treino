@@ -7,7 +7,7 @@ import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type Record
 import { exerciseExecutionStatus, initialSetDraft, prefillSource, restCommandForToggle, type SetDraft } from '../lib/domain/session.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
-import { progressionAction } from '../lib/domain/progression.js'
+import { progressionAction, progressionMessageKey } from '../lib/domain/progression.js'
 import { useEquipment, useExercises, useMedia, useRecordBaseline, useSessions, useSetLogs, useSettings, useTemplatesEver } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
@@ -52,13 +52,15 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
         // Conselho e esforço só do mesmo treino: a regra compara com a faixa deste item.
         const sameWorkout = source?.origin === 'template' ? source : null
         const representative = today ?? source?.sets.at(-1) ?? null
+        const metric = item.isTimeBased ? 'seconds' : 'reps'
         const recommendation = current.length === 0 && sameWorkout
-          ? progressionAction(sameWorkout.sets, sameWorkout.earlierSets, item.repMax)
+          ? progressionAction(sameWorkout.sets, sameWorkout.earlierSets, item.repMax, metric)
           : null
         const snapshot = 'exerciseName' in item ? item : null
         const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
         const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
-        const range = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
+        const span = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
+        const range = item.isTimeBased ? `${span}s` : span
         const effort = (today ?? sameWorkout?.sets.at(-1))?.rir ?? item.rirTarget
         const status = statusOf(item)
         return <li className={`session-exercise session-exercise--${status}`} key={item.id}>
@@ -68,8 +70,8 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
               <strong>{snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')}</strong>
               <small>{item.sets} × {range} · {effort === null ? '—' : t(rirLabelKey(effort)!)}</small>
               <small>{t('session.expected_load')}: {formatLoad(representative?.weightKg ?? null, representative?.plateCount ?? null, settings?.unit ?? 'kg', settings?.showPlates ?? true, perSide ? t('session.per_side_short') : null)}{gear?.name ? ` · ${gear.name}` : ''}</small>
-              {recommendation && <small className={`progression-hint progression-hint--${recommendation}`}>
-                {t(`progression.${recommendation}`)}
+              {recommendation && sameWorkout && <small className={`progression-hint progression-hint--${recommendation}`}>
+                {t(progressionMessageKey(recommendation, metric, sameWorkout.sets))}
               </small>}
               {current.length === 0 && source?.origin === 'other_workout' && <small><PrefillOrigin session={source.session} /></small>}
             </span>
