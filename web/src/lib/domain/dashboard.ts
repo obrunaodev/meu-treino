@@ -1,5 +1,6 @@
 import type { Exercise, PainEvent, SetLog, WorkoutSession } from '../types.js'
 import { assignCycleNumbers, averageIntervalDays } from './cycle.js'
+import { kgToLb, type Unit } from './load.js'
 
 export interface LoadTrend {
   exerciseId: string
@@ -136,6 +137,22 @@ export function weeksToBlockEnd(sessionsToBlockEnd: number, sessions: WorkoutSes
   const intervalDays = averageIntervalDays(sessions)
   if (intervalDays === null) return null
   return Math.max(1, Math.ceil((sessionsToBlockEnd * intervalDays) / 7))
+}
+
+/**
+ * Valores do gráfico de carga na unidade que o usuário lê. O trend guarda kg;
+ * sem converter, quem usa lb via números em kg sob o rótulo "lb". Volume segue
+ * em kg·rep, que é o rótulo desse gráfico.
+ */
+export function loadTrendValues(
+  trend: LoadTrend,
+  metric: 'weight' | 'volume',
+  unit: Unit,
+): Array<{ at: string; value: number }> {
+  return trend.points.map((point) => ({
+    at: point.at,
+    value: metric === 'weight' && unit === 'lb' ? Number(kgToLb(point.weight).toFixed(1)) : point[metric],
+  }))
 }
 
 /** Resume as oito últimas exposições de carga de cada exercício. */

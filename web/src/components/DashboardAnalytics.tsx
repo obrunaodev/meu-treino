@@ -6,7 +6,7 @@ import {
 } from '../lib/repo.js'
 import { useCatalogTaxonomy } from '../lib/catalog-taxonomy.js'
 import {
-  muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek, sessionsForWeek,
+  loadTrendValues, muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek, sessionsForWeek,
   type LoadTrend, type MuscleGroupWork, type WeeklySessions,
 } from '../lib/domain/dashboard.js'
 import { formatLoad } from '../lib/domain/load.js'
@@ -111,8 +111,8 @@ function ExerciseProgressCard({ trends, selected, metric, unit, exerciseId, labe
   const values = selected.points.map((point) => point[metric])
   const delta = values.at(-1)! - values[0]!
   const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
-  const points = selected.points.map((point) => ({
-    label: labels.dateLabel.format(new Date(point.at)), value: point[metric],
+  const points = loadTrendValues(selected, metric, unit).map((point) => ({
+    label: labels.dateLabel.format(new Date(point.at)), value: point.value,
   }))
   const exercise = exercises.find((item) => item.id === selected.exerciseId)
   const deltaLabel = metric === 'weight'
