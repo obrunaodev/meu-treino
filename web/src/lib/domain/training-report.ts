@@ -127,25 +127,7 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
       report.volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0) * (perSide.get(`${set.sessionId}:${set.exerciseId}`) ? 2 : 1)
       if (set.rir !== null) rirValues.set(set.exerciseId, [...(rirValues.get(set.exerciseId) ?? []), set.rir])
     }
-    const session = sessionById.get(set.sessionId)
-    report.sets.push({
-      id: set.id,
-      sessionId: set.sessionId,
-      sessionName: session?.planSnapshot?.templateName ?? '',
-      sessionStartedAt: session?.startedAt ?? set.createdAt ?? set.updatedAt,
-      setIndex: set.setIndex,
-      isWarmup: set.isWarmup,
-      side: set.side,
-      weightKg: set.weightKg,
-      plateCount: set.plateCount,
-      loadPerSide: perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false,
-      reps: set.reps,
-      seconds: set.seconds,
-      rir: set.rir,
-      skipped: set.skipped,
-      hadPain: set.hadPain,
-      completedAt: set.completedAt,
-    })
+    report.sets.push(setReport(set, sessionById.get(set.sessionId), perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false))
     reports.set(set.exerciseId, report)
   }
 
@@ -153,6 +135,28 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
     reports.get(exerciseId)!.averageRir = values.reduce((sum, value) => sum + value, 0) / values.length
   }
   return [...reports.values()]
+}
+
+/** Uma série como os relatórios a mostram; a história de um exercício usa a mesma linha. */
+export function setReport(set: SetLog, session: WorkoutSession | undefined, loadPerSide: boolean): ExerciseSetReport {
+  return {
+    id: set.id,
+    sessionId: set.sessionId,
+    sessionName: session?.planSnapshot?.templateName ?? '',
+    sessionStartedAt: session?.startedAt ?? set.createdAt ?? set.updatedAt,
+    setIndex: set.setIndex,
+    isWarmup: set.isWarmup,
+    side: set.side,
+    weightKg: set.weightKg,
+    plateCount: set.plateCount,
+    loadPerSide,
+    reps: set.reps,
+    seconds: set.seconds,
+    rir: set.rir,
+    skipped: set.skipped,
+    hadPain: set.hadPain,
+    completedAt: set.completedAt,
+  }
 }
 
 function emptyExercise(exerciseId: string, name: string): ExerciseReport {
