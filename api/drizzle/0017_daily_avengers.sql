@@ -1,0 +1,1 @@
+ALTER TABLE "template_items" ADD COLUMN "superset_group" uuid;

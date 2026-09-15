@@ -63,11 +63,13 @@ suite('sync ponta a ponta', () => {
     await pool.query('delete from sync_operations where owner_id=$1', [ownerId])
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
+    await pool.query('delete from template_items where owner_id=$1', [ownerId])
   })
 
   afterAll(async () => {
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
+    await pool.query('delete from template_items where owner_id=$1', [ownerId])
     await pool.query("delete from users where google_sub='vitest-e2e'")
     await pool.end()
   })
@@ -132,6 +134,43 @@ suite('sync ponta a ponta', () => {
 
     const { rows } = await pool.query('select unit, rest_auto_start from user_settings where id=$1', [settingsId])
     expect(rows[0]).toMatchObject({ unit: 'lb', rest_auto_start: true })
+  })
+
+  it('agrupar um item antigo não conflita, e cliente antigo não desfaz o grupo', async () => {
+    const ITEM = '17171717-1717-7171-8171-171717171717'
+    const GROUP = '18181818-1818-7181-8181-181818181818'
+    // Linha criada antes de a coluna existir: a base que o cliente guarda não tem a chave.
+    const antes = {
+      id: ITEM, templateId: '19191919-1919-7191-8191-191919191919', exerciseId: EQUIP,
+      position: 0, sets: 3, updatedAt: new Date().toISOString(),
+    }
+    await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{ opId: '00000000-0000-7000-8000-0000000000f4', entity: 'template_items', entityId: ITEM, op: 'upsert', base: null, data: antes }],
+    })
+
+    const agrupou = await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000f5', entity: 'template_items', entityId: ITEM, op: 'upsert',
+        base: antes, data: { ...antes, supersetGroup: GROUP, updatedAt: new Date().toISOString() },
+      }],
+    })
+    expect(agrupou.results[0]?.status).toBe('applied')
+    expect(agrupou.pendingConflicts).toBe(0)
+
+    // Cliente de versão anterior edita as séries sem conhecer a coluna.
+    const antigo = await sync({
+      deviceId: DEVICE_B, cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000f6', entity: 'template_items', entityId: ITEM, op: 'upsert',
+        base: antes, data: { ...antes, sets: 4, updatedAt: new Date().toISOString() },
+      }],
+    })
+    expect(antigo.results[0]?.status).toBe('applied')
+
+    const { rows } = await pool.query('select sets, superset_group from template_items where id=$1', [ITEM])
+    expect(rows[0]).toMatchObject({ sets: 4, superset_group: GROUP })
   })
 
   it('recusa criar mídia pelo sync, mesmo apontando para objeto alheio', async () => {
