@@ -16,6 +16,8 @@ export interface WorkoutItem {
   rirTarget: number | null
   restSeconds: number | null
   isTimeBased: boolean
+  /** Chave do bi-set/tri-set; itens vizinhos com a mesma chave são um grupo. */
+  supersetGroup: string | null
   laterality: string
   unilateralAsymmetric: boolean
   loadPerSide: boolean
@@ -223,7 +225,7 @@ async function nextWorkoutSlot(client: PoolClient, ownerId: string) {
 async function loadItems(client: PoolClient, ownerId: string, templateId: string): Promise<WorkoutItem[]> {
   const { rows } = await client.query(`
     select i.id, i.exercise_id, i.updated_at, e.name, i.position, i.sets, i.rep_min, i.rep_max,
-           i.rir_target, i.rest_seconds, i.is_time_based, e.laterality,
+           i.rir_target, i.rest_seconds, i.is_time_based, i.superset_group, e.laterality,
            e.unilateral_asymmetric, e.load_per_side, c.video, previous.previous_weight_kg,
            gear.id as equipment_id, gear.name as equipment_name, gear.load_type,
            gear.increment_kg, gear.plate_table
@@ -246,6 +248,7 @@ async function loadItems(client: PoolClient, ownerId: string, templateId: string
     id: row.id, exerciseId: row.exercise_id, name: row.name, position: row.position,
     sets: row.sets, repMin: row.rep_min, repMax: row.rep_max,
     rirTarget: row.rir_target, restSeconds: row.rest_seconds, isTimeBased: row.is_time_based,
+    supersetGroup: row.superset_group,
     laterality: row.laterality, unilateralAsymmetric: row.unilateral_asymmetric,
     loadPerSide: row.load_per_side,
     equipment: row.equipment_id ? {

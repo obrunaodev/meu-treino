@@ -237,6 +237,32 @@ integration('registro completo pelo WhatsApp', () => {
     expect(await endOpenWorkout(ownerId)).toBe(true)
   })
 
+  it('leva o bi-set para o snapshot e segue registrando um exercício por vez', async () => {
+    const { recordExercise, startTodayWorkout } = await import('../src/workout.js')
+    const { endOpenWorkout } = await import('../src/workout-history.js')
+    const group = randomUUID()
+    // O rodízio precisa cair no treino com os três itens: o outro sai de cena.
+    await client.query('update templates set deleted_at=now() where owner_id=$1 and id <> $2', [ownerId, templateId])
+    await client.query('update template_items set superset_group=$1 where id = any($2::uuid[])', [group, [itemIds[0], itemIds[1]]])
+
+    const started = await startTodayWorkout(ownerId)
+    expect(started?.items.slice(0, 2).map((entry) => entry.supersetGroup)).toEqual([group, group])
+    expect(started?.items[2]?.supersetGroup).toBeNull()
+
+    // A numeração segue plana: "2 60kg 3x10 moderado" grava só o exercício 2.
+    const saved = await recordExercise(ownerId, { exerciseNumber: 2, weightKg: 60, sets: 3, reps: 10, rir: 2 })
+    expect(saved).toMatchObject({ status: 'saved' })
+    const { rows } = await client.query(
+      'select distinct template_item_id from set_logs where session_id=$1 and deleted_at is null',
+      [started!.sessionId],
+    )
+    expect(rows).toEqual([{ template_item_id: itemIds[1] }])
+
+    await client.query('update template_items set superset_group=null where owner_id=$1', [ownerId])
+    await client.query('update templates set deleted_at=null where owner_id=$1', [ownerId])
+    expect(await endOpenWorkout(ownerId)).toBe(true)
+  })
+
   it('persiste e revoga mensagens conhecidas do grupo', async () => {
     const { clearTrackedMessages, trackGroupMessage } = await import('../src/chat-cleaner.js')
     const jid = 'grupo-teste@g.us'
