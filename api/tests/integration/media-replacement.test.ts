@@ -63,6 +63,20 @@ suite('exercise media replacement', () => {
     })
   }
 
+  it('answers an oversized upload with 413, not a server error', async () => {
+    // Um byte acima do teto: o multer para no meio do stream.
+    const form = new FormData()
+    form.append('file', new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: 'image/png' }), 'big.png')
+    const response = await fetch(`${API}/api/media/exercises/${exerciseId}`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${accessToken}` },
+      body: form,
+    })
+
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({ code: 'arquivo_grande_demais' })
+  })
+
   it('soft-deletes the previous image when a new one succeeds', async () => {
     const firstResponse = await upload('red')
     expect(firstResponse.status).toBe(201)
