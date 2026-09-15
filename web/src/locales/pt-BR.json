@@ -829,6 +829,13 @@
     "kind_rep_max": "mais repetições nessa carga",
     "kind_session_volume": "maior volume numa sessão",
     "kind_longest_set": "maior tempo",
-    "volume_new": "Recorde: maior volume numa sessão"
+    "volume_new": "Recorde: maior volume numa sessão",
+    "title": "Recordes",
+    "none": "Recordes contam a partir da segunda sessão com este exercício.",
+    "rep_table": "Melhor carga por repetições",
+    "col_reps": "Reps",
+    "col_load": "Carga",
+    "col_e1rm": "1RM est.",
+    "col_date": "Quando"
   }
 }

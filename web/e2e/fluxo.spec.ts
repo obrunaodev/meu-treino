@@ -339,7 +339,7 @@ test.describe('jornada completa', () => {
     // A série registrada na sessão, na linha e na tabela do gráfico.
     await expect(page.locator('.report-series__row').filter({ hasText: '72,5 kg' }).first()).toBeVisible()
     await page.getByRole('button', { name: /ver tabela/i }).click()
-    await expect(page.getByRole('table')).toContainText('72.5')
+    await expect(page.getByRole('table', { name: 'kg' })).toContainText('72.5')
 
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)

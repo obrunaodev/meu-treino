@@ -5,6 +5,8 @@ import type { ExerciseSetReport, TrainingReport } from '../lib/domain/training-r
 import { exerciseHistoryRoute, historyRoute } from '../lib/routes.js'
 import { Card } from './ui.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
+import type { RecordKind } from '../lib/domain/records.js'
+import { RecordFlag } from './RecordFlag.js'
 
 /** Resumo numérico e detalhamento por exercício compartilhado pelos três relatórios. */
 export function TrainingReportView({ report, unit }: { report: TrainingReport; unit: Unit }) {
@@ -107,10 +109,11 @@ function ExerciseSets({ sets, load, locale }: {
 }
 
 /** Uma série dentro de uma sessão, como os relatórios e a história do exercício mostram. */
-export function ReportSetRow({ set, load, locale }: {
+export function ReportSetRow({ set, load, locale, recordKinds }: {
   set: ExerciseSetReport
   load: (kg: number) => string
   locale: string
+  recordKinds?: RecordKind[]
 }) {
   const { t } = useTranslation()
   return <li className={set.skipped ? 'report-series__row report-series__row--off' : 'report-series__row'}>
@@ -125,6 +128,7 @@ export function ReportSetRow({ set, load, locale }: {
     <div className="report-series__flags">
       {set.skipped && <span>{t('reports.skipped')}</span>}
       {set.hadPain && <span>{t('reports.pain_marked')}</span>}
+      <RecordFlag kinds={recordKinds} />
     </div>
   </li>
 }

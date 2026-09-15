@@ -76,7 +76,18 @@ describe('ExerciseHistory', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'ver tabela' }))
     // 60 kg → 132,3 lb
-    await waitFor(() => expect(screen.getByRole('table')).toHaveTextContent('132.3'))
+    await waitFor(() => expect(screen.getByRole('table', { name: 'lb' })).toHaveTextContent('132.3'))
+  })
+
+  it('lista os recordes e marca a série que bateu a sessão anterior', async () => {
+    await seedSessions(2)
+    renderPage()
+
+    const table = await screen.findByRole('table', { name: 'Melhor carga por repetições' })
+    // 61 × 10 supera 60 × 10 nas duas coisas: a fronteira fica com um ponto só.
+    expect(within(table).getAllByRole('row')).toHaveLength(2)
+    expect(within(table).getByRole('rowheader', { name: '10' })).toBeInTheDocument()
+    expect(screen.getByText('Recorde: maior carga · 1RM estimado')).toBeInTheDocument()
   })
 
   it('mostra as sessões mais antigas sob demanda', async () => {
