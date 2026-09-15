@@ -103,6 +103,29 @@ suite('sync ponta a ponta', () => {
     expect(typeof row?.rev).toBe('number')
   })
 
+  it('recusa criar mídia pelo sync, mesmo apontando para objeto alheio', async () => {
+    // Só o upload cria mídia; uma linha forjada serviria (e o purge apagaria)
+    // o objeto de outra conta.
+    const forjada = '15151515-1515-7151-8151-151515151515'
+    const res = await sync({
+      deviceId: DEVICE_A,
+      cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000f1',
+        entity: 'exercise_media', entityId: forjada, op: 'upsert', base: null,
+        data: {
+          id: forjada, exerciseId: EQUIP, s3Key: 'users/outra-conta/exercises/x/y.webp',
+          thumbKey: 'users/outra-conta/exercises/x/y.thumb.webp', mime: 'image/webp', bytes: 1,
+          updatedAt: new Date().toISOString(),
+        },
+      }],
+    })
+
+    expect(res.results[0]?.status).toBe('rejected')
+    const { rows } = await pool.query('select 1 from exercise_media where id=$1', [forjada])
+    expect(rows).toHaveLength(0)
+  })
+
   it('edições em campos distintos fazem auto-merge sem conflito', async () => {
     const base = { ...criacao }
     await sync({

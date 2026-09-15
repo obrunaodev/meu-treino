@@ -37,6 +37,14 @@ export const SYNC_TABLES = {
 
 export type SyncEntity = keyof typeof SYNC_TABLES
 
+/**
+ * Linhas que só o servidor cria. A mídia nasce no upload, que grava o objeto
+ * no bucket antes da linha; aceitar criação pelo sync deixaria o cliente
+ * apontar `s3Key` para qualquer objeto — o GET o serviria e o purge o apagaria.
+ * O sync continua valendo para o que já existe (apagar, por exemplo).
+ */
+export const SERVER_CREATED_ENTITIES: ReadonlySet<SyncEntity> = new Set(['exercise_media'])
+
 export const SYNC_ENTITIES = Object.keys(SYNC_TABLES) as SyncEntity[]
 
 export function isSyncEntity(value: string): value is SyncEntity {
