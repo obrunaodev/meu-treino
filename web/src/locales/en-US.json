@@ -217,7 +217,8 @@
     "no_program": "You don't have a program yet.",
     "create_program": "Create program",
     "exercises": "{{count}} exercise",
-    "exercises_other": "{{count}} exercises"
+    "exercises_other": "{{count}} exercises",
+    "deload_hint": "Block {{block}} closed heavy. Consider a lighter week, with less load or fewer sets. Nothing changes automatically."
   },
   "errors": {
     "nao_autenticado": "Session expired. Sign in again.",
@@ -843,5 +844,11 @@
     "col_load": "Load",
     "col_e1rm": "Est. 1RM",
     "col_date": "When"
+  },
+  "deload": {
+    "reason_effort": "{{percent}}% of working sets harder than target (threshold {{limit}}%)",
+    "reason_pain_one": "Pain level {{level}} or higher in {{count}} session of the block",
+    "reason_pain_other": "Pain level {{level}} or higher in {{count}} sessions of the block",
+    "open_report": "View block report"
   }
 }

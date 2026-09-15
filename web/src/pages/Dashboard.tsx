@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  useActiveProgram, useOpenSession, useSessions, useTemplateItems, useTemplates,
+  useActiveProgram, useOpenSession, usePainEvents, useSessions, useSetLogs, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
-import { routes, sessionRoute } from '../lib/routes.js'
+import { blockReportRoute, routes, sessionRoute } from '../lib/routes.js'
 import { calendarTrainingPosition, currentStreak, nextTemplate } from '../lib/domain/cycle.js'
 import { sessionsByWeek } from '../lib/domain/dashboard.js'
+import { blockEffort, blockSessions, deloadSignal, isNextBlock } from '../lib/domain/deload.js'
+import { dismissDeload, isDeloadDismissed } from '../lib/deload-dismissal.js'
 import { Empty } from '../components/ui.js'
 import { DashboardAnalytics } from '../components/DashboardAnalytics.js'
 import { BlockReviewCard } from '../components/BlockReviewCard.js'
@@ -19,6 +21,8 @@ export function Dashboard() {
   const templates = useTemplates(program?.id)
   const sessions = useSessions()
   const openSession = useOpenSession()
+  const sets = useSetLogs()
+  const painEvents = usePainEvents()
   const { startSession } = useActions()
 
   const [dismissedBlock, setDismissedBlock] = useState<string | null>(null)
@@ -42,11 +46,20 @@ export function Dashboard() {
   const currentWeekSessions = sessionsByWeek(programSessions).at(-1)?.value ?? 0
   const blockKey = `${position.periodNumber}:${position.blockNumber}`
   const lastFinished = finished.at(-1)
+  const closedBlock = lastFinished && { periodNumber: lastFinished.periodNumber ?? 1, blockNumber: lastFinished.blockNumber }
 
   const blockClosed =
-    lastFinished &&
+    lastFinished && closedBlock && program &&
     ((lastFinished.periodNumber ?? 1) !== position.periodNumber || lastFinished.blockNumber !== position.blockNumber) &&
-    dismissedBlock !== blockKey
+    dismissedBlock !== blockKey &&
+    !isDeloadDismissed(program.id, closedBlock)
+
+  // A leitura de esforço só vale se o bloco atual vem logo depois do que fechou:
+  // depois de uma parada longa, o descanso já aconteceu.
+  const effort = blockClosed && isNextBlock(closedBlock, position)
+    ? blockEffort(blockSessions(sessions, program.id, closedBlock), sets, painEvents)
+    : null
+  const signal = deloadSignal(effort)
 
   async function begin() {
     if (!program || !upcoming) return
@@ -89,8 +102,17 @@ export function Dashboard() {
         </Link>
       </header>
 
-      {blockClosed && lastFinished && (
-        <BlockReviewCard blockNumber={lastFinished.blockNumber} onDismiss={() => setDismissedBlock(blockKey)} />
+      {blockClosed && lastFinished && closedBlock && program && (
+        <BlockReviewCard
+          blockNumber={lastFinished.blockNumber}
+          effort={effort}
+          signal={signal}
+          reportHref={blockReportRoute(program.id, closedBlock.periodNumber, closedBlock.blockNumber)}
+          onDismiss={() => {
+            dismissDeload(program.id, closedBlock)
+            setDismissedBlock(blockKey)
+          }}
+        />
       )}
 
       <section className="dashboard__next" aria-labelledby="dashboard-next-title">
