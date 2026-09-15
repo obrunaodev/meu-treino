@@ -89,6 +89,7 @@ The UI uses a four-level effort scale while retaining numeric RIR in storage for
 - Session history can be edited or deleted. Deleting a session also soft-deletes its sets, cardio, and pain records.
 - Cycle and block reports summarize adherence and training data for their scope.
 - Set history is grouped by exercise and ordered by the timestamp at which each exercise was checked.
+- Each exercise has a read-only history page with every logged set, grouped by session and month, and a chart of top load, estimated 1RM, volume, or best repetitions or time.
 - A versioned JSON backup exports and restores all personal records and exercise images. Imports can merge with existing data or explicitly replace it.
 - Set history can also be exported as a spreadsheet-friendly CSV.
 - Pain can be captured from selectable body regions and reviewed as a history.
@@ -467,6 +468,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 | `/functional-tests` | Functional tests |
 | `/history` | Calendar and grouped history |
 | `/history/:sessionId` | Read-only session report |
+| `/history/exercises/:exerciseId` | Read-only history and progress of one exercise |
 | `/history/:sessionId/edit` | Session editing and deletion |
 | `/history/reports/cycle/:programId/:cycleNumber` | Cycle report |
 | `/history/reports/period/:periodNumber/block/:programId/:blockNumber` | Block report |

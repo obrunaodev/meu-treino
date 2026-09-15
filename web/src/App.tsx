@@ -25,6 +25,7 @@ import { SessionDetail, SessionEdit } from './pages/SessionDetail.js'
 import { SessionGate } from './pages/SessionGate.js'
 import { WhatsApp } from './pages/WhatsApp.js'
 import { TrainingReport } from './pages/TrainingReport.js'
+import { ExerciseHistory } from './pages/ExerciseHistory.js'
 import { AdminPresets } from './pages/AdminPresets.js'
 import { routes } from './lib/routes.js'
 
@@ -83,6 +84,7 @@ function Authed() {
           <Route path={routes.history} element={<History />} />
           <Route path={`${routes.history}/reports/cycle/:programId/:cycleNumber`} element={<TrainingReport scope="cycle" />} />
           <Route path={`${routes.history}/reports/period/:periodNumber/block/:programId/:blockNumber`} element={<TrainingReport scope="block" />} />
+          <Route path={`${routes.history}/exercises/:exerciseId`} element={<ExerciseHistory />} />
           <Route path={`${routes.history}/:sessionId/edit`} element={<SessionEdit />} />
           <Route path={`${routes.history}/:sessionId`} element={<SessionDetail />} />
           <Route path={routes.settings} element={<Settings />} />
