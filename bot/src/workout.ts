@@ -204,7 +204,9 @@ async function loadItems(client: PoolClient, ownerId: string, templateId: string
       where sl.owner_id=$1 and sl.exercise_id=e.id and sl.deleted_at is null
         and sl.is_warmup=false and sl.skipped=false and sl.weight_kg is not null
         and ws.status in ('concluida','incompleta') and ws.deleted_at is null
-      group by ws.started_at order by ws.started_at desc limit 1
+      -- Mesmo treino primeiro, como o app: outro treino costuma ter outra faixa e outra carga.
+      group by ws.started_at, ws.template_id
+      order by (ws.template_id = i.template_id) desc, ws.started_at desc limit 1
     ) previous on true
     where i.owner_id=$1 and i.template_id=$2 and i.deleted_at is null and e.deleted_at is null
     order by i.position`, [ownerId, templateId])
