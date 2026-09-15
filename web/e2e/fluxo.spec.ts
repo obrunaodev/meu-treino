@@ -21,6 +21,30 @@ test.describe('jornada completa', () => {
     test.skip(!TOKEN, 'precisa de DEV_LOGIN_TOKEN e do login provisório ativo')
 
     page = await browser.newPage()
+    // Wake Lock simulado: o Chromium headless pode recusar o real, e o que
+    // importa aqui é quando a sessão pede e quando solta o lock de tela.
+    await page.addInitScript(() => {
+      const state = { held: 0 }
+      Object.assign(window, { __wakeLock: state })
+      Object.defineProperty(navigator, 'wakeLock', {
+        configurable: true,
+        value: {
+          request: async () => {
+            state.held += 1
+            const sentinel = Object.assign(new EventTarget(), {
+              released: false,
+              release: async () => {
+                if (sentinel.released) return
+                sentinel.released = true
+                state.held -= 1
+                sentinel.dispatchEvent(new Event('release'))
+              },
+            })
+            return sentinel
+          },
+        },
+      })
+    })
     page.on('pageerror', (error) => errors.push(error.message))
     page.on('console', (message) => {
       // O 401 do /auth/refresh inicial é esperado: navegador sem cookie ainda
@@ -34,6 +58,8 @@ test.describe('jornada completa', () => {
   test.afterAll(async () => {
     await page?.close()
   })
+
+  const wakeLockHeld = () => page.evaluate(() => (window as unknown as { __wakeLock: { held: number } }).__wakeLock.held)
 
   async function openSessionEditor() {
     await page.getByRole('link', { name: /editar sessão/i }).click()
@@ -128,6 +154,7 @@ test.describe('jornada completa', () => {
     await page.getByRole('button', { name: /iniciar treino a/i }).click()
 
     await expect(page.getByText(/preparação/i)).toHaveCount(0)
+    await expect.poll(wakeLockHeld).toBe(1)
     await page.locator('.session-exercise__overview').click()
     await expect(page.getByRole('spinbutton', { name: /carga/i })).toHaveCount(3)
     await expect(page.getByRole('button', { name: /iniciar intervalo após a série/i })).toHaveCount(2)
@@ -168,6 +195,7 @@ test.describe('jornada completa', () => {
     // música e voltar não pode perder o exercício já registrado.
     await expect(page.getByRole('heading', { name: /treino de hoje/i })).toBeVisible()
     await expect(page.getByText(/1 de 1 exercícios/i)).toBeVisible()
+    await expect.poll(wakeLockHeld).toBe(1)
 
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
@@ -186,6 +214,7 @@ test.describe('jornada completa', () => {
 
     await expect(page.getByRole('heading', { name: /^dashboard$/i })).toBeVisible()
     await expect(page.locator('.dashboard__metric').filter({ hasText: /treinos na semana/i }).locator('strong')).toHaveText('1')
+    await expect.poll(wakeLockHeld).toBe(0)
   })
 
   test('dashboard mantém a hierarquia no mobile e no desktop', async () => {
