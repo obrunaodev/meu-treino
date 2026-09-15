@@ -8,8 +8,9 @@ import { useActions } from '../lib/actions.js'
 import { routes, sessionRoute } from '../lib/routes.js'
 import { calendarTrainingPosition, currentStreak, nextTemplate } from '../lib/domain/cycle.js'
 import { sessionsByWeek } from '../lib/domain/dashboard.js'
-import { Card, Empty } from '../components/ui.js'
+import { Empty } from '../components/ui.js'
 import { DashboardAnalytics } from '../components/DashboardAnalytics.js'
+import { BlockReviewCard } from '../components/BlockReviewCard.js'
 
 export function Dashboard() {
   const { t } = useTranslation()
@@ -88,24 +89,8 @@ export function Dashboard() {
         </Link>
       </header>
 
-      {blockClosed && (
-        <Card tone="quiet">
-          <p>
-            {t('dashboard.block_closed', { block: lastFinished?.blockNumber })}
-          </p>
-          <div className="row">
-            <Link className="button button--primary" to={routes.workouts}>
-              {t('dashboard.block_apply')}
-            </Link>
-            <button
-              type="button"
-              className="button button--ghost"
-              onClick={() => setDismissedBlock(blockKey)}
-            >
-              {t('dashboard.block_dismiss')}
-            </button>
-          </div>
-        </Card>
+      {blockClosed && lastFinished && (
+        <BlockReviewCard blockNumber={lastFinished.blockNumber} onDismiss={() => setDismissedBlock(blockKey)} />
       )}
 
       <section className="dashboard__next" aria-labelledby="dashboard-next-title">
