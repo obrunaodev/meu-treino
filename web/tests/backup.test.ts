@@ -79,6 +79,22 @@ describe('personal backup', () => {
     expect(() => parseBackup('{broken')).toThrow('backup_invalid_json')
   })
 
+  it('restaurar um backup anterior ao bi-set desfaz o grupo de hoje', async () => {
+    const item = await mutate('template_items', {
+      ownerId: SOURCE, templateId: 't', exerciseId: 'e', position: 0, sets: 3,
+      repMin: 8, repMax: 12, isTimeBased: false, rirTarget: 2, restSeconds: null, notes: null,
+    })
+    await localDb.outbox.clear()
+    const exported = await buildBackup()
+    const backup = parseBackup(await readBlob(exported.blob))
+
+    // O arquivo é de antes da coluna existir; o item local já está agrupado.
+    await mutate('template_items', { id: item.id, ownerId: SOURCE, supersetGroup: 'g1' })
+    await restoreBackup(backup, SOURCE, 'replace')
+
+    expect(await localDb.table_('template_items').get(item.id)).toMatchObject({ supersetGroup: null })
+  })
+
   it('leva a preferência nova no arquivo, e um backup anterior a ela não a desliga', async () => {
     await mutate('user_settings', {
       ownerId: SOURCE, unit: 'kg', showPlates: true, theme: 'dark', locale: 'pt-BR',
