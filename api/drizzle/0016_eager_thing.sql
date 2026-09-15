@@ -1,0 +1,1 @@
+ALTER TABLE "user_settings" ADD COLUMN "rest_auto_start" boolean DEFAULT false NOT NULL;

@@ -62,10 +62,12 @@ suite('sync ponta a ponta', () => {
     await pool.query('delete from sync_conflicts where owner_id=$1', [ownerId])
     await pool.query('delete from sync_operations where owner_id=$1', [ownerId])
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
+    await pool.query('delete from user_settings where owner_id=$1', [ownerId])
   })
 
   afterAll(async () => {
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
+    await pool.query('delete from user_settings where owner_id=$1', [ownerId])
     await pool.query("delete from users where google_sub='vitest-e2e'")
     await pool.end()
   })
@@ -101,6 +103,35 @@ suite('sync ponta a ponta', () => {
     const row = res.changes.equipment?.[0]
     expect(row).toMatchObject({ name: 'Leg press horizontal', plateTable: [10, 15, 22] })
     expect(typeof row?.rev).toBe('number')
+  })
+
+  it('preferência nova sobrevive ao push de um cliente que não a conhece', async () => {
+    const settingsId = '16161616-1616-7161-8161-161616161616'
+    const criado = await sync({
+      deviceId: DEVICE_A,
+      cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000f2',
+        entity: 'user_settings', entityId: settingsId, op: 'upsert', base: null,
+        data: { id: settingsId, unit: 'kg', restAutoStart: true, updatedAt: new Date().toISOString() },
+      }],
+    })
+    expect(criado.results[0]?.status).toBe('created')
+
+    // Cliente de uma versão anterior não envia a coluna nova; o valor fica.
+    const antigo = await sync({
+      deviceId: DEVICE_B,
+      cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000f3',
+        entity: 'user_settings', entityId: settingsId, op: 'upsert', base: null,
+        data: { id: settingsId, unit: 'lb', updatedAt: new Date().toISOString() },
+      }],
+    })
+    expect(antigo.results[0]?.status).toBe('applied')
+
+    const { rows } = await pool.query('select unit, rest_auto_start from user_settings where id=$1', [settingsId])
+    expect(rows[0]).toMatchObject({ unit: 'lb', rest_auto_start: true })
   })
 
   it('recusa criar mídia pelo sync, mesmo apontando para objeto alheio', async () => {

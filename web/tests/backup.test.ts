@@ -78,6 +78,25 @@ describe('personal backup', () => {
       .toThrow('backup_invalid_format')
     expect(() => parseBackup('{broken')).toThrow('backup_invalid_json')
   })
+
+  it('leva a preferência nova no arquivo, e um backup anterior a ela não a desliga', async () => {
+    await mutate('user_settings', {
+      ownerId: SOURCE, unit: 'kg', showPlates: true, theme: 'dark', locale: 'pt-BR',
+      remindersEnabled: false, restAutoStart: true, onboardedAt: null,
+    })
+    await localDb.outbox.clear()
+
+    const exported = await buildBackup()
+    const backup = parseBackup(await readBlob(exported.blob))
+    const settings = backup.entities.user_settings![0]!
+    expect(settings).toMatchObject({ restAutoStart: true })
+
+    // Arquivo gerado antes da coluna existir: restaurar não pode desligar o que está ligado.
+    const before = Object.fromEntries(Object.entries(settings).filter(([key]) => key !== 'restAutoStart'))
+    await restoreBackup({ ...backup, entities: { ...backup.entities, user_settings: [before] } }, SOURCE, 'merge')
+
+    expect((await localDb.table_('user_settings').toArray())[0]).toMatchObject({ restAutoStart: true })
+  })
 })
 
 function readBlob(blob: Blob): Promise<string> {
