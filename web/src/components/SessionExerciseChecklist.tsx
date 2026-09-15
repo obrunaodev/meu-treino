@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
-import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
+import { formatLoad, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
 import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
 import { exerciseExecutionStatus, initialSetDraft, prefillSource, restCommandForToggle, type SetDraft } from '../lib/domain/session.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
@@ -12,9 +12,8 @@ import { useEquipment, useExercises, useMedia, useRecordBaseline, useSessions, u
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
-import { RecordFlag } from './RecordFlag.js'
-import { RirSelector } from './RirSelector.js'
-import { Modal, NumberStepper } from './ui.js'
+import { SetCard, RestCard } from './SessionSetCard.js'
+import { Modal } from './ui.js'
 
 export type SessionChecklistItem = TemplateItem | PlanSnapshotItem
 
@@ -234,8 +233,6 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     </div>
   </section>
 
-  const resultMin = item.repMin ?? 0
-  const resultMax = item.repMax ?? Number.POSITIVE_INFINITY
   return <section className="session-focus">
     <header className="session-focus__head">
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.back_and_skip')}</button>
@@ -248,52 +245,27 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     </div>
     <ol className="session-focus__sets">
       {drafts.map((draft, setIndex) => <Fragment key={setIndex}>
-        <li className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
-          <div className="session-focus__set-head">
-            <button
-              type="button"
-              className="session-exercise__check"
-              aria-pressed={draft.checked}
-              aria-label={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
-              onClick={() => toggleSet(setIndex)}
-            >✓</button>
-            <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
-            <RecordFlag kinds={records.get(String(setIndex))} />
-          </div>
-          <div className="session-focus__fields">
-          <NumberStepper
-            label={loadPerSide ? `${t('session.load')} · ${t('session.per_side_short')}` : t('session.load')}
-            value={draft.kg === null ? null : settings?.unit === 'lb' ? Number(kgToLb(draft.kg).toFixed(1)) : draft.kg}
-            suffix={loadPerSide ? `${settings?.unit ?? 'kg'}/${t('session.per_side_short')}` : settings?.unit ?? 'kg'}
-            step={0.5}
-            max={settings?.unit === 'lb' ? 2202 : 999}
-            onChange={(value) => typeLoad(setIndex, value)}
-            onStep={(direction) => stepLoad(setIndex, direction)}
-          />
-          <NumberStepper
-            label={item.isTimeBased ? t('session.seconds') : t('session.reps')}
-            value={draft.result}
-            min={resultMin}
-            max={Number.isFinite(resultMax) ? resultMax : undefined}
-            step={item.isTimeBased ? 5 : 1}
-            onChange={(result) => updateDraft(setIndex, { result: result === null ? null : Math.min(resultMax, Math.max(resultMin, result)) })}
-            onStep={(direction) => updateDraft(setIndex, { result: Math.min(resultMax, Math.max(resultMin, (draft.result ?? resultMin) + direction * (item.isTimeBased ? 5 : 1))) })}
-          />
-          <RirSelector value={draft.rir} onChange={(rir) => updateDraft(setIndex, { rir })} />
-          </div>
-        </li>
-        {setIndex < drafts.length - 1 && <li className={`session-rest-card${activeRestAfter === setIndex ? ' session-rest-card--active' : ''}`}>
-          <button
-            type="button"
-            aria-label={t(activeRestAfter === setIndex ? 'session.stop_rest_after' : 'session.start_rest_after', { number: setIndex + 1 })}
-            onClick={() => activeRestAfter === setIndex ? onContinue() : onRest(setIndex)}
-          >
-            <span aria-hidden="true">◷</span>
-            <strong>{activeRestAfter === setIndex
-              ? `${Math.floor(restRemaining / 60)}:${String(restRemaining % 60).padStart(2, '0')}`
-              : t('session.rest_seconds', { count: restSeconds })}</strong>
-          </button>
-        </li>}
+        <SetCard
+          item={item}
+          eyebrow={t('session.set', { n: setIndex + 1 })}
+          checkLabel={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
+          draft={draft}
+          unit={settings?.unit ?? 'kg'}
+          loadPerSide={loadPerSide}
+          recordKinds={records.get(String(setIndex))}
+          onToggle={() => toggleSet(setIndex)}
+          onTypeLoad={(value) => typeLoad(setIndex, value)}
+          onStepLoad={(direction) => stepLoad(setIndex, direction)}
+          onUpdate={(patch) => updateDraft(setIndex, patch)}
+        />
+        {setIndex < drafts.length - 1 && <RestCard
+          active={activeRestAfter === setIndex}
+          label={activeRestAfter === setIndex
+            ? `${Math.floor(restRemaining / 60)}:${String(restRemaining % 60).padStart(2, '0')}`
+            : t('session.rest_seconds', { count: restSeconds })}
+          ariaLabel={t(activeRestAfter === setIndex ? 'session.stop_rest_after' : 'session.start_rest_after', { number: setIndex + 1 })}
+          onToggle={() => activeRestAfter === setIndex ? onContinue() : onRest(setIndex)}
+        />}
       </Fragment>)}
     </ol>
     {(item.notes || (exercise?.cues.length ?? 0) > 0 || description) && <details className="session-focus__specifics">
