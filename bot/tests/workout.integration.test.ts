@@ -158,6 +158,36 @@ integration('registro completo pelo WhatsApp', () => {
     expect(await endOpenWorkout(ownerId)).toBe(true)
   })
 
+  it('lê o snapshot de uma sessão iniciada pelo app', async () => {
+    const { previewTodayWorkout, startTodayWorkout } = await import('../src/workout.js')
+    const { endOpenWorkout } = await import('../src/workout-history.js')
+    const { workoutMessage } = await import('../src/messages.js')
+    // Formato de capturePlanSnapshot no web: exerciseName, sem name nem carga anterior.
+    const appSessionId = randomUUID()
+    const snapshot = {
+      version: 1, capturedAt: new Date().toISOString(), templateId, templateName: 'Treino do app',
+      items: [{
+        id: itemIds[0], ownerId, templateId, position: 0, exerciseId: exerciseIds[0],
+        sets: 4, repMin: 8, repMax: 10, isTimeBased: false, rirTarget: 2, restSeconds: 90, notes: null,
+        exerciseName: 'Supino do app', laterality: 'bilateral', unilateralAsymmetric: false,
+        loadPerSide: false, equipment: null,
+      }],
+    }
+    await client.query(`insert into workout_sessions
+      (id,owner_id,program_id,template_id,plan_snapshot,status,started_at)
+      values ($1,$2,$3,$4,$5,'em_andamento',now())`,
+    [appSessionId, ownerId, programId, templateId, JSON.stringify(snapshot)])
+
+    const preview = await previewTodayWorkout(ownerId)
+    expect(preview?.items[0]).toMatchObject({ name: 'Supino do app', sets: 4, repMin: 8, repMax: 10 })
+    expect(preview?.items[0]?.previousWeightKg).not.toBeUndefined()
+    const message = workoutMessage(preview!)
+    expect(message).toContain('*Supino do app*')
+    expect(message).not.toContain('undefined')
+    expect((await startTodayWorkout(ownerId))?.items[0]?.name).toBe('Supino do app')
+    expect(await endOpenWorkout(ownerId)).toBe(true)
+  })
+
   it('persiste e revoga mensagens conhecidas do grupo', async () => {
     const { clearTrackedMessages, trackGroupMessage } = await import('../src/chat-cleaner.js')
     const jid = 'grupo-teste@g.us'
