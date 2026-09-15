@@ -829,6 +829,13 @@
     "kind_rep_max": "most reps at this load",
     "kind_session_volume": "biggest session volume",
     "kind_longest_set": "longest time",
-    "volume_new": "Record: biggest session volume"
+    "volume_new": "Record: biggest session volume",
+    "title": "Records",
+    "none": "Records count from the second session with this exercise.",
+    "rep_table": "Best load by reps",
+    "col_reps": "Reps",
+    "col_load": "Load",
+    "col_e1rm": "Est. 1RM",
+    "col_date": "When"
   }
 }

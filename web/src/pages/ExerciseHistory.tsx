@@ -8,7 +8,8 @@ import {
   availableMetrics, exerciseSessionHistory, historySeries, pageByMonth,
   type ExerciseSessionHistory, type HistoryMetric, type HistoryRange,
 } from '../lib/domain/exercise-history.js'
-import { kgToLb, type Unit } from '../lib/domain/load.js'
+import { estimateOneRepMax, kgToLb, type Unit } from '../lib/domain/load.js'
+import { personalRecords, type RecordBaseline, type RecordKind } from '../lib/domain/records.js'
 import { historyRoute, routes } from '../lib/routes.js'
 import { useEquipment, useExercises, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 
@@ -31,6 +32,7 @@ export function ExerciseHistory() {
     .find(Boolean)
   const name = exercise?.name ?? capturedName ?? t('library.gone')
   const workingSets = history.reduce((total, entry) => total + entry.workingSets, 0)
+  const records = personalRecords(history)
   const since = history.at(-1) && new Date(history.at(-1)!.startedAt).toLocaleDateString(i18n.language, { dateStyle: 'medium' })
 
   return (
@@ -44,7 +46,9 @@ export function ExerciseHistory() {
       {history.length === 0 ? <Empty message={t('exercise_history.empty')} /> : (
         <>
           <ProgressCard history={history} unit={settings?.unit ?? 'kg'} perSide={exercise?.loadPerSide ?? false} />
-          <SessionList history={history} unit={settings?.unit ?? 'kg'} />
+          <RecordsCard records={records.baseline} unit={settings?.unit ?? 'kg'} perSide={exercise?.loadPerSide ?? false}
+            bodyweight={history.some((entry) => entry.sets.some((set) => set.bodyweight))} />
+          <SessionList history={history} unit={settings?.unit ?? 'kg'} flags={records.flagsBySetId} />
         </>
       )}
     </div>
@@ -109,7 +113,58 @@ function ProgressCard({ history, unit, perSide }: { history: ExerciseSessionHist
   )
 }
 
-function SessionList({ history, unit }: { history: ExerciseSessionHistory[]; unit: Unit }) {
+function RecordsCard({ records, unit, perSide, bodyweight }: { records: RecordBaseline; unit: Unit; perSide: boolean; bodyweight: boolean }) {
+  const { t } = useTranslation()
+  const loadUnit = perSide ? `${unit}/${t('session.per_side_short')}` : unit
+  const load = (kg: number | null) => (kg === null ? null : `${chartValue(kg, 'top_load', unit, perSide)} ${loadUnit}`)
+  const stats: Array<{ kind: RecordKind; value: string | null }> = [
+    { kind: 'top_load', value: load(records.topLoadKg) },
+    { kind: 'e1rm', value: load(records.e1rmKg) },
+    { kind: 'session_volume', value: records.sessionVolumeKg === null ? null : `${Math.round(records.sessionVolumeKg)} kg·rep` },
+    { kind: 'longest_set', value: records.longestSeconds === null ? null : `${records.longestSeconds} s` },
+  ]
+
+  return (
+    <Card title={t('records.title')}>
+      {records.sessions < 2 && <p className="mono muted">{t('records.none')}</p>}
+      <div className="report__stats">{stats.filter((stat) => stat.value !== null).map((stat) => (
+        <div className="report-metric" key={stat.kind}><span>{t(`records.kind_${stat.kind}`)}</span><strong>{stat.value}</strong></div>
+      ))}</div>
+      {records.frontier.length > 0 && <RepTable records={records} unit={unit} perSide={perSide} loadUnit={loadUnit} bodyweight={bodyweight} />}
+    </Card>
+  )
+}
+
+/** Melhor carga em cada número de repetições — a fronteira que um recorde de repetições precisa furar. */
+function RepTable({ records, unit, perSide, loadUnit, bodyweight }: {
+  records: RecordBaseline; unit: Unit; perSide: boolean; loadUnit: string; bodyweight: boolean
+}) {
+  const { t, i18n } = useTranslation()
+  return (
+    <table className="viz-table">
+      <caption className="card__title">{t('records.rep_table')}</caption>
+      <thead><tr>
+        <th scope="col">{t('records.col_reps')}</th>
+        <th scope="col">{t('records.col_load')} ({loadUnit})</th>
+        {!bodyweight && <th scope="col">{t('records.col_e1rm')}</th>}
+        <th scope="col">{t('records.col_date')}</th>
+      </tr></thead>
+      <tbody>{[...records.frontier].sort((a, b) => a.reps - b.reps).map((point) => {
+        const e1rm = estimateOneRepMax(point.totalKg, point.reps)
+        return (
+          <tr key={`${point.reps}:${point.totalKg}`}>
+            <th scope="row">{point.reps}</th>
+            <td>{chartValue(point.totalKg, 'top_load', unit, perSide)}</td>
+            {!bodyweight && <td>{e1rm === null ? '—' : chartValue(e1rm, 'e1rm', unit, perSide)}</td>}
+            <td><Link to={historyRoute(point.sessionId)}>{new Date(point.at).toLocaleDateString(i18n.language, { dateStyle: 'medium' })}</Link></td>
+          </tr>
+        )
+      })}</tbody>
+    </table>
+  )
+}
+
+function SessionList({ history, unit, flags }: { history: ExerciseSessionHistory[]; unit: Unit; flags: Map<string, RecordKind[]> }) {
   const { t, i18n } = useTranslation()
   const [visible, setVisible] = useState(PAGE_SIZE)
   const { months, hasMore } = pageByMonth(history, visible)
@@ -135,7 +190,7 @@ function SessionList({ history, unit }: { history: ExerciseSessionHistory[]; uni
                   </div>
                   <Link to={historyRoute(session.sessionId)}>{t('reports.open_session')}</Link>
                 </header>
-                <ol>{session.sets.map((set) => <ReportSetRow key={set.id} set={set} load={load} locale={i18n.language} />)}</ol>
+                <ol>{session.sets.map((set) => <ReportSetRow key={set.id} set={set} load={load} locale={i18n.language} recordKinds={flags.get(set.id)} />)}</ol>
               </section>
             ))}
           </div>
