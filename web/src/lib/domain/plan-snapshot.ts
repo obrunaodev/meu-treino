@@ -22,6 +22,8 @@ export function capturePlanSnapshot(
       const gear = exercise.equipmentId ? equipmentById.get(exercise.equipmentId) ?? null : null
       return {
         ...item,
+        // Normaliza para o snapshot não depender de a coluna existir na linha local.
+        supersetGroup: item.supersetGroup ?? null,
         exerciseName: exercise.name,
         laterality: exercise.laterality,
         unilateralAsymmetric: exercise.unilateralAsymmetric,
