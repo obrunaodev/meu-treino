@@ -117,6 +117,25 @@ export function workVolume(
     .reduce((total, s) => total + (s.weightKg ?? 0) * (s.reps ?? 0), 0)
 }
 
+/**
+ * Acima disso a estimativa de 1RM vira chute: a fórmula foi feita para séries
+ * pesadas, e 15 repetições dizem mais de resistência que de força. 12 ainda
+ * cobre o topo das faixas de hipertrofia dos presets (8–12).
+ */
+export const MAX_E1RM_REPS = 12
+
+/** Carga total movida: máquina com carga por lado registra um lado só. */
+export function totalLoadKg(weightKg: number | null, loadPerSide: boolean): number | null {
+  if (weightKg === null) return null
+  return loadPerSide ? weightKg * 2 : weightKg
+}
+
+/** 1RM estimado por Epley, `carga × (1 + reps/30)`; uma repetição é a própria carga. */
+export function estimateOneRepMax(totalKg: number | null, reps: number | null): number | null {
+  if (totalKg === null || reps === null || totalKg <= 0 || reps < 1 || reps > MAX_E1RM_REPS) return null
+  return reps === 1 ? totalKg : totalKg * (1 + reps / 30)
+}
+
 export function workingSetCount(sets: Array<{ isWarmup: boolean; skipped: boolean }>): number {
   return sets.filter((s) => !s.isWarmup && !s.skipped).length
 }

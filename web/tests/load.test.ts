@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatLoad, kgForPlate, kgToLb, lbToKg, nextLoadStep, plateForKg, workVolume, workingSetCount,
+  MAX_E1RM_REPS, estimateOneRepMax, formatLoad, kgForPlate, kgToLb, lbToKg, nextLoadStep, plateForKg, totalLoadKg,
+  workVolume, workingSetCount,
 } from '../src/lib/domain/load'
 
 // Coluna real de máquina de pino: os saltos NÃO são constantes.
@@ -129,5 +130,31 @@ describe('volume', () => {
 
   it('série pulada não conta', () => {
     expect(workingSetCount(sets)).toBe(2)
+  })
+})
+
+describe('estimateOneRepMax', () => {
+  it('uma repetição é a própria carga', () => {
+    expect(estimateOneRepMax(100, 1)).toBe(100)
+  })
+
+  it('segue Epley até o teto de repetições', () => {
+    expect(estimateOneRepMax(100, 5)).toBeCloseTo(116.67, 2)
+    expect(estimateOneRepMax(100, MAX_E1RM_REPS)).toBeCloseTo(140, 6)
+  })
+
+  it('não estima acima do teto, sem carga ou sem repetições', () => {
+    expect(estimateOneRepMax(100, MAX_E1RM_REPS + 1)).toBeNull()
+    expect(estimateOneRepMax(0, 5)).toBeNull()
+    expect(estimateOneRepMax(null, 5)).toBeNull()
+    expect(estimateOneRepMax(100, null)).toBeNull()
+  })
+})
+
+describe('totalLoadKg', () => {
+  it('dobra a carga registrada por lado', () => {
+    expect(totalLoadKg(40, true)).toBe(80)
+    expect(totalLoadKg(40, false)).toBe(40)
+    expect(totalLoadKg(null, true)).toBeNull()
   })
 })
