@@ -28,7 +28,10 @@ export function SessionGate() {
   const [choosing, setChoosing] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const upcomingPosition = nextTemplate(templates, sessions)
+  // Sessão de outro programa não diz nada sobre o rodízio deste: o treino
+  // dela é desconhecido aqui e faria a sugestão recomeçar do Treino A.
+  const programSessions = sessions.filter((session) => session.programId === program?.id)
+  const upcomingPosition = nextTemplate(templates, programSessions)
   const upcoming = templates.find((template) => template.id === upcomingPosition?.id) ?? null
   useEffect(() => {
     if (!selectedId && upcoming) setSelectedId(upcoming.id)
@@ -42,7 +45,6 @@ export function SessionGate() {
     .filter((item) => item.templateId === selected?.id)
     .sort((a, b) => a.position - b.position)
   const exerciseNames = new Map(exercises.map((exercise) => [exercise.id, exercise.name]))
-  const programSessions = sessions.filter((session) => session.programId === program.id)
   const finished = programSessions.filter((session) => session.status !== 'em_andamento')
   const position = calendarTrainingPosition(
     program.sessionsPerCycle,
