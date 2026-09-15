@@ -42,10 +42,11 @@ export async function flushUploads(): Promise<number> {
       })
       sent += 1
     } catch (error) {
-      // Arquivo rejeitado nunca vai passar. Já 404 pode ser só o exercício
-      // local ainda chegando pelo sync; manter na fila permite tentar depois.
+      // Arquivo rejeitado (inválido ou grande demais) nunca vai passar. Já 404
+      // pode ser só o exercício local ainda chegando pelo sync; manter na fila
+      // permite tentar depois.
       const status = (error as { status?: number }).status
-      if (status === 400) await localDb.uploads.delete(upload.id)
+      if (status === 400 || status === 413) await localDb.uploads.delete(upload.id)
       else break
     }
   }
