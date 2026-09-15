@@ -47,6 +47,32 @@ describe('threeWayMerge', () => {
     expect(result).toEqual({ kind: 'apply', row: { sets: 4 } })
   })
 
+  describe('coluna adicionada depois que o cliente puxou a linha', () => {
+    // A base local não tem a chave; o servidor devolve a coluna nova como null.
+    const before = { name: 'Supino', sets: 3 }
+
+    it('a primeira escrita na coluna aplica sem conflito', () => {
+      const result = threeWayMerge(before, { ...before, supersetGroup: null }, { ...before, supersetGroup: 'g1' })
+      expect(result).toEqual({ kind: 'apply', row: { supersetGroup: 'g1' } })
+    })
+
+    it('ainda conflita quando o servidor já gravou outro valor nela', () => {
+      const result = threeWayMerge(before, { ...before, supersetGroup: 'g2' }, { ...before, supersetGroup: 'g1' })
+      expect(result.kind).toBe('conflict')
+      if (result.kind !== 'conflict') throw new Error('esperava conflito')
+      expect(result.conflictingFields).toEqual(['supersetGroup'])
+    })
+
+    it('cliente antigo que nunca envia a coluna preserva o valor do servidor', () => {
+      const result = threeWayMerge(before, { ...before, supersetGroup: 'g1' }, { ...before, sets: 4 })
+      expect(result).toEqual({ kind: 'apply', row: { sets: 4 } })
+    })
+
+    it('sem base, null no servidor e chave ausente no cliente não é divergência', () => {
+      expect(threeWayMerge(null, { ...before, supersetGroup: null }, { ...before })).toEqual({ kind: 'noop' })
+    })
+  })
+
   it('compara arrays JSON por conteúdo, não por referência', () => {
     const withPlates = { plateTable: [10, 15, 22] }
     const result = threeWayMerge(withPlates, { plateTable: [10, 15, 22] }, { plateTable: [10, 15, 22] })

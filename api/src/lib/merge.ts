@@ -24,6 +24,11 @@ const SERVER_OWNED = new Set([
 function sameValue(a: unknown, b: unknown): boolean {
   if (a === b) return true
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime()
+  // Chave ausente e null são o mesmo "sem valor". A base é a linha local, e
+  // uma linha puxada antes de uma migration não tem a coluna nova — enquanto o
+  // servidor já a devolve null. Distinguir os dois fazia a primeira escrita
+  // nessa coluna parecer mudança dos dois lados e virar conflito manual.
+  if ((a === null || a === undefined) && (b === null || b === undefined)) return true
   if (a === null || b === null || a === undefined || b === undefined) return false
   if (typeof a === 'object' && typeof b === 'object') {
     return JSON.stringify(a) === JSON.stringify(b)
