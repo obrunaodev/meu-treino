@@ -445,7 +445,10 @@
     "start_selected": "Iniciar {{name}}",
     "suggested": "próximo",
     "exercise_count": "{{count}} exercício",
-    "exercise_count_other": "{{count}} exercícios"
+    "exercise_count_other": "{{count}} exercícios",
+    "prefill_from_today": "Carga de {{workout}} · hoje",
+    "prefill_from_one": "Carga de {{workout}} · há {{count}} dia",
+    "prefill_from_other": "Carga de {{workout}} · há {{count}} dias"
   },
   "templates": {
     "title": "Gerenciar Treinos",

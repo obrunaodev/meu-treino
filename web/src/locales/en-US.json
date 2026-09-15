@@ -445,7 +445,10 @@
     "start_selected": "Start {{name}}",
     "suggested": "next",
     "exercise_count": "{{count}} exercise",
-    "exercise_count_other": "{{count}} exercises"
+    "exercise_count_other": "{{count}} exercises",
+    "prefill_from_today": "Load from {{workout}} · today",
+    "prefill_from_one": "Load from {{workout}} · {{count}} day ago",
+    "prefill_from_other": "Load from {{workout}} · {{count}} days ago"
   },
   "templates": {
     "title": "Manage Workouts",

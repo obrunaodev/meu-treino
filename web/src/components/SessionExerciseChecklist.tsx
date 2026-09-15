@@ -4,10 +4,11 @@ import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
 import { exerciseExecutionStatus, initialSetDraft, prefillSource, type SetDraft } from '../lib/domain/session.js'
+import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { progressionAction } from '../lib/domain/progression.js'
-import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
-import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem } from '../lib/types.js'
+import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings, useTemplatesEver } from '../lib/repo.js'
+import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
 import { RirSelector } from './RirSelector.js'
@@ -68,6 +69,7 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
               {recommendation && <small className={`progression-hint progression-hint--${recommendation}`}>
                 {t(`progression.${recommendation}`)}
               </small>}
+              {current.length === 0 && source?.origin === 'other_workout' && <small><PrefillOrigin session={source.session} /></small>}
             </span>
             <span className="session-exercise__state">{status === 'done' ? '✓' : status === 'skipped' ? t('session.skipped') : t('session.open_exercise')}</span>
           </button>
@@ -78,6 +80,18 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
 }
 
 /** One-exercise editor that keeps every planned set visible at once. */
+/**
+ * Carga que veio de outro treino precisa dizer de onde veio: sem isso, 80 kg
+ * do Treino B parecem a carga de sempre do Treino A.
+ */
+function PrefillOrigin({ session }: { session: WorkoutSession }) {
+  const { t } = useTranslation()
+  const templates = useTemplatesEver()
+  const workout = session.planSnapshot?.templateName ?? templates.find((template) => template.id === session.templateId)?.name ?? '—'
+  const days = calendarDaysBetween(session.startedAt, new Date())
+  return <>{days === 0 ? t('session.prefill_from_today', { workout }) : t('session.prefill_from', { workout, count: days })}</>
+}
+
 export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAfter, restSeconds, restRemaining, onRest, onContinue, onDone }: {
   sessionId: string
   item: SessionChecklistItem
@@ -202,7 +216,11 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.back_and_skip')}</button>
       <span className="mono muted">{String(index + 1).padStart(2, '0')} · {t('session.sets_count', { count: item.sets })}</span>
     </header>
-    <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: restSeconds })}</p></div>
+    <div>
+      <h2>{name}</h2>
+      <p className="mono muted">{t('session.rest_seconds', { count: restSeconds })}</p>
+      {workLogs.length === 0 && source?.origin === 'other_workout' && <p className="mono muted"><PrefillOrigin session={source.session} /></p>}
+    </div>
     <ol className="session-focus__sets">
       {drafts.map((draft, setIndex) => <Fragment key={setIndex}>
         <li className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
