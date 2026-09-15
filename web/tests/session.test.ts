@@ -69,6 +69,37 @@ describe('nextSlot', () => {
   })
 })
 
+describe('nextSlot no bi-set', () => {
+  const grouped = [
+    { id: 'a', sets: 3, restSeconds: null, supersetGroup: 'g1' },
+    { id: 'b', sets: 2, restSeconds: null, supersetGroup: 'g1' },
+    { id: 'c', sets: 1, restSeconds: null },
+  ]
+
+  it('alterna entre os membros a cada série', () => {
+    expect(nextSlot(grouped, [])).toEqual({ itemIndex: 0, setIndex: 0 })
+    expect(nextSlot(grouped, [set('a', 0)])).toEqual({ itemIndex: 1, setIndex: 0 })
+    expect(nextSlot(grouped, [set('a', 0), set('b', 0)])).toEqual({ itemIndex: 0, setIndex: 1 })
+  })
+
+  it('membro com menos séries some das últimas rodadas', () => {
+    const done = [set('a', 0), set('b', 0), set('a', 1), set('b', 1)]
+    expect(nextSlot(grouped, done)).toEqual({ itemIndex: 0, setIndex: 2 })
+    expect(nextSlot(grouped, [...done, set('a', 2)])).toEqual({ itemIndex: 2, setIndex: 0 })
+  })
+
+  it('membro pulado sai da alternância e o outro segue sozinho', () => {
+    const skipped = [set('b', 0, { skipped: true }), set('b', 1, { skipped: true })]
+    expect(nextSlot(grouped, skipped)).toEqual({ itemIndex: 0, setIndex: 0 })
+    expect(nextSlot(grouped, [...skipped, set('a', 0)])).toEqual({ itemIndex: 0, setIndex: 1 })
+  })
+
+  it('mesma chave separada na ordem volta a ser fila comum', () => {
+    const split = [grouped[0]!, grouped[2]!, grouped[1]!]
+    expect(nextSlot(split, [set('a', 0)])).toEqual({ itemIndex: 0, setIndex: 1 })
+  })
+})
+
 describe('sessionProgress', () => {
   it('conta séries de trabalho contra o planejado', () => {
     expect(sessionProgress(items, [set('i1', 0), set('i1', 1)])).toMatchObject({ done: 2, planned: 5 })

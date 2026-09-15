@@ -7,6 +7,8 @@
  * mentiria em toda troca de app.
  */
 
+import { planBlocks, supersetRounds } from './supersets.js'
+
 export type SessionPhase = 'exercicios' | 'descanso' | 'cardio' | 'encerrada'
 
 export interface SessionState {
@@ -41,6 +43,7 @@ export interface SessionItem {
   id: string
   sets: number
   restSeconds: number | null
+  supersetGroup?: string | null
 }
 
 export interface LoggedSet {
@@ -217,18 +220,24 @@ function draftFromLog(item: DraftItem, log: DraftLog, prescribed: number | null,
 }
 
 /**
- * Próximo slot a executar: o primeiro item cujas séries de trabalho ainda não
- * fecharam. Pular um exercício não trava a sessão — o item pulado sai da fila
- * com todas as séries marcadas como `skipped`.
+ * Próximo slot a executar: a primeira série de trabalho ainda não registrada,
+ * na ordem em que o treino roda. Dentro de um bi-set a ordem alterna entre os
+ * membros (A1, B1, A2, B2…); fora dele um bloco tem um membro só e a alternância
+ * vira a fila de sempre. Pular um exercício não trava a sessão — o item pulado
+ * sai da fila com todas as séries marcadas como `skipped`.
  */
 export function nextSlot(
   items: SessionItem[],
   logged: LoggedSet[],
 ): { itemIndex: number; setIndex: number } | null {
-  for (let index = 0; index < items.length; index++) {
-    const item = items[index]!
-    const done = logged.filter((s) => s.templateItemId === item.id && !s.isWarmup).length
-    if (done < item.sets) return { itemIndex: index, setIndex: done }
+  const done = new Map(items.map((item) =>
+    [item.id, logged.filter((s) => s.templateItemId === item.id && !s.isWarmup).length]))
+  for (const block of planBlocks(items)) {
+    for (const entry of supersetRounds(block.items).flat()) {
+      if (entry.setIndex >= done.get(entry.itemId)!) {
+        return { itemIndex: items.findIndex((item) => item.id === entry.itemId), setIndex: entry.setIndex }
+      }
+    }
   }
   return null
 }
