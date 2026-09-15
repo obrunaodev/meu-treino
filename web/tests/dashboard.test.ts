@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Exercise, PainEvent, SetLog, WorkoutSession } from '../src/lib/types'
 import {
-  muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek,
+  loadTrendValues, muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek,
   workingSetsByCycle, weeksToBlockEnd,
 } from '../src/lib/domain/dashboard'
 
@@ -68,6 +68,22 @@ describe('recentLoadTrends', () => {
     )
 
     expect(result[0]?.points[0]?.volume).toBe(480)
+  })
+})
+
+describe('loadTrendValues', () => {
+  const trend = {
+    exerciseId: 'leg', name: 'Leg press', direction: 'up' as const,
+    points: [{ at: '2026-08-01', weight: 60, volume: 600 }, { at: '2026-08-02', weight: 62.5, volume: 625 }],
+  }
+
+  it('converte a carga para lb com uma casa, como o rótulo', () => {
+    expect(loadTrendValues(trend, 'weight', 'lb').map((point) => point.value)).toEqual([132.3, 137.8])
+  })
+
+  it('mantém kg e o volume em kg·rep como estão', () => {
+    expect(loadTrendValues(trend, 'weight', 'kg').map((point) => point.value)).toEqual([60, 62.5])
+    expect(loadTrendValues(trend, 'volume', 'lb').map((point) => point.value)).toEqual([600, 625])
   })
 })
 
