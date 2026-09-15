@@ -160,3 +160,16 @@ describe('session completion messages', () => {
     expect(message).not.toContain('Treino concluído')
   })
 })
+
+describe('record announcement', () => {
+  const entry = { exerciseNumber: 1, weightKg: 105, sets: 3, reps: 10, rir: 2 }
+
+  it('anuncia os recordes batidos numa linha', () => {
+    expect(savedMessage(1, item(), entry, false, false, ['top_load', 'e1rm'])).toContain('🏆 Novo recorde: maior carga · 1RM estimado')
+  })
+
+  it('sem recorde, a mensagem é exatamente a de antes', () => {
+    expect(savedMessage(1, item(), entry, false, false, [])).toBe(savedMessage(1, item(), entry, false))
+    expect(savedMessage(1, item(), entry, false)).not.toContain('🏆')
+  })
+})

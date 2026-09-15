@@ -214,6 +214,29 @@ integration('registro completo pelo WhatsApp', () => {
     expect(preview?.items[0]).toMatchObject({ exerciseId: exerciseIds[0], previousWeightKg: 77 })
   })
 
+  it('anuncia recorde contra sessões encerradas, ignorando aquecimento e sessão apagada', async () => {
+    const { recordExercise } = await import('../src/workout.js')
+    const { endOpenWorkout } = await import('../src/workout-history.js')
+    // Exercício 3 só tem 80 kg no histórico. Um aquecimento de 120 e uma sessão
+    // apagada com 130 não podem contar como marca a bater.
+    const open = randomUUID()
+    const warmupSession = randomUUID()
+    const deletedSession = randomUUID()
+    await client.query(`insert into workout_sessions (id,owner_id,program_id,template_id,status,started_at,deleted_at)
+      values ($1,$2,$3,$4,'concluida',now() + interval '90 minutes',null),
+             ($5,$2,$3,$4,'concluida',now() + interval '100 minutes',now()),
+             ($6,$2,$3,$4,'em_andamento',now() + interval '2 hours',null)`,
+    [warmupSession, ownerId, programId, templateId, deletedSession, open])
+    await client.query(`insert into set_logs (id,owner_id,session_id,template_item_id,exercise_id,set_index,is_warmup,weight_kg,reps)
+      values ($1,$2,$3,$4,$5,0,true,120,5), ($6,$2,$7,$4,$5,1,false,130,5)`,
+    [randomUUID(), ownerId, warmupSession, itemIds[2], exerciseIds[2], randomUUID(), deletedSession])
+
+    const saved = await recordExercise(ownerId, { exerciseNumber: 3, weightKg: 85, sets: 3, reps: 10, rir: 2 })
+    expect(saved).toMatchObject({ status: 'saved' })
+    expect(saved.status === 'saved' && saved.records).toContain('top_load')
+    expect(await endOpenWorkout(ownerId)).toBe(true)
+  })
+
   it('persiste e revoga mensagens conhecidas do grupo', async () => {
     const { clearTrackedMessages, trackGroupMessage } = await import('../src/chat-cleaner.js')
     const jid = 'grupo-teste@g.us'

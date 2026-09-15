@@ -223,7 +223,7 @@ async function respond(ownerId: string, socket: WASocket, jid: string, text: str
   if (result.status === 'no_session') return send(ownerId, socket, jid, 'Comece primeiro com */start*.')
   if (result.status === 'bad_exercise') return send(ownerId, socket, jid, `O treino atual tem exercícios de 1 a ${result.count}.`)
   if (result.status === 'already_logged') return send(ownerId, socket, jid, `ℹ️ *${result.item.name}* já foi registrado nesta sessão.`)
-  return send(ownerId, socket, jid, savedMessage(parsed.value.exerciseNumber, result.item, parsed.value, result.finished, result.incomplete))
+  return send(ownerId, socket, jid, savedMessage(parsed.value.exerciseNumber, result.item, parsed.value, result.finished, result.incomplete, result.records))
 }
 
 async function respondToEdit(ownerId: string, socket: WASocket, jid: string, args: string) {
