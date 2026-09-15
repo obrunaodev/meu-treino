@@ -37,7 +37,8 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Workout templates can be created, renamed, reordered, edited, and removed.
 - Each template configures exercise order, target sets, repetition range or timed duration, target effort, rest interval, tracking mode, and optional cardio.
 - Cardio is selected from the equipment configured for the user's gym instead of entered as unrestricted text.
-- Progression remains manual. The live overview recommends increasing load after reaching the top of the repetition range at moderate effort, progressing repetitions below the ceiling, or reducing after maximal or repeatedly heavy effort.
+- Progression remains manual. The live overview recommends increasing load after reaching the top of the repetition range at moderate effort, progressing repetitions below the ceiling, or reducing after maximal or repeatedly heavy effort. Timed exercises get the same guidance measured in seconds; at the top of the range the suggestion is to raise the target duration in the workout.
+- When a block closes heavy — at least half of its rated working sets harder than their own effort target, or pain of level 4 or higher in two of its sessions — the dashboard suggests a lighter week and shows the numbers behind it. The block report always shows that reading. Nothing is applied automatically, and the suggestion can be dismissed per block.
 
 ### Live workout
 
