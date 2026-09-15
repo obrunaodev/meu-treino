@@ -1,5 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { localDb, type SyncEntity } from './db.js'
+import { exerciseSessionHistory } from './domain/exercise-history.js'
+import { EMPTY_BASELINE, recordBaseline, type RecordBaseline } from './domain/records.js'
 import type {
   CardioLog, CardioOption, Equipment, Exercise, ExerciseMedia, ExerciseSubstitution, FunctionalTest,
   Gym, PainEvent, Program, SetLog, Template, TemplateItem, TestResult, UserSettings,
@@ -13,14 +15,13 @@ import type {
  * O filtro de `deletedAt` mora aqui, num lugar só: soft delete é obrigatório
  * para o sync, mas a UI não deveria ter que lembrar disso em toda consulta.
  */
+async function aliveRows<T>(entity: SyncEntity): Promise<T[]> {
+  const rows = await localDb.table_(entity).toArray()
+  return rows.filter((row) => !row.deletedAt) as T[]
+}
+
 function useLive<T>(entity: SyncEntity, deps: unknown[] = []): T[] | undefined {
-  return useLiveQuery(
-    async () => {
-      const rows = await localDb.table_(entity).toArray()
-      return rows.filter((row) => !row.deletedAt) as T[]
-    },
-    deps,
-  )
+  return useLiveQuery(() => aliveRows<T>(entity), deps)
 }
 
 const byPosition = <T extends { position: number }>(rows: T[]) =>
@@ -135,6 +136,25 @@ export function useTestResults(testId?: string | null) {
   const rows = useLive<TestResult>('test_results') ?? []
   const filtered = testId ? rows.filter((r) => r.testId === testId) : rows
   return [...filtered].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))
+}
+
+/**
+ * O que os recordes da sessão precisam bater. Consulta viva própria, e não um
+ * useMemo na tela: a sessão re-renderiza a cada segundo do cronômetro com
+ * arrays novos, e o histórico inteiro seria recalculado por segundo. Aqui só
+ * recalcula quando o banco muda.
+ */
+export function useRecordBaseline(exerciseId: string, sessionId: string): RecordBaseline | undefined {
+  return useLiveQuery(async () => {
+    const [sessions, sets, exercises, equipment] = await Promise.all([
+      aliveRows<WorkoutSession>('workout_sessions'), aliveRows<SetLog>('set_logs'),
+      aliveRows<Exercise>('exercises'), aliveRows<Equipment>('equipment'),
+    ])
+    const current = sessions.find((session) => session.id === sessionId)
+    if (!current) return EMPTY_BASELINE
+    const exercise = exercises.find((entry) => entry.id === exerciseId) ?? null
+    return recordBaseline(exerciseSessionHistory(exerciseId, exercise, sessions, sets, equipment), current)
+  }, [exerciseId, sessionId])
 }
 
 export function useSettings(): UserSettings | null {

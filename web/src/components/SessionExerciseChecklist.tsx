@@ -2,15 +2,17 @@ import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
-import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
+import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
+import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
 import { exerciseExecutionStatus, initialSetDraft, prefillSource, type SetDraft } from '../lib/domain/session.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { progressionAction } from '../lib/domain/progression.js'
-import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings, useTemplatesEver } from '../lib/repo.js'
+import { useEquipment, useExercises, useMedia, useRecordBaseline, useSessions, useSetLogs, useSettings, useTemplatesEver } from '../lib/repo.js'
 import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
+import { RecordFlag } from './RecordFlag.js'
 import { RirSelector } from './RirSelector.js'
 import { Modal, NumberStepper } from './ui.js'
 
@@ -111,6 +113,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const sessions = useSessions()
   const settings = useSettings()
   const media = useMedia().find((entry) => entry.exerciseId === item.exerciseId) ?? null
+  const recordBaseline = useRecordBaseline(item.exerciseId, sessionId)
   const { logSet, removeSet, logPain } = useActions()
   const exercise = exercises.find((entry) => entry.id === item.exerciseId) ?? null
   const snapshot = 'exerciseName' in item ? item : null
@@ -147,6 +150,14 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
   const completed = workLogs.length >= item.sets
   const allChecked = drafts.every((draft) => draft.checked)
+  // As séries marcadas ainda são rascunho (só gravam ao finalizar), então o
+  // recorde é calculado sobre elas, contra o que já estava gravado antes.
+  const checkedSets = drafts.flatMap((draft, setIndex): ComparableSet[] => (draft.checked ? [{
+    key: String(setIndex), setIndex, totalKg: totalLoadKg(draft.kg, loadPerSide),
+    reps: item.isTimeBased ? null : draft.result, seconds: item.isTimeBased ? draft.result : null,
+    bodyweight: gear?.loadType === 'corporal',
+  }] : []))
+  const records = recordBaseline ? sessionRecordKinds(recordBaseline, checkedSets) : new Map<string, RecordKind[]>()
 
   async function completeExercise() {
     if (!allChecked) return
@@ -233,6 +244,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
               onClick={() => updateDraft(setIndex, { checked: !draft.checked })}
             >✓</button>
             <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
+            <RecordFlag kinds={records.get(String(setIndex))} />
           </div>
           <div className="session-focus__fields">
           <NumberStepper
@@ -281,6 +293,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     {showPain ? <PainCapture onCancel={() => setShowPain(false)} onSave={async (regionSlug, level) => {
       await logPain({ regionSlug, level, sessionId, setLogId: workLogs.at(-1)?.id ?? null }); setShowPain(false)
     }} /> : <div className="session-focus__actions">
+      {allChecked && records.has(SESSION_RECORD_KEY) && <p className="record-flag" role="status">{t('records.volume_new')}</p>}
       <button type="button" className="button button--primary" disabled={!allChecked} onClick={() => void completeExercise()}>{t('session.complete_exercise')}</button>
       <button type="button" className="button button--quiet" onClick={() => void addWarmup()}>{t('session.add_warmup')}</button>
       <button type="button" className="button button--quiet" onClick={() => setShowPain(true)}>{t('session.pain')}</button>
