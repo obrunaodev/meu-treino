@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  exerciseExecutionStatus, exerciseProgress, groupByExercise, prescribedResult, previousSetForDraft, previousTemplateSession, remainingSeconds, restFor,
+  exerciseExecutionStatus, exerciseProgress, groupByExercise, initialSetDraft, prefillSource, prescribedResult, previousSetForDraft, remainingSeconds, restFor,
   sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
@@ -135,20 +135,77 @@ describe('previousSetForDraft', () => {
   })
 })
 
-describe('previousTemplateSession', () => {
-  const sessions = [
-    { id: 'a1', templateId: 'a', startedAt: '2026-08-01T10:00:00Z' },
-    { id: 'b1', templateId: 'b', startedAt: '2026-08-10T10:00:00Z' },
-    { id: 'a2', templateId: 'a', startedAt: '2026-08-20T10:00:00Z' },
-    { id: 'a3', templateId: 'a', startedAt: '2026-08-28T10:00:00Z' },
-  ]
+describe('prefillSource', () => {
+  const session = (id: string, templateId: string, day: number) => ({ id, templateId, startedAt: `2026-08-${String(day).padStart(2, '0')}T10:00:00Z` })
+  const log = (sessionId: string, setIndex: number, extra: Partial<{ exerciseId: string; isWarmup: boolean; skipped: boolean }> = {}) => ({
+    sessionId, setIndex, exerciseId: 'supino', isWarmup: false, skipped: false, ...extra,
+  })
+  const current = session('hoje', 'a', 28)
 
-  it('usa o treino anterior do mesmo template', () => {
-    expect(previousTemplateSession(sessions[3]!, sessions)?.id).toBe('a2')
+  it('fica no mesmo treino mesmo quando outro treino é mais recente', () => {
+    const sessions = [session('a1', 'a', 10), session('b1', 'b', 20), current]
+    const source = prefillSource(current, sessions, [log('a1', 0), log('b1', 0)], 'supino')
+    expect(source).toMatchObject({ origin: 'template', session: { id: 'a1' } })
   })
 
-  it('não usa outro treino nem uma sessão futura', () => {
-    expect(previousTemplateSession(sessions[0]!, sessions)).toBeNull()
+  it('passa por sessões do mesmo treino em que o exercício não teve série de trabalho', () => {
+    const sessions = [session('a1', 'a', 5), session('a2', 'a', 12), session('a3', 'a', 19), current]
+    const logs = [log('a1', 0), log('a2', 0, { skipped: true }), log('a3', 0, { isWarmup: true })]
+    expect(prefillSource(current, sessions, logs, 'supino')?.session.id).toBe('a1')
+  })
+
+  it('traz a sessão anterior do mesmo treino com o exercício para o conselho de progressão', () => {
+    const sessions = [session('a1', 'a', 5), session('a2', 'a', 12), session('a3', 'a', 19), current]
+    const source = prefillSource(current, sessions, [log('a1', 0), log('a3', 1), log('a3', 0)], 'supino')
+    expect(source?.session.id).toBe('a3')
+    expect(source?.sets.map((set) => set.setIndex)).toEqual([0, 1])
+    expect(source?.earlierSets.map((set) => set.sessionId)).toEqual(['a1'])
+  })
+
+  it('sem histórico no mesmo treino, usa a última vez em qualquer treino', () => {
+    const sessions = [session('b1', 'b', 10), session('c1', 'c', 20), current]
+    const source = prefillSource(current, sessions, [log('b1', 0), log('c1', 0)], 'supino')
+    expect(source).toMatchObject({ origin: 'other_workout', session: { id: 'c1' }, earlierSets: [] })
+  })
+
+  it('ignora a própria sessão, sessões posteriores e outros exercícios', () => {
+    const sessions = [current, session('a9', 'a', 30), session('b1', 'b', 10)]
+    const logs = [log('hoje', 0), log('a9', 0), log('b1', 0, { exerciseId: 'remada' })]
+    expect(prefillSource(current, sessions, logs, 'supino')).toBeNull()
+  })
+})
+
+describe('initialSetDraft', () => {
+  const item = { repMin: 10, repMax: 12, rirTarget: 2, isTimeBased: false, trackingMode: 'full' as const }
+  const log = (setIndex: number, weightKg: number, reps: number, rir: number) => ({
+    setIndex, weightKg, plateCount: null, reps, seconds: null, rir,
+  })
+  const fromTemplate = { origin: 'template' as const, session: null, sets: [log(0, 60, 11, 1), log(1, 55, 10, 2)], earlierSets: [] }
+  const fromOther = { origin: 'other_workout' as const, session: null, sets: [log(0, 80, 5, 0), log(1, 82.5, 5, 1)], earlierSets: [] }
+
+  it('do mesmo treino copia carga, repetições e esforço por série no modo completo', () => {
+    expect(initialSetDraft(item, 1, undefined, fromTemplate)).toEqual({ kg: 55, plate: null, result: 10, rir: 2, checked: false })
+  })
+
+  it('do mesmo treino no modo compacto repete a última série', () => {
+    expect(initialSetDraft({ ...item, trackingMode: 'compact' }, 0, undefined, fromTemplate)).toMatchObject({ kg: 55, result: 10 })
+  })
+
+  it('de outro treino copia só a carga da última série; repetições e esforço seguem a prescrição', () => {
+    expect(initialSetDraft(item, 0, undefined, fromOther)).toEqual({ kg: 82.5, plate: null, result: 12, rir: 2, checked: false })
+  })
+
+  it('exercício por tempo vindo de outro treino recebe os segundos prescritos', () => {
+    const timed = { repMin: 30, repMax: 45, rirTarget: null, isTimeBased: true }
+    expect(initialSetDraft(timed, 0, undefined, fromOther)).toMatchObject({ kg: 82.5, result: 45, rir: null })
+  })
+
+  it('o que já foi feito hoje vence e vem marcado', () => {
+    expect(initialSetDraft(item, 0, log(0, 70, 12, 2), fromOther)).toEqual({ kg: 70, plate: null, result: 12, rir: 2, checked: true })
+  })
+
+  it('sem histórico nenhum, só a prescrição', () => {
+    expect(initialSetDraft(item, 0, undefined, null)).toEqual({ kg: null, plate: null, result: 12, rir: 2, checked: false })
   })
 })
 

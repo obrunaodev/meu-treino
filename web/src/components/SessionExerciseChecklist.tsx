@@ -1,9 +1,9 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg } from '../lib/domain/load.js'
-import { exerciseExecutionStatus, prescribedResult, previousSetForDraft, previousTemplateSession } from '../lib/domain/session.js'
+import { exerciseExecutionStatus, initialSetDraft, prefillSource, type SetDraft } from '../lib/domain/session.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { progressionAction } from '../lib/domain/progression.js'
 import { useEquipment, useExercises, useMedia, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
@@ -29,11 +29,6 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
   const sessions = useSessions()
   const settings = useSettings()
   const session = sessions.find((entry) => entry.id === sessionId) ?? null
-  const previous = useMemo(() => session ? previousTemplateSession(session, sessions) : null, [session, sessions])
-  const sessionsBefore = sessions.filter((entry) => (
-    session && entry.templateId === session.templateId && entry.startedAt < session.startedAt
-  )).sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-  const previousPrevious = sessionsBefore[1] ?? null
   const currentByItem = new Map(items.map((item) => [item.id, logs.filter((log) => log.templateItemId === item.id && !log.isWarmup)]))
   const statusOf = (item: SessionChecklistItem) => exerciseExecutionStatus(item, currentByItem.get(item.id) ?? [])
   const sections = [
@@ -49,21 +44,19 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
         const index = items.indexOf(item)
         const exercise = exercises.find((entry) => entry.id === item.exerciseId)
         const current = currentByItem.get(item.id) ?? []
-        const previousLogs = allLogs.filter((log) => (
-          log.sessionId === previous?.id && log.exerciseId === item.exerciseId && !log.isWarmup && !log.skipped
-        )).sort((a, b) => a.setIndex - b.setIndex)
-        const representative = current.find((log) => !log.skipped) ?? previousLogs.at(-1) ?? null
-        const previousPreviousLogs = allLogs.filter((log) => (
-          log.sessionId === previousPrevious?.id && log.exerciseId === item.exerciseId
-        ))
-        const recommendation = current.length === 0
-          ? progressionAction(previousLogs, previousPreviousLogs, item.repMax)
+        const source = session ? prefillSource(session, sessions, allLogs, item.exerciseId) : null
+        const today = current.find((log) => !log.skipped) ?? null
+        // Conselho e esforço só do mesmo treino: a regra compara com a faixa deste item.
+        const sameWorkout = source?.origin === 'template' ? source : null
+        const representative = today ?? source?.sets.at(-1) ?? null
+        const recommendation = current.length === 0 && sameWorkout
+          ? progressionAction(sameWorkout.sets, sameWorkout.earlierSets, item.repMax)
           : null
         const snapshot = 'exerciseName' in item ? item : null
         const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
         const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
         const range = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
-        const effort = representative?.rir ?? item.rirTarget
+        const effort = (today ?? sameWorkout?.sets.at(-1))?.rir ?? item.rirTarget
         const status = statusOf(item)
         return <li className={`session-exercise session-exercise--${status}`} key={item.id}>
           <button type="button" className="session-exercise__overview" onClick={() => onSelect(item.id)}>
@@ -83,8 +76,6 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
     </div>)}
   </section>
 }
-
-interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
 
 /** One-exercise editor that keeps every planned set visible at once. */
 export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAfter, restSeconds, restRemaining, onRest, onContinue, onDone }: {
@@ -114,21 +105,14 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const name = snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')
   const workLogs = logs.filter((log) => !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
   const currentSession = sessions.find((entry) => entry.id === sessionId) ?? null
-  const previous = useMemo(() => currentSession ? previousTemplateSession(currentSession, sessions) : null, [currentSession, sessions])
-  const previousLogs = allLogs.filter((log) => log.sessionId === previous?.id && log.exerciseId === item.exerciseId && !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
-  const sourceKey = [...workLogs, ...previousLogs].map((log) => `${log.id}:${log.updatedAt}`).join('|')
-  const initialDrafts = (): Draft[] => Array.from({ length: item.sets }, (_, setIndex) => {
-    const current = workLogs.find((log) => log.setIndex === setIndex)
-    const source = current ?? previousSetForDraft([], previousLogs, setIndex, item.trackingMode ?? 'compact')
-    return {
-      kg: source?.weightKg ?? null,
-      plate: source?.plateCount ?? null,
-      result: (item.isTimeBased ? source?.seconds : source?.reps) ?? prescribedResult(item.repMin, item.repMax),
-      rir: source?.rir ?? item.rirTarget,
-      checked: current !== undefined,
-    }
-  })
-  const [drafts, setDrafts] = useState<Draft[]>(initialDrafts)
+  const source = currentSession ? prefillSource(currentSession, sessions, allLogs, item.exerciseId) : null
+  // A chave é só da fonte escolhida: os rascunhos recomeçam quando essa fonte
+  // muda, não a cada pull que traz séries de outras sessões.
+  const sourceKey = [...workLogs, ...(source?.sets ?? [])].map((log) => `${log.id}:${log.updatedAt}`).concat(String(source?.origin)).join('|')
+  const initialDrafts = (): SetDraft[] => Array.from({ length: item.sets }, (_, setIndex) => (
+    initialSetDraft(item, setIndex, workLogs.find((log) => log.setIndex === setIndex), source)
+  ))
+  const [drafts, setDrafts] = useState<SetDraft[]>(initialDrafts)
   const [showImage, setShowImage] = useState(false)
   const [showPain, setShowPain] = useState(false)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
@@ -181,7 +165,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
   }
 
-  function updateDraft(setIndex: number, patch: Partial<Draft>) {
+  function updateDraft(setIndex: number, patch: Partial<SetDraft>) {
     setDrafts((current) => current.map((draft, index) => index === setIndex ? { ...draft, ...patch } : draft))
   }
 
