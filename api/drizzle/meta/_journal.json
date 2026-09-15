@@ -120,6 +120,13 @@
       "when": 1789512998192,
       "tag": "0016_eager_thing",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789516074855,
+      "tag": "0017_daily_avengers",
+      "breakpoints": true
     }
   ]
 }

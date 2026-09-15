@@ -385,6 +385,12 @@ export const templateItems = pgTable('template_items', {
   repMax: smallint('rep_max'),
   /** Exercício por tempo (prancha, ponte lateral): rep_min/max viram segundos. */
   isTimeBased: boolean('is_time_based').notNull().default(false),
+  /**
+   * Bi-set e tri-set: itens vizinhos que dividem a mesma chave formam um grupo.
+   * O grupo é derivado da ordem, nunca imposto — cliente antigo que reordena
+   * só separa o grupo, e voltar a ordem o reconstitui.
+   */
+  supersetGroup: uuid('superset_group'),
   /** `compact`: um valor replica nas séries; `full`: cada série tem valores próprios. */
   trackingMode: text('tracking_mode').notNull().default('compact'),
   rirTarget: smallint('rir_target'),

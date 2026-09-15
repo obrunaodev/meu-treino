@@ -101,6 +101,8 @@ export interface TemplateItem extends Base {
   repMin: number | null
   repMax: number | null
   isTimeBased: boolean
+  /** Chave do bi-set/tri-set: itens vizinhos com a mesma chave são um grupo. */
+  supersetGroup?: string | null
   /** Ausente em snapshots antigos; nesses casos a sessão usa `compact`. */
   trackingMode?: 'compact' | 'full'
   rirTarget: number | null
