@@ -180,6 +180,8 @@ test.describe('jornada completa', () => {
       await uncheckedSets.first().click()
       await expect(uncheckedSets).toHaveCount(remaining - 1)
     }
+    // Padrão é o início manual: marcar série nenhuma dispara intervalo.
+    await expect(page.getByRole('button', { name: /encerrar intervalo após a série/i })).toHaveCount(0)
     await expect(finishExercise).toBeEnabled()
     await finishExercise.click()
 

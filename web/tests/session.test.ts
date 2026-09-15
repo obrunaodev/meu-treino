@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AUTO_CLOSE_AFTER_MS, elapsedSeconds, finalStatus, formatClock, nextSlot,
-  exerciseExecutionStatus, exerciseProgress, groupByExercise, initialSetDraft, prefillSource, prescribedResult, previousSetForDraft, remainingSeconds, restFor,
+  exerciseExecutionStatus, exerciseProgress, groupByExercise, initialSetDraft, prefillSource, prescribedResult, previousSetForDraft, remainingSeconds, restCommandForToggle, restFor,
   sessionProgress, shouldAutoClose, topWorkingSet,
 } from '../src/lib/domain/session'
 
@@ -206,6 +206,43 @@ describe('initialSetDraft', () => {
 
   it('sem histórico nenhum, só a prescrição', () => {
     expect(initialSetDraft(item, 0, undefined, null)).toEqual({ kg: null, plate: null, result: 12, rir: 2, checked: false })
+  })
+})
+
+describe('restCommandForToggle', () => {
+  const toggle = (patch: Partial<Parameters<typeof restCommandForToggle>[0]> = {}) => restCommandForToggle({
+    setIndex: 0, sets: 3, nextChecked: true, nextSetChecked: false, activeRestAfter: null, autoStart: true, ...patch,
+  })
+
+  it('com a preferência desligada não mexe no descanso', () => {
+    expect(toggle({ autoStart: false })).toBeNull()
+    expect(toggle({ autoStart: false, nextChecked: false, activeRestAfter: 0 })).toBeNull()
+  })
+
+  it('marcar uma série do meio inicia o descanso dela', () => {
+    expect(toggle()).toEqual({ kind: 'start', afterSetIndex: 0 })
+  })
+
+  it('não inicia quando a série seguinte já está marcada', () => {
+    expect(toggle({ nextSetChecked: true })).toBeNull()
+  })
+
+  it('marcar outra série reinicia a contagem para ela', () => {
+    expect(toggle({ setIndex: 1, activeRestAfter: 0 })).toEqual({ kind: 'start', afterSetIndex: 1 })
+  })
+
+  it('marcar a série que já está descansando não reinicia', () => {
+    expect(toggle({ activeRestAfter: 0 })).toBeNull()
+  })
+
+  it('a última série não abre intervalo, e encerra o que estiver correndo', () => {
+    expect(toggle({ setIndex: 2 })).toBeNull()
+    expect(toggle({ setIndex: 2, activeRestAfter: 1 })).toEqual({ kind: 'stop' })
+  })
+
+  it('desmarcar encerra só o descanso da própria série', () => {
+    expect(toggle({ nextChecked: false, activeRestAfter: 0 })).toEqual({ kind: 'stop' })
+    expect(toggle({ setIndex: 1, nextChecked: false, activeRestAfter: 0 })).toBeNull()
   })
 })
 
