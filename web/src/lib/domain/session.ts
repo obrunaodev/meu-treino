@@ -233,6 +233,34 @@ export function nextSlot(
   return null
 }
 
+export type RestCommand = { kind: 'start'; afterSetIndex: number } | { kind: 'stop' } | null
+
+/**
+ * O que o descanso faz quando uma série é marcada ou desmarcada.
+ *
+ * Só com a preferência ligada — o início manual é o padrão. Depois da última
+ * série não há intervalo: o descanso existe entre séries, e sair do exercício
+ * já o cancela. Marcar outra série mais adiante reinicia a contagem para ela,
+ * porque o intervalo anterior virou passado; marcar a própria série que já
+ * está descansando não reinicia nada, para não atropelar um início manual.
+ */
+export function restCommandForToggle(input: {
+  setIndex: number
+  sets: number
+  nextChecked: boolean
+  nextSetChecked: boolean
+  activeRestAfter: number | null
+  autoStart: boolean
+}): RestCommand {
+  const { setIndex, sets, nextChecked, nextSetChecked, activeRestAfter, autoStart } = input
+  if (!autoStart) return null
+  const resting = activeRestAfter !== null
+  if (!nextChecked) return activeRestAfter === setIndex ? { kind: 'stop' } : null
+  if (setIndex >= sets - 1) return resting ? { kind: 'stop' } : null
+  if (nextSetChecked || activeRestAfter === setIndex) return null
+  return { kind: 'start', afterSetIndex: setIndex }
+}
+
 /** O mesmo default da coluna `programs.default_rest_seconds`, para quando o programa ainda não carregou. */
 export const DEFAULT_REST_SECONDS = 90
 

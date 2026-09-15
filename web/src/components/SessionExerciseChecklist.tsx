@@ -4,7 +4,7 @@ import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, kgToLb, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
 import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
-import { exerciseExecutionStatus, initialSetDraft, prefillSource, type SetDraft } from '../lib/domain/session.js'
+import { exerciseExecutionStatus, initialSetDraft, prefillSource, restCommandForToggle, type SetDraft } from '../lib/domain/session.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { progressionAction } from '../lib/domain/progression.js'
@@ -150,6 +150,18 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
   const completed = workLogs.length >= item.sets
   const allChecked = drafts.every((draft) => draft.checked)
+
+  function toggleSet(setIndex: number) {
+    const nextChecked = !drafts[setIndex]?.checked
+    updateDraft(setIndex, { checked: nextChecked })
+    const command = restCommandForToggle({
+      setIndex, sets: drafts.length, nextChecked,
+      nextSetChecked: drafts[setIndex + 1]?.checked ?? false,
+      activeRestAfter, autoStart: settings?.restAutoStart ?? false,
+    })
+    if (command?.kind === 'start') onRest(command.afterSetIndex)
+    if (command?.kind === 'stop') onContinue()
+  }
   // As séries marcadas ainda são rascunho (só gravam ao finalizar), então o
   // recorde é calculado sobre elas, contra o que já estava gravado antes.
   const checkedSets = drafts.flatMap((draft, setIndex): ComparableSet[] => (draft.checked ? [{
@@ -241,7 +253,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
               className="session-exercise__check"
               aria-pressed={draft.checked}
               aria-label={t(draft.checked ? 'session.uncheck_set' : 'session.check_set', { number: setIndex + 1 })}
-              onClick={() => updateDraft(setIndex, { checked: !draft.checked })}
+              onClick={() => toggleSet(setIndex)}
             >✓</button>
             <span className="eyebrow">{t('session.set', { n: setIndex + 1 })}</span>
             <RecordFlag kinds={records.get(String(setIndex))} />
