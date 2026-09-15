@@ -3,6 +3,7 @@ import type { ExpectedWorkout, WorkoutItem, WorkoutPlan } from './workout.js'
 import type { WorkoutReview } from './workout-history.js'
 import type { WeeklySession } from './weekly-history.js'
 import { rirLabelPt } from './rir.js'
+import type { RecordKind } from './records.js'
 
 export function workoutMessage(workout: WorkoutPlan, options: { includeLinks?: boolean } = {}) {
   const list = workout.items.map((item, index) => {
@@ -35,10 +36,18 @@ export function todayMessage(
   return `▶️ Esta sessão já está em andamento.\n\n${workoutMessage(workout, options)}${progress}\n\nContinue registrando os exercícios ou envie */end* para encerrar.`
 }
 
-export function savedMessage(index: number, item: WorkoutItem, entry: ExerciseEntry, finished: boolean, incomplete = false) {
+const RECORD_LABEL: Record<RecordKind, string> = {
+  top_load: 'maior carga',
+  e1rm: '1RM estimado',
+  rep_max: 'mais repetições nessa carga',
+  session_volume: 'maior volume numa sessão',
+}
+
+export function savedMessage(index: number, item: WorkoutItem, entry: ExerciseEntry, finished: boolean, incomplete = false, records: RecordKind[] = []) {
   const weight = Number(entry.weightKg.toFixed(1))
   const side = item.loadPerSide ? '/lado' : ''
-  const done = `✅ *${index}. ${item.name}*\n${weight} kg${side} · ${entry.sets}×${entry.reps} · ${rirLabelPt(entry.rir)}`
+  const record = records.length ? `\n🏆 Novo recorde: ${records.map((kind) => RECORD_LABEL[kind]).join(' · ')}` : ''
+  const done = `✅ *${index}. ${item.name}*\n${weight} kg${side} · ${entry.sets}×${entry.reps} · ${rirLabelPt(entry.rir)}${record}`
   if (!finished) return done
   return incomplete
     ? `${done}\n\n🏁 Sessão encerrada como *incompleta* porque houve exercício pulado.`

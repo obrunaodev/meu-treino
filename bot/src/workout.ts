@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg'
 import { pool } from './db.js'
 import type { ExerciseEntry } from './parser.js'
 import { calendarCadence } from './cadence.js'
+import { entryRecords, type PriorSet } from './records.js'
 
 export interface WorkoutItem {
   id: string
@@ -95,10 +96,16 @@ export async function recordExercise(ownerId: string, entry: ExerciseEntry) {
     }
 
     if (state === 'skipped') await removeSkip(client, session.id, item.id)
+    // Contra sessões anteriores: as séries recém-inseridas desta não entram na comparação.
+    const records = item.isTimeBased ? [] : entryRecords(
+      await priorWorkingSets(client, ownerId, session.id, item.exerciseId),
+      { totalKg: entry.weightKg * (item.loadPerSide ? 2 : 1), reps: entry.reps, sets: entry.sets },
+      item.equipment?.loadType === 'corporal',
+    )
     await insertSets(client, ownerId, session.id, item, entry)
     const completion = await completeIfAllExercisesLogged(client, session.id, ownerId, items)
     await client.query('commit')
-    return { status: 'saved' as const, item, ...completion }
+    return { status: 'saved' as const, item, records, ...completion }
   } catch (error) {
     await client.query('rollback')
     throw error
@@ -131,6 +138,31 @@ export async function skipExercise(ownerId: string, exerciseNumber: number) {
   } finally {
     client.release()
   }
+}
+
+/**
+ * Séries de trabalho do exercício em sessões encerradas antes desta. O modo por
+ * lado vale como era em cada sessão (snapshot), com o exercício como fallback.
+ */
+async function priorWorkingSets(client: PoolClient, ownerId: string, sessionId: string, exerciseId: string): Promise<PriorSet[]> {
+  const { rows } = await client.query(`
+    select sl.session_id, sl.weight_kg, sl.reps,
+      coalesce((
+        select (item->>'loadPerSide')::boolean from jsonb_array_elements(ws.plan_snapshot->'items') item
+        where item->>'exerciseId' = sl.exercise_id::text limit 1
+      ), e.load_per_side, false) as load_per_side
+    from set_logs sl
+    join workout_sessions ws on ws.id = sl.session_id
+    left join exercises e on e.id = sl.exercise_id
+    where sl.owner_id = $1 and sl.exercise_id = $2 and sl.deleted_at is null
+      and sl.is_warmup = false and sl.skipped = false
+      and ws.deleted_at is null and ws.status in ('concluida','incompleta') and ws.id <> $3
+      and ws.started_at < (select started_at from workout_sessions where id = $3)`, [ownerId, exerciseId, sessionId])
+  return rows.map((row) => ({
+    sessionId: row.session_id,
+    totalKg: row.weight_kg === null ? null : Number(row.weight_kg) * (row.load_per_side ? 2 : 1),
+    reps: row.reps,
+  }))
 }
 
 async function findOpenSession(client: PoolClient, ownerId: string) {
