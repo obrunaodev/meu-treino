@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  useCardioLogs, useCardioOptions, useSessions, useSetLogs, useTemplateItems, useTemplates,
+  useCardioLogs, useCardioOptions, usePrograms, useSessions, useSetLogs, useTemplateItems, useTemplates,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import {
-  CARDIO_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
-  nextSlot, remainingSeconds,
+  CARDIO_SECONDS, DEFAULT_REST_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
+  nextSlot, remainingSeconds, restFor,
 } from '../lib/domain/session.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
@@ -23,6 +23,7 @@ export function Session() {
   const session = sessions.find((s) => s.id === sessionId) ?? null
   const currentItems = useTemplateItems(session?.templateId)
   const items = session?.planSnapshot?.items ?? currentItems
+  const program = usePrograms().find((entry) => entry.id === session?.programId) ?? null
   const templates = useTemplates(session?.programId)
   const template = templates.find((entry) => entry.id === session?.templateId) ?? null
   const cardioOptions = useCardioOptions()
@@ -58,7 +59,8 @@ export function Session() {
 
   const selectedIndex = items.findIndex((item) => item.id === itemId)
   const selectedItem = selectedIndex >= 0 ? items[selectedIndex]! : null
-  const selectedRest = selectedItem?.restSeconds ?? 90
+  // O descanso do item vence; sem ele, vale o padrão do programa em Configurações.
+  const selectedRest = restFor(selectedItem ?? undefined, program?.defaultRestSeconds ?? DEFAULT_REST_SECONDS)
   const restRemaining = phase === 'descanso' ? remainingSeconds(phaseStartedAt, selectedRest, now) : 0
 
   useEffect(() => {
@@ -140,6 +142,7 @@ export function Session() {
           activeRestAfter={phase === 'descanso' && restKey?.startsWith(`${selectedItem.id}:`)
             ? Number(restKey.split(':').at(-1))
             : null}
+          restSeconds={selectedRest}
           restRemaining={restRemaining}
           onRest={(afterSetIndex) => setPhase('descanso', `${selectedItem.id}:${afterSetIndex}`)}
           onContinue={() => setPhase('exercicios')}

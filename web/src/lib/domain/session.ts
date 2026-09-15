@@ -133,6 +133,9 @@ export function nextSlot(
   return null
 }
 
+/** O mesmo default da coluna `programs.default_rest_seconds`, para quando o programa ainda não carregou. */
+export const DEFAULT_REST_SECONDS = 90
+
 export function restFor(item: SessionItem | undefined, programDefault: number): number {
   return item?.restSeconds ?? programDefault
 }

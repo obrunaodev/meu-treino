@@ -87,12 +87,13 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
 interface Draft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
 
 /** One-exercise editor that keeps every planned set visible at once. */
-export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAfter, restRemaining, onRest, onContinue, onDone }: {
+export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAfter, restSeconds, restRemaining, onRest, onContinue, onDone }: {
   sessionId: string
   item: SessionChecklistItem
   index: number
   logs: SetLog[]
   activeRestAfter: number | null
+  restSeconds: number
   restRemaining: number
   onRest: (afterSetIndex: number) => void
   onContinue: () => void
@@ -217,7 +218,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
       <button type="button" className="button button--ghost" onClick={() => void skipExercise()}>{t('session.back_and_skip')}</button>
       <span className="mono muted">{String(index + 1).padStart(2, '0')} · {t('session.sets_count', { count: item.sets })}</span>
     </header>
-    <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</p></div>
+    <div><h2>{name}</h2><p className="mono muted">{t('session.rest_seconds', { count: restSeconds })}</p></div>
     <ol className="session-focus__sets">
       {drafts.map((draft, setIndex) => <Fragment key={setIndex}>
         <li className={`session-focus__set${draft.checked ? ' session-focus__set--checked' : ''}`}>
@@ -262,7 +263,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
             <span aria-hidden="true">◷</span>
             <strong>{activeRestAfter === setIndex
               ? `${Math.floor(restRemaining / 60)}:${String(restRemaining % 60).padStart(2, '0')}`
-              : t('session.rest_seconds', { count: item.restSeconds ?? 90 })}</strong>
+              : t('session.rest_seconds', { count: restSeconds })}</strong>
           </button>
         </li>}
       </Fragment>)}
