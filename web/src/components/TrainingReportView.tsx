@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { kgToLb, type Unit } from '../lib/domain/load.js'
 import type { ExerciseSetReport, TrainingReport } from '../lib/domain/training-report.js'
-import { historyRoute } from '../lib/routes.js'
+import { exerciseHistoryRoute, historyRoute } from '../lib/routes.js'
 import { Card } from './ui.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 
@@ -54,7 +54,7 @@ function ExerciseBreakdown({ report, number, load, volume }: {
       <ol className="report-exercises">{report.exercises.map((exercise, index) => <li key={exercise.exerciseId}>
         <div className="report-exercises__head">
           <span className="report-exercises__index mono">{String(index + 1).padStart(2, '0')}</span>
-          <div><h3>{exercise.name}</h3><p className="report-exercises__target">
+          <div><h3><Link className="loglist__link" to={exerciseHistoryRoute(exercise.exerciseId)}>{exercise.name}</Link></h3><p className="report-exercises__target">
             {exercise.targets.join(' · ') || '—'}
             {exercise.targetRir.length ? ` · ${exercise.targetRir.map((rir) => t(rirLabelKey(rir)!)).join(' / ')}` : ''}
             {exercise.equipment.length ? ` · ${exercise.equipment.join(', ')}` : ''}
