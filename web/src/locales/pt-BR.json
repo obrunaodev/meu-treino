@@ -706,7 +706,15 @@
     "block_title": "Relatório do bloco {{number}}",
     "block_description": "Resultados consolidados dentro deste intervalo de semanas.",
     "included_sessions": "Sessões incluídas",
-    "not_found": "Nenhuma sessão encontrada para este relatório."
+    "not_found": "Nenhuma sessão encontrada para este relatório.",
+    "effort_title": "Leitura de esforço",
+    "effort_heavy": "Séries acima do alvo",
+    "effort_heavy_hint": "{{heavy}} de {{rated}} séries avaliadas · sugere a partir de {{limit}}%",
+    "effort_pain": "Sessões com dor",
+    "effort_pain_hint": "nível {{level}} ou mais · sugere a partir de {{sessions}}",
+    "effort_suggests": "O bloco fechou pesado: considere uma semana mais leve.",
+    "effort_ok": "Nada indica que o bloco fechou pesado.",
+    "effort_insufficient": "Menos de {{sessions}} sessões encerradas: ainda não dá para ler o esforço do bloco."
   },
   "settings": {
     "title": "Configurações",
