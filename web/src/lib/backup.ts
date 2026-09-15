@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid'
 import { fetchMediaBlob } from './api.js'
-import { localDb, SYNC_STORES } from './db.js'
+import { localDb, SYNC_STORES, type SyncEntity } from './db.js'
 import { mutate, remove } from './outbox.js'
 import {
   BACKUP_ENTITIES, BACKUP_FORMAT, BACKUP_VERSION, portableRow,
@@ -34,6 +34,17 @@ export async function buildBackup(): Promise<{ blob: Blob; summary: BackupSummar
 }
 
 /** Restores a backup into the signed-in account and queues every change for sync. */
+/**
+ * O que uma linha de backup anterior ao recurso não traz.
+ *
+ * `mutate` mescla o arquivo POR CIMA da linha local, então sem o default o
+ * agrupamento de hoje sobreviveria à restauração de um backup que não o tem —
+ * inclusive no modo "substituir", que promete deixar só o arquivo.
+ */
+const RESTORE_DEFAULTS: Partial<Record<SyncEntity, Record<string, unknown>>> = {
+  template_items: { supersetGroup: null },
+}
+
 export async function restoreBackup(
   backup: BackupDocument,
   ownerId: string,
@@ -46,7 +57,7 @@ export async function restoreBackup(
   for (const entity of BACKUP_ENTITIES) {
     for (const source of backup.entities[entity] ?? []) {
       const id = entity === 'user_settings' && currentSettings ? currentSettings.id : String(source.id)
-      await mutate(entity, { ...source, id, ownerId, deletedAt: null })
+      await mutate(entity, { ...RESTORE_DEFAULTS[entity], ...source, id, ownerId, deletedAt: null })
       rows += 1
     }
   }
