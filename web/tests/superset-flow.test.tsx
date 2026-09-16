@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../src/lib/i18n'
 
@@ -9,6 +9,7 @@ vi.mock('../src/lib/auth.js', () => ({ useAuth: () => ({ user: { id: OWNER } }) 
 
 const { localDb } = await import('../src/lib/db.js')
 const { SessionSupersetFlow } = await import('../src/components/SessionSupersetFlow.js')
+const { SessionExerciseChecklist } = await import('../src/components/SessionExerciseChecklist.js')
 
 const base = { ownerId: OWNER, updatedAt: '2026-09-01T00:00:00.000Z', deletedAt: null }
 const itemBase = {
@@ -18,9 +19,10 @@ const itemBase = {
 }
 const supino = { ...itemBase, id: 'item-a', exerciseId: 'supino', sets: 2 }
 const remada = { ...itemBase, id: 'item-b', exerciseId: 'remada', position: 1, sets: 2 }
+const agacho = { ...itemBase, id: 'item-c', exerciseId: 'agacho', position: 2, sets: 2, supersetGroup: null }
 
 async function seed() {
-  for (const [id, name] of [['supino', 'Supino reto'], ['remada', 'Remada curvada']]) {
+  for (const [id, name] of [['supino', 'Supino reto'], ['remada', 'Remada curvada'], ['agacho', 'Agachamento']]) {
     await localDb.table_('exercises').put({
       ...base, id, name, cues: [], equipmentId: null, catalogExerciseId: null, loadPerSide: false,
     } as never)
@@ -122,5 +124,30 @@ describe('bi-set ao vivo', () => {
     const logs = await localDb.table_('set_logs').toArray()
     expect(logs.every((log: never) => (log as { skipped: boolean; templateItemId: string }).skipped
       && (log as { templateItemId: string }).templateItemId === 'item-b')).toBe(true)
+  })
+})
+
+describe('bi-set na lista de exercícios', () => {
+  const renderList = async (logs: unknown[] = []) => {
+    render(<SessionExerciseChecklist sessionId="hoje" items={[supino, remada, agacho]} logs={logs as never} onSelect={vi.fn()} />)
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)) })
+  }
+
+  it('os membros do grupo ficam juntos, sob o rótulo do bloco', async () => {
+    await renderList()
+
+    const block = screen.getByText('Bi-set').closest('li')!
+    expect(within(block).getByText('Supino reto')).toBeInTheDocument()
+    expect(within(block).getByText('Remada curvada')).toBeInTheDocument()
+    expect(within(block).queryByText('Agachamento')).not.toBeInTheDocument()
+  })
+
+  it('membro pulado vai para a sua seção sem perder o rótulo do bloco', async () => {
+    await renderList(skippedLogs('item-b', 2))
+
+    const labels = screen.getAllByText('Bi-set')
+    expect(labels).toHaveLength(2)
+    expect(within(labels[0]!.closest('li')!).getByText('Supino reto')).toBeInTheDocument()
+    expect(within(labels[1]!.closest('li')!).getByText('Remada curvada')).toBeInTheDocument()
   })
 })
