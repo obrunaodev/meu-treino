@@ -79,6 +79,29 @@ describe('personal backup', () => {
     expect(() => parseBackup('{broken')).toThrow('backup_invalid_json')
   })
 
+  it('arquivo anterior a uma tabela nova continua restaurando', async () => {
+    const gym = await mutate('gyms', { ownerId: SOURCE, name: 'Academia', isActive: true })
+    const exported = await buildBackup()
+    const raw = JSON.parse(await readBlob(exported.blob))
+    // Como um arquivo escrito antes de a entidade existir: a lista some.
+    delete raw.entities.test_results
+    await localDb.delete()
+    await localDb.open()
+
+    const summary = await restoreBackup(parseBackup(JSON.stringify(raw)), TARGET, 'merge')
+
+    expect(summary.rows).toBeGreaterThan(0)
+    expect(await localDb.table_('gyms').get(gym.id)).toMatchObject({ name: 'Academia', ownerId: TARGET })
+  })
+
+  it('lista presente com outra coisa dentro ainda é arquivo corrompido', async () => {
+    const exported = await buildBackup()
+    const raw = JSON.parse(await readBlob(exported.blob))
+    raw.entities.test_results = 'nao-e-lista'
+
+    expect(() => parseBackup(JSON.stringify(raw))).toThrow('backup_invalid_format')
+  })
+
   it('restaurar um backup anterior ao bi-set desfaz o grupo de hoje', async () => {
     const item = await mutate('template_items', {
       ownerId: SOURCE, templateId: 't', exerciseId: 'e', position: 0, sets: 3,
