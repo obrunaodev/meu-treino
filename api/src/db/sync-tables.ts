@@ -32,6 +32,8 @@ export const SYNC_TABLES = {
   pain_events: { table: s.painEvents, mergeStrategy: 'append-only' },
   functional_tests: { table: s.functionalTests, mergeStrategy: 'field-merge' },
   test_results: { table: s.testResults, mergeStrategy: 'append-only' },
+  // field-merge, não append-only: a tela corrige uma medida digitada errado.
+  body_measurements: { table: s.bodyMeasurements, mergeStrategy: 'field-merge' },
   user_settings: { table: s.userSettings, mergeStrategy: 'lww' },
 } as const
 

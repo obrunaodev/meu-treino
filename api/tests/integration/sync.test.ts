@@ -64,12 +64,14 @@ suite('sync ponta a ponta', () => {
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
     await pool.query('delete from template_items where owner_id=$1', [ownerId])
+    await pool.query('delete from body_measurements where owner_id=$1', [ownerId])
   })
 
   afterAll(async () => {
     await pool.query('delete from equipment where owner_id=$1', [ownerId])
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
     await pool.query('delete from template_items where owner_id=$1', [ownerId])
+    await pool.query('delete from body_measurements where owner_id=$1', [ownerId])
     await pool.query("delete from users where google_sub='vitest-e2e'")
     await pool.end()
   })
@@ -171,6 +173,37 @@ suite('sync ponta a ponta', () => {
 
     const { rows } = await pool.query('select sets, superset_group from template_items where id=$1', [ITEM])
     expect(rows[0]).toMatchObject({ sets: 4, superset_group: GROUP })
+  })
+
+  it('a medida corporal vai e volta no mesmo dia, e a correção se aplica', async () => {
+    const MEDIDA = '1a1a1a1a-1a1a-7a1a-8a1a-1a1a1a1a1a1a'
+    // Pesagem da manhã: o dia é o que o usuário viu, não o instante em UTC.
+    const criada = {
+      id: MEDIDA, kind: 'peso', side: 'ambos', value: 82.4,
+      measuredOn: '2026-09-15', note: null, updatedAt: new Date().toISOString(),
+    }
+    const criou = await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{ opId: '00000000-0000-7000-8000-0000000000fa', entity: 'body_measurements', entityId: MEDIDA, op: 'upsert', base: null, data: criada }],
+    })
+    expect(criou.results[0]?.status).toBe('created')
+
+    const corrigiu = await sync({
+      deviceId: DEVICE_B, cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000fb', entity: 'body_measurements', entityId: MEDIDA, op: 'upsert',
+        base: criada, data: { ...criada, value: 82.9, updatedAt: new Date().toISOString() },
+      }],
+    })
+    expect(corrigiu.results[0]?.status).toBe('applied')
+    expect(corrigiu.pendingConflicts).toBe(0)
+
+    const volta = await sync({ deviceId: DEVICE_A, cursors: {}, operations: [] })
+    const linha = volta.changes.body_measurements?.find((row) => row.id === MEDIDA)
+    // A data não pode virar timestamp: seria o dia anterior a oeste de Greenwich.
+    expect(linha?.measuredOn).toBe('2026-09-15')
+    expect(linha?.value).toBe(82.9)
+    expect(typeof linha?.value).toBe('number')
   })
 
   it('recusa criar mídia pelo sync, mesmo apontando para objeto alheio', async () => {
