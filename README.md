@@ -36,6 +36,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - Programs can run continuously or follow selected weekdays.
 - Workout templates can be created, renamed, reordered, edited, and removed.
 - Each template configures exercise order, target sets, repetition range or timed duration, target effort, rest interval, tracking mode, and optional cardio.
+- Neighbouring exercises can be linked into a superset of up to three. A group is a run of adjacent items sharing one key, so it is derived from order rather than stored as a separate entity: reordering apart splits the group and reordering back restores it, and no invalid state can exist. The key of a new group is the id of its first member, so two offline devices creating the same superset write the same value.
 - Cardio is selected from the equipment configured for the user's gym instead of entered as unrestricted text.
 - Progression remains manual. The live overview recommends increasing load after reaching the top of the repetition range at moderate effort, progressing repetitions below the ceiling, or reducing after maximal or repeatedly heavy effort. Timed exercises get the same guidance measured in seconds; at the top of the range the suggestion is to raise the target duration in the workout.
 - When a block closes heavy — at least half of its rated working sets harder than their own effort target, or pain of level 4 or higher in two of its sessions — the dashboard suggests a lighter week and shows the numbers behind it. The block report always shows that reading. Nothing is applied automatically, and the suggestion can be dismissed per block.
@@ -51,6 +52,7 @@ The interface supports Brazilian Portuguese and American English. Brazilian Port
 - The screen stays awake while an open session is displayed, where the browser supports the Screen Wake Lock API.
 - A checked set that beats every earlier session is flagged as a record: top load, estimated 1RM (Epley, up to 12 repetitions), most repetitions at a load, longest time, or session volume. Records are derived from history on read and never stored, so editing an old session updates them.
 - Completing the final set returns to the exercise overview. Cardio starts only after an explicit action.
+- A superset runs as one block, opened from any of its members. Sets are listed by round rather than by exercise — A1, B1, A2, B2 — and rest sits between rounds, using the last member's interval. The next-set pointer alternates the same way. Skipping one member drops it from later rounds and leaves the block running; the block is finished in one action and records every remaining member at once.
 - The live overview does not repeat recorded-set details; those remain available in session history.
 - Leaving an exercise before completion marks it as skipped. It remains available to reopen and does not count as completed unless values are later recorded.
 - Warm-up sets are recorded with `is_warmup` and excluded from volume and progress statistics.
@@ -497,6 +499,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 ## Known limitations
 
 - Knee and hip pain substitutions require catalog and clinical curation before all source relationships can be enabled.
+- Supersets are grouped in the editor and executed in the live session. Session history, reports, the CSV export, and the WhatsApp bot still present grouped exercises one by one.
 - Push reminders require a weekly schedule, VAPID keys, and browser permission. iOS requires an installed Home Screen PWA.
 - Reminder scheduling uses the installation-wide `REMINDER_TIMEZONE`, not a per-user timezone.
 - WhatsApp depends on an unofficial protocol implementation and can be disrupted by upstream changes.
