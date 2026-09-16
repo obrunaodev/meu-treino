@@ -4,9 +4,10 @@ import type { WorkoutReview } from './workout-history.js'
 import type { WeeklySession } from './weekly-history.js'
 import { rirLabelPt } from './rir.js'
 import type { RecordKind } from './records.js'
+import { planBlocks, supersetHeading } from './supersets.js'
 
 export function workoutMessage(workout: WorkoutPlan, options: { includeLinks?: boolean } = {}) {
-  const list = workout.items.map((item, index) => {
+  const line = (item: WorkoutItem, index: number) => {
     const reps = item.repMin === item.repMax ? item.repMin : `${item.repMin ?? '—'}–${item.repMax ?? '—'}`
     const side = item.loadPerSide ? '/lado' : ''
     const load = item.previousWeightKg === null
@@ -14,6 +15,13 @@ export function workoutMessage(workout: WorkoutPlan, options: { includeLinks?: b
       : `Carga: ${Number(item.previousWeightKg.toFixed(1))} kg${side}`
     const video = options.includeLinks && item.videoUrl ? `\n   Link: ${item.videoUrl}` : ''
     return `${index + 1}. *${item.name}* · ${item.sets}×${reps} · ${rirLabelPt(item.rirTarget)} · ${load}${video}`
+  }
+  // A numeração é a do treino inteiro, porque é por ela que o registro entra;
+  // o cabeçalho do grupo só diz quais números andam alternados.
+  const list = planBlocks(workout.items).map((block) => {
+    const lines = block.items.map((item) => line(item, workout.items.indexOf(item)))
+    const heading = supersetHeading(block.items.length)
+    return heading === null ? lines.join('\n\n') : [heading, ...lines].join('\n')
   }).join('\n\n')
   return `🏋️ *${workout.templateName.toUpperCase()}*\n\n${list}\n\n_Responda: exercício peso séries×reps esforço_\nEx.: \`1 100kg 3x15 moderado\`\nPular: \`/skip 1\``
 }

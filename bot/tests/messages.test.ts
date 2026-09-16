@@ -139,6 +139,20 @@ describe('workoutMessage', () => {
     expect(message).not.toContain('Para iniciar')
   })
 
+  it('o bi-set ganha cabeçalho e mantém a numeração do treino', () => {
+    const message = workoutMessage(workout([
+      item({ id: 'a', name: 'Supino', supersetGroup: 'g1' }),
+      item({ id: 'b', name: 'Remada', supersetGroup: 'g1' }),
+      item({ id: 'c', name: 'Agachamento' }),
+    ]))
+
+    expect(message).toContain('🔗 *Bi-set — alterne as séries*\n1. *Supino*')
+    expect(message).toMatch(/1\. \*Supino\*[^\n]*\n2\. \*Remada\*/)
+    expect(message).toContain('3. *Agachamento*')
+    // O terceiro está fora do grupo, então não pode herdar o cabeçalho.
+    expect(message.match(/🔗/g)).toHaveLength(1)
+  })
+
   it('marca carga por lado e não inventa carga sem histórico', () => {
     const message = workoutMessage(workout([
       item({ previousWeightKg: 40, loadPerSide: true }),
