@@ -127,6 +127,13 @@
       "when": 1789516074855,
       "tag": "0017_daily_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789519732971,
+      "tag": "0018_third_chimera",
+      "breakpoints": true
     }
   ]
 }

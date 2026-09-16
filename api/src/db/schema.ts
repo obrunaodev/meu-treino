@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
-  bigint, boolean, index, integer, jsonb, numeric, pgTable, primaryKey,
+  bigint, boolean, date, index, integer, jsonb, numeric, pgTable, primaryKey,
   smallint, text, timestamp, unique, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -481,6 +481,26 @@ export const testResults = pgTable('test_results', {
   measuredAt: timestamp('measured_at', { withTimezone: true }).notNull(),
   note: text('note'),
 }, (t) => [index('test_results_owner_rev_idx').on(t.ownerId, t.rev)])
+
+/**
+ * Uma linha por medida: peso, gordura ou circunferência de um dia.
+ *
+ * Uma linha por medida, e não uma linha por dia com uma coluna por local:
+ * assim acrescentar um local é dado, não migração. `measured_on` é DATE, não
+ * timestamp — a pesagem da manhã não pode escorregar para o dia anterior ao
+ * cruzar fuso. Sem índice único em (dia, tipo, lado): duas medidas offline do
+ * mesmo dia entram as duas e a leitura resolve, em vez de o segundo aparelho
+ * perder a dele em silêncio.
+ */
+export const bodyMeasurements = pgTable('body_measurements', {
+  ...syncCols,
+  kind: text('kind').notNull(),
+  side: text('side').notNull().default('ambos'),
+  /** Sempre na unidade canônica: kg para peso, cm para comprimento, % para gordura. */
+  value: numeric('value', { precision: 8, scale: 2 }).notNull(),
+  measuredOn: date('measured_on', { mode: 'string' }).notNull(),
+  note: text('note'),
+}, (t) => [index('body_measurements_owner_rev_idx').on(t.ownerId, t.rev)])
 
 export const userSettings = pgTable('user_settings', {
   ...syncCols,
