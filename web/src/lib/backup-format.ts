@@ -54,6 +54,11 @@ export function parseBackup(raw: string, byteLength = new Blob([raw]).size): Bac
   const entities: BackupDocument['entities'] = {}
   for (const entity of BACKUP_ENTITIES) {
     const rows = value.entities[entity]
+    // Entidade ausente é um arquivo escrito antes dela existir, e isso não
+    // invalida o backup: exigir todas as listas faria cada tabela nova
+    // aposentar todos os arquivos já salvos. Lista presente com outra coisa
+    // dentro continua sendo arquivo corrompido.
+    if (rows === undefined) continue
     if (!Array.isArray(rows)) throw new Error('backup_invalid_format')
     entities[entity] = rows.map(validateRow)
   }
