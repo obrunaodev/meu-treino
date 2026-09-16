@@ -5,6 +5,7 @@ import { useActions } from '../lib/actions.js'
 import { formatLoad, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
 import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
 import { exerciseExecutionStatus, initialSetDraft, prefillSource, restCommandForToggle, type SetDraft } from '../lib/domain/session.js'
+import { planBlocks, supersetKind } from '../lib/domain/supersets.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import { progressionAction, progressionMessageKey } from '../lib/domain/progression.js'
@@ -39,43 +40,56 @@ export function SessionExerciseChecklist({ sessionId, items, logs, onSelect }: {
     { key: 'done', items: items.filter((item) => statusOf(item) === 'done') },
   ] as const
 
+  function row(item: SessionChecklistItem) {
+    const index = items.indexOf(item)
+    const exercise = exercises.find((entry) => entry.id === item.exerciseId)
+    const current = currentByItem.get(item.id) ?? []
+    const source = session ? prefillSource(session, sessions, allLogs, item.exerciseId) : null
+    const today = current.find((log) => !log.skipped) ?? null
+    // Conselho e esforço só do mesmo treino: a regra compara com a faixa deste item.
+    const sameWorkout = source?.origin === 'template' ? source : null
+    const representative = today ?? source?.sets.at(-1) ?? null
+    const metric = item.isTimeBased ? 'seconds' : 'reps'
+    const recommendation = current.length === 0 && sameWorkout
+      ? progressionAction(sameWorkout.sets, sameWorkout.earlierSets, item.repMax, metric)
+      : null
+    const snapshot = 'exerciseName' in item ? item : null
+    const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
+    const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
+    const span = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
+    const range = item.isTimeBased ? `${span}s` : span
+    const effort = (today ?? sameWorkout?.sets.at(-1))?.rir ?? item.rirTarget
+    const status = statusOf(item)
+    return <li className={`session-exercise session-exercise--${status}`} key={item.id}>
+      <button type="button" className="session-exercise__overview" onClick={() => onSelect(item.id)}>
+        <span className="session-exercise__number mono">{String(index + 1).padStart(2, '0')}</span>
+        <span className="session-exercise__copy">
+          <strong>{snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')}</strong>
+          <small>{item.sets} × {range} · {effort === null ? '—' : t(rirLabelKey(effort)!)}</small>
+          <small>{t('session.expected_load')}: {formatLoad(representative?.weightKg ?? null, representative?.plateCount ?? null, settings?.unit ?? 'kg', settings?.showPlates ?? true, perSide ? t('session.per_side_short') : null)}{gear?.name ? ` · ${gear.name}` : ''}</small>
+          {recommendation && sameWorkout && <small className={`progression-hint progression-hint--${recommendation}`}>
+            {t(progressionMessageKey(recommendation, metric, sameWorkout.sets))}
+          </small>}
+          {current.length === 0 && source?.origin === 'other_workout' && <small><PrefillOrigin session={source.session} /></small>}
+        </span>
+        <span className="session-exercise__state">{status === 'done' ? '✓' : status === 'skipped' ? t('session.skipped') : t('session.open_exercise')}</span>
+      </button>
+    </li>
+  }
+
+  const blocks = planBlocks(items)
   return <section className="session-checklist" aria-label={t('session.exercise_list')}>
     {sections.map((section) => section.items.length > 0 && <div className="session-checklist__group" key={section.key}>
       <header className="session-checklist__head"><h2>{t(`session.${section.key}_exercises`)}</h2><span className="badge">{section.items.length}</span></header>
-      <ol className="session-checklist__list">{section.items.map((item) => {
-        const index = items.indexOf(item)
-        const exercise = exercises.find((entry) => entry.id === item.exerciseId)
-        const current = currentByItem.get(item.id) ?? []
-        const source = session ? prefillSource(session, sessions, allLogs, item.exerciseId) : null
-        const today = current.find((log) => !log.skipped) ?? null
-        // Conselho e esforço só do mesmo treino: a regra compara com a faixa deste item.
-        const sameWorkout = source?.origin === 'template' ? source : null
-        const representative = today ?? source?.sets.at(-1) ?? null
-        const metric = item.isTimeBased ? 'seconds' : 'reps'
-        const recommendation = current.length === 0 && sameWorkout
-          ? progressionAction(sameWorkout.sets, sameWorkout.earlierSets, item.repMax, metric)
-          : null
-        const snapshot = 'exerciseName' in item ? item : null
-        const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
-        const perSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
-        const span = item.repMin === item.repMax || item.repMax === null ? `${item.repMin ?? '—'}` : `${item.repMin ?? 0}–${item.repMax}`
-        const range = item.isTimeBased ? `${span}s` : span
-        const effort = (today ?? sameWorkout?.sets.at(-1))?.rir ?? item.rirTarget
-        const status = statusOf(item)
-        return <li className={`session-exercise session-exercise--${status}`} key={item.id}>
-          <button type="button" className="session-exercise__overview" onClick={() => onSelect(item.id)}>
-            <span className="session-exercise__number mono">{String(index + 1).padStart(2, '0')}</span>
-            <span className="session-exercise__copy">
-              <strong>{snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')}</strong>
-              <small>{item.sets} × {range} · {effort === null ? '—' : t(rirLabelKey(effort)!)}</small>
-              <small>{t('session.expected_load')}: {formatLoad(representative?.weightKg ?? null, representative?.plateCount ?? null, settings?.unit ?? 'kg', settings?.showPlates ?? true, perSide ? t('session.per_side_short') : null)}{gear?.name ? ` · ${gear.name}` : ''}</small>
-              {recommendation && sameWorkout && <small className={`progression-hint progression-hint--${recommendation}`}>
-                {t(progressionMessageKey(recommendation, metric, sameWorkout.sets))}
-              </small>}
-              {current.length === 0 && source?.origin === 'other_workout' && <small><PrefillOrigin session={source.session} /></small>}
-            </span>
-            <span className="session-exercise__state">{status === 'done' ? '✓' : status === 'skipped' ? t('session.skipped') : t('session.open_exercise')}</span>
-          </button>
+      <ol className="session-checklist__list">{blocks.map((block) => {
+        // Os blocos saem do plano inteiro, não da seção: um bi-set com um
+        // membro pulado e outro pendente aparece nas duas, sempre rotulado.
+        const members = block.items.filter((item) => section.items.includes(item))
+        if (members.length === 0) return null
+        if (block.items.length === 1) return row(members[0]!)
+        return <li className="session-checklist__block" key={block.key}>
+          <span className="eyebrow">{t(`session.superset_${supersetKind(block.items.length)}`)}</span>
+          <ol className="session-checklist__list">{members.map(row)}</ol>
         </li>
       })}</ol>
     </div>)}
