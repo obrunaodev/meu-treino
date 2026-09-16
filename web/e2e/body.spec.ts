@@ -43,6 +43,11 @@ test('registra uma medida e a encontra depois de recarregar', async ({ page }) =
   await page.getByLabel(/^valor \(cm\)/i).fill('58')
   await page.getByRole('button', { name: /salvar/i }).click()
 
+  // Esperar a linha aparecer antes de recarregar: o reload no meio da
+  // gravação cancelaria a transação do IndexedDB, e o teste ficaria instável.
+  await page.getByRole('button', { name: /^coxa/i }).click()
+  await expect(page.locator('.loglist__row')).toContainText('58 cm')
+
   await page.reload()
   await expect(page.locator('.loglist__row')).toContainText('82.4 kg')
   await page.getByRole('button', { name: /^coxa/i }).click()
