@@ -499,7 +499,7 @@ Read `docs/design-system.md` before UI changes. Intentional visual-language chan
 ## Known limitations
 
 - Knee and hip pain substitutions require catalog and clinical curation before all source relationships can be enabled.
-- Supersets are grouped in the editor and executed in the live session. Session history, reports, the CSV export, and the WhatsApp bot still present grouped exercises one by one.
+- Supersets are grouped in the editor, executed in the live session, labelled in session history and the set-log CSV, and headed in the WhatsApp workout listing. Cycle and block reports still aggregate grouped exercises one by one, because an exercise there spans sessions that may have been grouped differently.
 - Push reminders require a weekly schedule, VAPID keys, and browser permission. iOS requires an installed Home Screen PWA.
 - Reminder scheduling uses the installation-wide `REMINDER_TIMEZONE`, not a per-user timezone.
 - WhatsApp depends on an unofficial protocol implementation and can be disrupted by upstream changes.

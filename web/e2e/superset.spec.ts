@@ -37,13 +37,15 @@ test('monta um bi-set no treino e executa as rodadas alternadas', async ({ page 
   await expect(page.locator('.checkitem').first()).toBeVisible({ timeout: 15_000 })
   await page.locator('.checkitem').nth(0).click()
   await page.getByRole('button', { name: /importar do catálogo/i }).click()
-  await page.locator('.checkitem').nth(0).click()
+  await page.locator('.checkitem').nth(1).click()
   await expect(page.locator('.tile')).toHaveCount(2)
 
   await page.getByRole('link', { name: /gerenciar treinos/i }).first().click()
-  for (const _ of [0, 1]) {
+  // Dois exercícios diferentes: um bi-set do mesmo exercício consigo mesmo
+  // passaria pelas mesmas telas sem provar que o grupo separa os membros.
+  for (const position of [0, 1]) {
     await page.getByRole('button', { name: /adicionar exercício/i }).click()
-    await page.locator('.checkitem').first().click()
+    await page.locator('.checkitem').nth(position).click()
   }
   await expect(page.locator('.item')).toHaveCount(2)
 
@@ -72,4 +74,11 @@ test('monta um bi-set no treino e executa as rodadas alternadas', async ({ page 
   // Os dois membros fecham juntos: a visão geral volta sem nenhum pendente.
   await expect(page.getByRole('heading', { name: /concluíd/i })).toBeVisible()
   await expect(page.locator('.session-exercise--done')).toHaveCount(2)
+
+  // No histórico o bloco continua identificável, a partir do plano capturado.
+  await page.getByRole('link', { name: /histórico de treinos/i }).first().click()
+  await page.locator('.history-sessions a').first().click()
+  await expect(page.locator('.report-exercises .badge', { hasText: 'Bi-set 1' })).toHaveCount(2)
+  await page.getByRole('link', { name: /corrigir|editar/i }).first().click()
+  await expect(page.locator('.setgroup .badge', { hasText: 'Bi-set 1' })).toHaveCount(2)
 })
