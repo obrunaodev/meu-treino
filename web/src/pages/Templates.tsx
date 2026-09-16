@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { v7 as uuidv7 } from 'uuid'
 import { Link } from 'react-router-dom'
 import {
   useActiveProgram, useCardioOptions, useExercises, useSessions, useTemplateItems, useTemplates,
@@ -10,6 +11,13 @@ import { Card, Empty, Select, Stepper } from '../components/ui.js'
 import { RirSelector } from '../components/RirSelector.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
 import type { Program, Template, TemplateItem } from '../lib/types.js'
+import {
+  leaveSupersetChange, linkWithNextPatches, moveBlock, moveWithinGroup, planBlocks, supersetKind,
+  ungroupPatches, type ItemPatch,
+} from '../lib/domain/supersets.js'
+
+/** Chave de mentira só para perguntar se dá para unir; a de verdade só sai no clique. */
+const PROBE_KEY = 'probe'
 
 export function Templates() {
   const { t } = useTranslation()
@@ -246,14 +254,21 @@ function TemplateEditor({ templateId }: { templateId: string }) {
 
   const byId = new Map(exercises.map((e) => [e.id, e]))
 
-  async function move(index: number, direction: -1 | 1) {
-    const target = index + direction
-    if (target < 0 || target >= items.length) return
-    const ids = items.map((i) => i.id)
-    const moved = ids[index]!
-    ids[index] = ids[target]!
-    ids[target] = moved
-    await reorderTemplateItems(ids)
+  const blocks = planBlocks(items)
+
+  async function reorder(order: string[] | null) {
+    if (order) await reorderTemplateItems(order)
+  }
+
+  async function regroup(patches: ItemPatch[]) {
+    for (const patch of patches) await saveTemplateItem({ id: patch.id, supersetGroup: patch.supersetGroup })
+  }
+
+  async function leaveGroup(itemId: string) {
+    const change = leaveSupersetChange(items, itemId)
+    if (!change) return
+    await regroup(change.patches)
+    await reorder(change.order)
   }
 
   return (
@@ -302,30 +317,58 @@ function TemplateEditor({ templateId }: { templateId: string }) {
         <p className="muted">{t('session.empty_template')}</p>
       ) : (
         <ol className="items">
-          {items.map((item, index) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              name={byId.get(item.exerciseId)?.name ?? '—'}
-              first={index === 0}
-              last={index === items.length - 1}
-              onMove={(direction) => void move(index, direction)}
-              onSave={(patch) => void saveTemplateItem({ ...patch, id: item.id })}
-              onRemove={() => void removeTemplateItem(item.id)}
-            />
-          ))}
+          {blocks.map((block, blockIndex) => {
+            const grouped = block.items.length > 1
+            const rows = block.items.map((item, position) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                name={byId.get(item.exerciseId)?.name ?? '—'}
+                first={grouped ? position === 0 : blockIndex === 0}
+                last={grouped ? position === block.items.length - 1 : blockIndex === blocks.length - 1}
+                onMove={(direction) => void reorder(grouped
+                  ? moveWithinGroup(items, item.id, direction)
+                  : moveBlock(items, blockIndex, direction))}
+                onGroup={linkWithNextPatches(items, item.id, PROBE_KEY).length === 0
+                  ? null
+                  : () => void regroup(linkWithNextPatches(items, item.id, uuidv7()))}
+                onLeaveGroup={grouped ? () => void leaveGroup(item.id) : null}
+                onSave={(patch) => void saveTemplateItem({ ...patch, id: item.id })}
+                onRemove={() => void removeTemplateItem(item.id)}
+              />
+            ))
+            if (!grouped) return rows
+            return (
+              <li className="item-block" key={block.key}>
+                <div className="item-block__head">
+                  <span className="eyebrow">{t(`session.superset_${supersetKind(block.items.length)}`)}</span>
+                  <div className="item__move">
+                    <button type="button" onClick={() => void reorder(moveBlock(items, blockIndex, -1))} disabled={blockIndex === 0} aria-label={t('templates.move_block_up')}>↑</button>
+                    <button type="button" onClick={() => void reorder(moveBlock(items, blockIndex, 1))} disabled={blockIndex === blocks.length - 1} aria-label={t('templates.move_block_down')}>↓</button>
+                  </div>
+                  <button type="button" className="button button--ghost" onClick={() => void regroup(ungroupPatches(block))}>
+                    {t('templates.ungroup')}
+                  </button>
+                </div>
+                <ol className="items">{rows}</ol>
+              </li>
+            )
+          })}
         </ol>
       )}
     </Card>
   )
 }
 
-function ItemRow({ item, name, first, last, onMove, onSave, onRemove }: {
+function ItemRow({ item, name, first, last, onMove, onGroup, onLeaveGroup, onSave, onRemove }: {
   item: TemplateItem
   name: string
   first: boolean
   last: boolean
   onMove: (direction: -1 | 1) => void
+  /** Unir ao exercício seguinte; null quando não há seguinte ou o grupo estouraria. */
+  onGroup: (() => void) | null
+  onLeaveGroup: (() => void) | null
   onSave: (patch: Partial<TemplateItem>) => void
   onRemove: () => void
 }) {
@@ -397,6 +440,12 @@ function ItemRow({ item, name, first, last, onMove, onSave, onRemove }: {
             <option value="compact">{t('templates.tracking_compact')}</option>
             <option value="full">{t('templates.tracking_full')}</option>
           </Select>
+          {onGroup && <button type="button" className="button button--quiet" onClick={onGroup}>
+            {t('templates.link_next')}
+          </button>}
+          {onLeaveGroup && <button type="button" className="button button--quiet" onClick={onLeaveGroup}>
+            {t('templates.leave_group')}
+          </button>}
           <button type="button" className="button button--ghost" onClick={onRemove}>
             {t('templates.remove')}
           </button>
