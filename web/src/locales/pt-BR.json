@@ -49,7 +49,8 @@
       "resources": "Recursos",
       "system": "Sistema",
       "admin": "Administração"
-    }
+    },
+    "body": "Corpo"
   },
   "pages": {
     "dashboard": "Acompanhe sua semana, evolução, ciclo, volume e sinais de dor.",
@@ -61,7 +62,8 @@
     "tests": "Registre avaliações periódicas para acompanhar capacidade, mobilidade e desempenho.",
     "pain": "Acompanhe desconfortos registrados e identifique regiões que exigem atenção.",
     "settings": "Ajuste preferências, integrações, lembretes e dados da sua conta.",
-    "more": "Acesse recursos complementares e configurações do aplicativo."
+    "more": "Acesse recursos complementares e configurações do aplicativo.",
+    "body": "Acompanhe peso, gordura e circunferências ao longo do tempo."
   },
   "sync": {
     "offline": "Offline — as alterações sobem quando a rede voltar",
@@ -615,6 +617,27 @@
     "occurrences_other": "{{count}} registros",
     "worst": "pior: {{level}}",
     "affected": "Exercícios contraindicados para esta região"
+  },
+  "body": {
+    "title": "Corpo",
+    "record": "Registrar medida",
+    "kind": "Medida",
+    "value": "Valor",
+    "day": "Dia",
+    "no_data": "Nenhuma medida registrada ainda.",
+    "remove_measurement": "Apagar a medida de {{day}}",
+    "kinds": {
+      "peso": "Peso",
+      "gordura": "Gordura corporal",
+      "pescoco": "Pescoço",
+      "peito": "Peito",
+      "cintura": "Cintura",
+      "quadril": "Quadril",
+      "braco": "Braço",
+      "antebraco": "Antebraço",
+      "coxa": "Coxa",
+      "panturrilha": "Panturrilha"
+    }
   },
   "tests": {
     "title": "Testes Funcionais",

@@ -20,6 +20,7 @@ const GROUPS = [
     { to: routes.equipment, key: 'academy' },
     { to: routes.functionalTests, key: 'tests' },
     { to: routes.pain, key: 'pain' },
+    { to: routes.body, key: 'body' },
   ] },
   { key: 'system', links: [
     { to: routes.settings, key: 'settings' },
