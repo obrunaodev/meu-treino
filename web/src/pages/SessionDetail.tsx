@@ -8,13 +8,14 @@ import {
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
+import { planBlocks, supersetKind } from '../lib/domain/supersets.js'
 import { historyEditRoute, historyRoute, routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { TrainingReportView } from '../components/TrainingReportView.js'
 import { RirSelector } from '../components/RirSelector.js'
 import { buildTrainingReport } from '../lib/domain/training-report.js'
-import type { PlanSnapshot, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
+import type { PlanSnapshot, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSession } from '../lib/types.js'
 
 const STATUSES = ['concluida', 'incompleta', 'em_andamento'] as const
 
@@ -72,7 +73,7 @@ export function SessionDetail() {
         {session.autoClosedAt && <span className="mono muted">{t('session.auto_closed')}</span>}
       </Card>
 
-      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} />
+      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} supersetLabels={supersetLabels(session.planSnapshot?.items ?? [], t)} />
 
       <Link className="session-detail__edit" to={historyEditRoute(session.id)}>{t('history.edit_session')} →</Link>
     </div>
@@ -145,6 +146,18 @@ function Datum({ label, value }: { label: string; value: string }) {
   return <div><dt>{label}</dt><dd>{value}</dd></div>
 }
 
+/**
+ * exerciseId → "Bi-set 1", a partir do plano que a sessão capturou. É o plano
+ * capturado que sabe o que era bi-set naquele dia: mudar o treino depois não
+ * pode reescrever o que a sessão mostra.
+ */
+function supersetLabels(items: PlanSnapshotItem[], t: (key: string) => string): Map<string, string> {
+  return new Map(planBlocks(items)
+    .filter((block) => block.items.length > 1)
+    .flatMap((block, index) => block.items.map((item) =>
+      [item.exerciseId, `${t(`session.superset_${supersetKind(block.items.length)}`)} ${index + 1}`] as const)))
+}
+
 function cardioSummary(logs: ReturnType<typeof useCardioLogs>, t: (key: string) => string): string {
   if (logs.length === 0) return t('history.no_cardio')
   return logs.map((entry) => [
@@ -202,6 +215,7 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
 
   const groups = groupByExercise(logs)
   const snapshotByExercise = new Map(snapshot?.items.map((item) => [item.exerciseId, item]) ?? [])
+  const groupLabels = supersetLabels(snapshot?.items ?? [], t)
   // `null` é "ninguém escolheu ainda" e abre o primeiro — a tela não pode
   // aparecer só com cabeçalhos fechados. `''` é o usuário tendo fechado todos.
   const openId = open ?? groups[0]?.exerciseId ?? null
@@ -292,6 +306,7 @@ function SetEditor({ sessionId, logs, planned, snapshot, templateName, unit, sho
                   onClick={() => setOpen(isOpen ? '' : group.exerciseId)}
                 >
                   <span className="setgroup__name">{nameOf(group.exerciseId)}</span>
+                  {groupLabels.has(group.exerciseId) && <span className="badge">{groupLabels.get(group.exerciseId)}</span>}
                   <span className="mono muted">
                     {[
                       t('history.sets', { count: group.logs.length }),

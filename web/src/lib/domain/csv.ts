@@ -26,7 +26,11 @@ export function toCsv(headers: string[], rows: CsvValue[][]): string {
 
 export const SET_LOG_HEADERS = [
   'sessao_id', 'data', 'periodo', 'bloco', 'ciclo', 'treino', 'status_sessao',
-  'exercicio', 'equipamento', 'serie', 'aquecimento', 'lado',
+  'exercicio', 'equipamento',
+  // Número do bi-set dentro do treino, vazio fora dele: é o que diz, na
+  // planilha, que duas séries foram alternadas em vez de feitas em sequência.
+  'bi_set',
+  'serie', 'aquecimento', 'lado',
   // `carga_por_lado` acompanha `carga_kg` porque o número sozinho é ambíguo
   // em máquina articulada: 40 pode ser 40 ou 80 no total.
   'carga_kg', 'carga_por_lado', 'placa', 'reps', 'segundos', 'rir', 'pulada', 'dor', 'concluida_em',

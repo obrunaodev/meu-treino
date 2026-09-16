@@ -1,5 +1,6 @@
 import { localDb } from './db.js'
 import { SET_LOG_HEADERS, csvBlob, toCsv } from './domain/csv.js'
+import { planBlocks } from './domain/supersets.js'
 import type {
   Equipment, Exercise, SetLog, Template, WorkoutSession,
 } from './types.js'
@@ -25,6 +26,19 @@ export async function buildSetLogCsv(): Promise<Blob> {
   const exerciseById = new Map(exercises.map((e) => [e.id, e]))
   const equipmentById = new Map(equipment.map((e) => [e.id, e]))
   const templateById = new Map(templates.map((t) => [t.id, t]))
+  // Um plano por sessão, calculado uma vez: o export percorre todas as séries.
+  const groupsBySession = new Map<string, Map<string, number>>()
+  const supersetNumber = (session: WorkoutSession | undefined, itemId: string | null) => {
+    if (!session?.planSnapshot || !itemId) return ''
+    let groups = groupsBySession.get(session.id)
+    if (!groups) {
+      groups = new Map(planBlocks(session.planSnapshot.items)
+        .filter((block) => block.items.length > 1)
+        .flatMap((block, index) => block.items.map((item) => [item.id, index + 1] as const)))
+      groupsBySession.set(session.id, groups)
+    }
+    return groups.get(itemId) ?? ''
+  }
 
   const rows = sets
     .filter((set) => !set.deletedAt)
@@ -49,6 +63,7 @@ export async function buildSetLogCsv(): Promise<Blob> {
         session?.status ?? '',
         snapshotItem?.exerciseName ?? exercise?.name ?? '',
         gear?.name ?? '',
+        supersetNumber(session, set.templateItemId),
         set.setIndex + 1,
         set.isWarmup ? 'sim' : 'nao',
         set.side,

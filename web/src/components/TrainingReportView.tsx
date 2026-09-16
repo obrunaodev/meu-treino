@@ -9,7 +9,17 @@ import type { RecordKind } from '../lib/domain/records.js'
 import { RecordFlag } from './RecordFlag.js'
 
 /** Resumo numérico e detalhamento por exercício compartilhado pelos três relatórios. */
-export function TrainingReportView({ report, unit }: { report: TrainingReport; unit: Unit }) {
+/**
+ * `supersetLabels` só chega no relatório de uma sessão: lá o plano capturado
+ * diz o que era bi-set naquele dia. No relatório de bloco o mesmo exercício
+ * atravessa sessões que podem ter sido agrupadas de formas diferentes, e um
+ * rótulo só seria uma meia-verdade.
+ */
+export function TrainingReportView({ report, unit, supersetLabels }: {
+  report: TrainingReport
+  unit: Unit
+  supersetLabels?: Map<string, string>
+}) {
   const { i18n } = useTranslation()
   const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 })
   const load = (kg: number) => `${number.format(unit === 'lb' ? kgToLb(kg) : kg)} ${unit}`
@@ -18,7 +28,7 @@ export function TrainingReportView({ report, unit }: { report: TrainingReport; u
   return (
     <div className="report">
       <ReportSummary report={report} number={number} volume={volume} />
-      <ExerciseBreakdown report={report} number={number} load={load} volume={volume} />
+      <ExerciseBreakdown report={report} number={number} load={load} volume={volume} supersetLabels={supersetLabels} />
     </div>
   )
 }
@@ -39,11 +49,12 @@ function ReportSummary({ report, number, volume }: {
   </div></Card>
 }
 
-function ExerciseBreakdown({ report, number, load, volume }: {
+function ExerciseBreakdown({ report, number, load, volume, supersetLabels }: {
   report: TrainingReport
   number: Intl.NumberFormat
   load: (kg: number) => string
   volume: (kg: number) => string
+  supersetLabels: Map<string, string> | undefined
 }) {
   const { t, i18n } = useTranslation()
   return <section className="report-breakdown" aria-labelledby="report-breakdown-title">
@@ -56,7 +67,10 @@ function ExerciseBreakdown({ report, number, load, volume }: {
       <ol className="report-exercises">{report.exercises.map((exercise, index) => <li key={exercise.exerciseId}>
         <div className="report-exercises__head">
           <span className="report-exercises__index mono">{String(index + 1).padStart(2, '0')}</span>
-          <div><h3><Link className="loglist__link" to={exerciseHistoryRoute(exercise.exerciseId)}>{exercise.name}</Link></h3><p className="report-exercises__target">
+          <div><h3>
+            <Link className="loglist__link" to={exerciseHistoryRoute(exercise.exerciseId)}>{exercise.name}</Link>
+            {supersetLabels?.has(exercise.exerciseId) && <span className="badge">{supersetLabels.get(exercise.exerciseId)}</span>}
+          </h3><p className="report-exercises__target">
             {exercise.targets.join(' · ') || '—'}
             {exercise.targetRir.length ? ` · ${exercise.targetRir.map((rir) => t(rirLabelKey(rir)!)).join(' / ')}` : ''}
             {exercise.equipment.length ? ` · ${exercise.equipment.join(', ')}` : ''}
