@@ -145,16 +145,26 @@ export function useTestResults(testId?: string | null) {
  * recalcula quando o banco muda.
  */
 export function useRecordBaseline(exerciseId: string, sessionId: string): RecordBaseline | undefined {
+  return useRecordBaselines([exerciseId], sessionId).get(exerciseId)
+}
+
+/** O mesmo, para os exercícios de um bi-set: uma consulta só em vez de uma por membro. */
+export function useRecordBaselines(exerciseIds: string[], sessionId: string): Map<string, RecordBaseline> {
+  const key = exerciseIds.join('|')
   return useLiveQuery(async () => {
     const [sessions, sets, exercises, equipment] = await Promise.all([
       aliveRows<WorkoutSession>('workout_sessions'), aliveRows<SetLog>('set_logs'),
       aliveRows<Exercise>('exercises'), aliveRows<Equipment>('equipment'),
     ])
     const current = sessions.find((session) => session.id === sessionId)
-    if (!current) return EMPTY_BASELINE
-    const exercise = exercises.find((entry) => entry.id === exerciseId) ?? null
-    return recordBaseline(exerciseSessionHistory(exerciseId, exercise, sessions, sets, equipment), current)
-  }, [exerciseId, sessionId])
+    // A lista sai da chave, e não do array: assim a consulta depende só do que
+    // está nas dependências, sem re-rodar a cada array novo com os mesmos ids.
+    return new Map((key ? key.split('|') : []).map((exerciseId) => {
+      if (!current) return [exerciseId, EMPTY_BASELINE]
+      const exercise = exercises.find((entry) => entry.id === exerciseId) ?? null
+      return [exerciseId, recordBaseline(exerciseSessionHistory(exerciseId, exercise, sessions, sets, equipment), current)]
+    }))
+  }, [key, sessionId]) ?? new Map()
 }
 
 export function useSettings(): UserSettings | null {

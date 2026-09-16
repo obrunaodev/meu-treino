@@ -9,9 +9,11 @@ import {
   CARDIO_SECONDS, DEFAULT_REST_SECONDS, elapsedSeconds, exerciseProgress, finalStatus, formatClock,
   nextSlot, remainingSeconds, restFor,
 } from '../lib/domain/session.js'
+import { blockRestSeconds, planBlocks } from '../lib/domain/supersets.js'
 import { clearSessionPhase, useSessionPhase } from '../lib/session-phase.js'
 import { Card, Empty, Select } from '../components/ui.js'
 import { SessionExerciseChecklist, SessionExerciseFlow } from '../components/SessionExerciseChecklist.js'
+import { SessionSupersetFlow } from '../components/SessionSupersetFlow.js'
 import { routes, sessionExerciseRoute, sessionRoute } from '../lib/routes.js'
 import { useScreenWakeLock } from '../lib/wake-lock.js'
 
@@ -63,8 +65,16 @@ export function Session() {
 
   const selectedIndex = items.findIndex((item) => item.id === itemId)
   const selectedItem = selectedIndex >= 0 ? items[selectedIndex]! : null
+  // Abrir qualquer membro de um bi-set abre o bloco inteiro: as séries dos
+  // membros se alternam, então executar um sem o outro não faria sentido.
+  const selectedBlock = selectedItem
+    ? planBlocks(items).find((block) => block.items.some((item) => item.id === selectedItem.id)) ?? null
+    : null
+  const superset = selectedBlock && selectedBlock.items.length > 1 ? selectedBlock : null
+  const defaultRest = program?.defaultRestSeconds ?? DEFAULT_REST_SECONDS
   // O descanso do item vence; sem ele, vale o padrão do programa em Configurações.
-  const selectedRest = restFor(selectedItem ?? undefined, program?.defaultRestSeconds ?? DEFAULT_REST_SECONDS)
+  // No bloco vale o do último membro: é depois dele que a rodada termina.
+  const selectedRest = superset ? blockRestSeconds(superset, defaultRest) : restFor(selectedItem ?? undefined, defaultRest)
   const restRemaining = phase === 'descanso' ? remainingSeconds(phaseStartedAt, selectedRest, now) : 0
 
   useEffect(() => {
@@ -137,7 +147,24 @@ export function Session() {
         </div>
       </header>
 
-      {phase !== 'cardio' && selectedItem && (
+      {phase !== 'cardio' && superset && (
+        <SessionSupersetFlow
+          sessionId={session.id}
+          items={superset.items}
+          index={items.findIndex((item) => item.id === superset.items[0]!.id)}
+          logs={logs.filter((log) => superset.items.some((item) => item.id === log.templateItemId))}
+          activeRound={phase === 'descanso' && restKey?.startsWith(`${superset.key}:`)
+            ? Number(restKey.split(':').at(-1))
+            : null}
+          restSeconds={selectedRest}
+          restRemaining={restRemaining}
+          onRest={(round) => setPhase('descanso', `${superset.key}:${round}`)}
+          onContinue={() => setPhase('exercicios')}
+          onDone={() => { setPhase('exercicios'); navigate(sessionRoute(session.id), { replace: true }) }}
+        />
+      )}
+
+      {phase !== 'cardio' && selectedItem && !superset && (
         <SessionExerciseFlow
           sessionId={session.id}
           item={selectedItem}
