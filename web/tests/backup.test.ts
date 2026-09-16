@@ -79,6 +79,36 @@ describe('personal backup', () => {
     expect(() => parseBackup('{broken')).toThrow('backup_invalid_json')
   })
 
+  it('substituir não apaga e recria o que o arquivo traz', async () => {
+    // Dor é append-only: recriar um id apagado vira noop no servidor, e a
+    // linha voltaria apagada no próximo pull.
+    const dor = await mutate('pain_events', {
+      ownerId: SOURCE, regionSlug: 'joelho-d', level: 3, note: null,
+      occurredAt: '2026-09-10T12:00:00.000Z', sessionId: null, setLogId: null,
+    })
+    const exported = await buildBackup()
+    const backup = parseBackup(await readBlob(exported.blob))
+    await localDb.outbox.clear()
+
+    await restoreBackup(backup, SOURCE, 'replace')
+
+    const ops = await localDb.outbox.toArray()
+    expect(ops.filter((op) => op.entityId === dor.id).map((op) => op.op)).toEqual(['upsert'])
+    expect(await localDb.table_('pain_events').get(dor.id)).toMatchObject({ deletedAt: null })
+  })
+
+  it('substituir continua apagando o que o arquivo não traz', async () => {
+    const backup = parseBackup(await readBlob((await buildBackup()).blob))
+    const sobrando = await mutate('pain_events', {
+      ownerId: SOURCE, regionSlug: 'ombro-e', level: 2, note: null,
+      occurredAt: '2026-09-11T12:00:00.000Z', sessionId: null, setLogId: null,
+    })
+
+    await restoreBackup(backup, SOURCE, 'replace')
+
+    expect((await localDb.table_('pain_events').get(sobrando.id))?.deletedAt).toBeTruthy()
+  })
+
   it('arquivo anterior a uma tabela nova continua restaurando', async () => {
     const gym = await mutate('gyms', { ownerId: SOURCE, name: 'Academia', isActive: true })
     const exported = await buildBackup()
