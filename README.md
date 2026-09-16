@@ -97,6 +97,7 @@ The UI uses a four-level effort scale while retaining numeric RIR in storage for
 - A versioned JSON backup exports and restores all personal records and exercise images. Imports can merge with existing data or explicitly replace it.
 - Set history can also be exported as a spreadsheet-friendly CSV.
 - Pain can be captured from selectable body regions and reviewed as a history.
+- Bodyweight, body fat and ten circumference sites are logged per calendar day, each with a chart and a deletable log. Values are stored canonically in kg, cm and %, and shown in the unit the load preference implies — lengths in inches when loads are in pounds. Limb sites are logged per side. The day is a date, not a timestamp, so a morning weigh-in cannot shift across time zones; two devices logging the same day both keep their row and the most recent write is the one displayed.
 - User-defined functional tests support frequency, units, side, history, and whether higher or lower values are better.
 - Push reminders are available for scheduled weekly programs when VAPID is configured.
 

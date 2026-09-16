@@ -157,6 +157,14 @@ accessible name of the completion button. Skipping one member drops it from
 later rounds and leaves the rest of the block running; the block is finished in
 one action, once every set of every remaining member is checked.
 
+Body measurements are entered from one form at the top of their page: the
+measurement, its side when the site has one, the value labelled with the unit it
+is being typed in, and the day. Sites are chosen from the same pill row used for
+view switching elsewhere, and only sites with data render a section below. Each
+section pairs the trend chart with a dated log. A change since the previous
+measurement is shown with its sign but no semantic color: gaining weight is the
+goal for some readers and the problem for others, and the page cannot know which.
+
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
 while retaining session links when activity exists on those dates. The current
