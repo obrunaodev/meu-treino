@@ -65,6 +65,7 @@ suite('sync ponta a ponta', () => {
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
     await pool.query('delete from template_items where owner_id=$1', [ownerId])
     await pool.query('delete from body_measurements where owner_id=$1', [ownerId])
+    await pool.query('delete from pain_events where owner_id=$1', [ownerId])
   })
 
   afterAll(async () => {
@@ -72,6 +73,7 @@ suite('sync ponta a ponta', () => {
     await pool.query('delete from user_settings where owner_id=$1', [ownerId])
     await pool.query('delete from template_items where owner_id=$1', [ownerId])
     await pool.query('delete from body_measurements where owner_id=$1', [ownerId])
+    await pool.query('delete from pain_events where owner_id=$1', [ownerId])
     await pool.query("delete from users where google_sub='vitest-e2e'")
     await pool.end()
   })
@@ -204,6 +206,36 @@ suite('sync ponta a ponta', () => {
     expect(linha?.measuredOn).toBe('2026-09-15')
     expect(linha?.value).toBe(82.9)
     expect(typeof linha?.value).toBe('number')
+  })
+
+  it('append-only apagado não volta por upsert: quem recria perde a linha', async () => {
+    const DOR = '1b1b1b1b-1b1b-7b1b-8b1b-1b1b1b1b1b1b'
+    const evento = {
+      id: DOR, regionSlug: 'joelho-d', level: 3, note: null,
+      occurredAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+    await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{ opId: '00000000-0000-7000-8000-0000000000fc', entity: 'pain_events', entityId: DOR, op: 'upsert', base: null, data: evento }],
+    })
+    await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{ opId: '00000000-0000-7000-8000-0000000000fd', entity: 'pain_events', entityId: DOR, op: 'delete', base: evento, data: evento }],
+    })
+
+    // É o que o restore "substituir" fazia: apagar tudo e recriar o mesmo id.
+    const recriou = await sync({
+      deviceId: DEVICE_A, cursors: {},
+      operations: [{
+        opId: '00000000-0000-7000-8000-0000000000fe', entity: 'pain_events', entityId: DOR, op: 'upsert',
+        base: null, data: { ...evento, updatedAt: new Date().toISOString() },
+      }],
+    })
+
+    // Em append-only, existir já significa estar em dia — inclusive apagado.
+    expect(recriou.results[0]?.status).toBe('noop')
+    const { rows } = await pool.query('select deleted_at from pain_events where id=$1', [DOR])
+    expect(rows[0]?.deleted_at).not.toBeNull()
   })
 
   it('recusa criar mídia pelo sync, mesmo apontando para objeto alheio', async () => {

@@ -50,8 +50,21 @@ export async function restoreBackup(
   ownerId: string,
   mode: 'merge' | 'replace',
 ): Promise<BackupSummary> {
-  if (mode === 'replace') await removeCurrentData()
+  // A preferência é lida ANTES de apagar: é ela que diz em qual linha as
+  // configurações do arquivo entram, e uma linha já apagada não seria achada.
   const currentSettings = (await localDb.table_('user_settings').toArray()).find((row) => !row.deletedAt)
+  const restored = new Map<SyncEntity, Set<string>>()
+  for (const entity of BACKUP_ENTITIES) {
+    const ids = new Set((backup.entities[entity] ?? []).map((source) =>
+      entity === 'user_settings' && currentSettings ? currentSettings.id : String(source.id)))
+    if (ids.size > 0) restored.set(entity, ids)
+  }
+
+  // "Substituir" apaga só o que o arquivo NÃO traz. Apagar tudo e recriar os
+  // mesmos ids parecia equivalente e não é: em entidade append-only o
+  // servidor descarta o upsert numa linha existente, então a dor e os
+  // resultados de teste voltariam apagados no próximo pull.
+  if (mode === 'replace') await removeCurrentData(restored)
   let rows = 0
 
   for (const entity of BACKUP_ENTITIES) {
@@ -88,11 +101,14 @@ async function exportMedia(): Promise<BackupMedia[]> {
   return [...files.values()]
 }
 
-async function removeCurrentData() {
+async function removeCurrentData(keep: Map<SyncEntity, Set<string>>) {
   await localDb.uploads.clear()
   for (const entity of [...SYNC_STORES].reverse()) {
     const rows = await localDb.table_(entity).toArray()
-    for (const row of rows) if (!row.deletedAt) await remove(entity, row.id)
+    const restored = keep.get(entity)
+    for (const row of rows) {
+      if (!row.deletedAt && !restored?.has(row.id)) await remove(entity, row.id)
+    }
   }
 }
 
