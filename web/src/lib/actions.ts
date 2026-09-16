@@ -334,6 +334,11 @@ export function makeActions(ownerId: string) {
 
     removeTestResult: (id: string) => remove('test_results', id),
 
+    saveBodyMeasurement: (patch: Record<string, unknown>) =>
+      write('body_measurements', { side: 'ambos', note: null, ...patch }),
+
+    removeBodyMeasurement: (id: string) => remove('body_measurements', id),
+
     async saveSettings(patch: Record<string, unknown>) {
       const settings = (await localDb.table_('user_settings').toArray())[0]
       return mutate('user_settings', { ...patch, id: settings?.id, ownerId })

@@ -8,7 +8,8 @@ import Dexie, { type EntityTable } from 'dexie'
 export type SyncEntity =
   | 'gyms' | 'equipment' | 'cardio_options' | 'exercises' | 'exercise_media' | 'exercise_substitutions'
   | 'programs' | 'templates' | 'template_items' | 'workout_sessions' | 'set_logs'
-  | 'cardio_logs' | 'pain_events' | 'functional_tests' | 'test_results' | 'user_settings'
+  | 'cardio_logs' | 'pain_events' | 'functional_tests' | 'test_results' | 'body_measurements'
+  | 'user_settings'
 
 export interface SyncRow {
   id: string
@@ -49,7 +50,8 @@ export interface MetaEntry {
 export const SYNC_STORES: SyncEntity[] = [
   'gyms', 'equipment', 'cardio_options', 'exercises', 'exercise_media', 'exercise_substitutions',
   'programs', 'templates', 'template_items', 'workout_sessions', 'set_logs',
-  'cardio_logs', 'pain_events', 'functional_tests', 'test_results', 'user_settings',
+  'cardio_logs', 'pain_events', 'functional_tests', 'test_results', 'body_measurements',
+  'user_settings',
 ]
 
 class TreinoDB extends Dexie {
@@ -101,6 +103,11 @@ class TreinoDB extends Dexie {
     this.version(5).stores(stores).upgrade(async (tx) => {
       await tx.table('meta').clear()
     })
+
+    // v6 abre o store das medidas corporais. Só o store novo: o cursor por
+    // entidade já começa em zero para quem não existia, então não há o que
+    // recarregar das outras.
+    this.version(6).stores(stores)
   }
 
   table_(entity: SyncEntity) {

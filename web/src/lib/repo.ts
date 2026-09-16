@@ -3,8 +3,8 @@ import { localDb, type SyncEntity } from './db.js'
 import { exerciseSessionHistory } from './domain/exercise-history.js'
 import { EMPTY_BASELINE, recordBaseline, type RecordBaseline } from './domain/records.js'
 import type {
-  CardioLog, CardioOption, Equipment, Exercise, ExerciseMedia, ExerciseSubstitution, FunctionalTest,
-  Gym, PainEvent, Program, SetLog, Template, TemplateItem, TestResult, UserSettings,
+  BodyMeasurement, CardioLog, CardioOption, Equipment, Exercise, ExerciseMedia, ExerciseSubstitution,
+  FunctionalTest, Gym, PainEvent, Program, SetLog, Template, TemplateItem, TestResult, UserSettings,
   WorkoutSession,
 } from './types.js'
 
@@ -130,6 +130,13 @@ export function usePainEvents() {
 export function useFunctionalTests() {
   const rows = useLive<FunctionalTest>('functional_tests') ?? []
   return [...rows].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** Medidas do mais antigo ao mais recente; o dia é a ordem, não o instante de gravação. */
+export function useBodyMeasurements(kind?: string | null) {
+  const rows = useLive<BodyMeasurement>('body_measurements') ?? []
+  const filtered = kind ? rows.filter((row) => row.kind === kind) : rows
+  return [...filtered].sort((a, b) => a.measuredOn.localeCompare(b.measuredOn))
 }
 
 export function useTestResults(testId?: string | null) {
