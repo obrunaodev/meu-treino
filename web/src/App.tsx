@@ -15,6 +15,7 @@ import { Session } from './pages/Session.js'
 import { Templates } from './pages/Templates.js'
 import { Library } from './pages/Library.js'
 import { Equipment } from './pages/Equipment.js'
+import { Body } from './pages/Body.js'
 import { Pain } from './pages/Pain.js'
 import { Tests } from './pages/Tests.js'
 import { History } from './pages/History.js'
@@ -80,6 +81,7 @@ function Authed() {
           <Route path={routes.exercises} element={<Library />} />
           <Route path={routes.equipment} element={<Equipment />} />
           <Route path={routes.pain} element={<Pain />} />
+          <Route path={routes.body} element={<Body />} />
           <Route path={routes.functionalTests} element={<Tests />} />
           <Route path={routes.history} element={<History />} />
           <Route path={`${routes.history}/reports/cycle/:programId/:cycleNumber`} element={<TrainingReport scope="cycle" />} />

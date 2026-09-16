@@ -12,6 +12,7 @@ describe('canonical web routes', () => {
       exercises: '/exercises',
       equipment: '/equipment',
       pain: '/pain',
+      body: '/body',
       functionalTests: '/functional-tests',
       history: '/history',
       settings: '/settings',

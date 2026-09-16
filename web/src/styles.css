@@ -1007,6 +1007,11 @@ p { margin: 0; line-height: 1.55; }
 }
 .cues button { border: 0; background: none; color: var(--dim); font-size: 15px; cursor: pointer; }
 
+/* A variação não ganha cor de bom ou ruim: ganhar peso é o objetivo de
+   algumas pessoas e o problema de outras, e a tela não sabe qual é o caso. */
+.body-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 12px; align-items: end; }
+.body-form .button { align-self: end; }
+.body-delta { color: var(--ink-2); }
 .loglist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .loglist__row {
   display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px;
