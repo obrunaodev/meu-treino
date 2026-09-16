@@ -146,6 +146,17 @@ its card head, in positive color with the record kinds written out, and a
 session-volume record appears above the actions once every set is checked.
 Records are computed from history on read and never change the plan.
 
+Exercises grouped into a superset execute as one block, opened from any of its
+members. A member strip names each exercise with a letter badge and carries the
+actions that belong to one exercise alone — reference image, video, warm-up and
+skip. Below it, sets are listed by round rather than by exercise: each round is
+an accent-railed group holding one set card per member, in plan order, and the
+rest clock sits between rounds instead of between sets. Set cards keep the
+single-exercise layout and name their exercise in the eyebrow and in the
+accessible name of the completion button. Skipping one member drops it from
+later rounds and leaves the rest of the block running; the block is finished in
+one action, once every set of every remaining member is checked.
+
 The monthly history calendar renders only the weeks required by that month.
 Adjacent dates complete a partial first or last week with reduced emphasis
 while retaining session links when activity exists on those dates. The current

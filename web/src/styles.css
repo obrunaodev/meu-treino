@@ -967,6 +967,20 @@ p { margin: 0; line-height: 1.55; }
 .session-focus__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .session-focus__actions .button--primary { flex: 1 1 100%; }
 .session-focus__done { align-self: center; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--good); color: var(--surface); font-size: 26px; }
+/* Bi-set: a rodada é o objeto, e o trilho na lateral diz que as séries de
+   dentro andam juntas — sem ele, viram duas listas soltas empilhadas. */
+.session-superset__members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.session-superset__member { display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-field); background: var(--surface-hot); }
+.session-superset__member--skipped { border-style: dashed; opacity: 0.72; }
+.session-superset__letter {
+  flex: 0 0 auto; display: grid; place-items: center; width: 26px; height: 26px;
+  border-radius: 50%; background: var(--raised); color: var(--accent); font-size: 12px; font-weight: 600;
+}
+.session-superset__member-copy { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.session-superset__member-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.session-superset__rounds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.session-superset__round { display: flex; flex-direction: column; gap: 10px; padding-left: 14px; border-left: 2px solid var(--accent); }
+.session-superset__summary { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; text-align: center; }
 @media (min-width: 40rem) {
   .session-focus { padding: 24px; }
   .session-focus__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
