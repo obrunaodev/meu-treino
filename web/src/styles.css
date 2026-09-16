@@ -883,6 +883,12 @@ p { margin: 0; line-height: 1.55; }
   border: 1px solid var(--line); border-radius: var(--r-card);
   background: var(--surface); overflow: hidden;
 }
+/* No editor o bloco usa o mesmo trilho da sessão, com as ações do grupo
+   inteiro na cabeça e as de cada exercício dentro da própria linha. */
+.item-block { list-style: none; display: flex; flex-direction: column; gap: 8px; padding-left: 12px; border-left: 2px solid var(--accent); }
+.item-block__head { display: flex; align-items: center; gap: 10px; }
+.item-block__head .item__move { margin-left: auto; }
+.item-block .items { gap: 8px; }
 /* O bi-set na lista: um trilho e um rótulo dizem que as linhas de dentro
    rodam juntas, e abrir qualquer uma abre o bloco inteiro. */
 .session-checklist__block {
