@@ -202,6 +202,16 @@ export interface TestResult extends Base {
   note: string | null
 }
 
+/** Uma medida de um dia. `value` está sempre na unidade canônica: kg, cm ou %. */
+export interface BodyMeasurement extends Base {
+  kind: string
+  side: 'ambos' | 'D' | 'E'
+  value: number
+  /** Dia local no formato YYYY-MM-DD — nunca um instante. */
+  measuredOn: string
+  note: string | null
+}
+
 export interface UserSettings extends Base {
   unit: 'kg' | 'lb'
   showPlates: boolean
