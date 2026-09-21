@@ -14,6 +14,7 @@ import type { PlanSnapshotItem, SetLog, WorkoutSession } from '../types.js'
 import { nextLoadStep } from './load.js'
 import { progressionAction, progressionMessageKey, type ProgressionAction, type ProgressionMetric } from './progression.js'
 import { prefillSource } from './session.js'
+import { countSets } from './sets.js'
 
 export interface ExerciseExposure {
   startedAt: string
@@ -53,7 +54,7 @@ function exposure(startedAt: string, sets: SetLog[], metric: ProgressionMetric):
 
   return {
     startedAt,
-    workingSets: sets.length,
+    workingSets: countSets(sets),
     topLoadKg: heaviest?.weightKg ?? null,
     plate: heaviest?.plateCount ?? null,
     low: measures.length ? Math.min(...measures) : null,

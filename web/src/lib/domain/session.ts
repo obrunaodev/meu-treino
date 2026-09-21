@@ -60,26 +60,33 @@ export interface LoggedSet {
  */
 export function sessionProgress(items: SessionItem[], logged: LoggedSet[]) {
   const planned = items.reduce((total, item) => total + item.sets, 0)
-  const done = logged.filter((s) => !s.isWarmup).length
+  const done = items.reduce((total, item) => total + setsOf(logged, item.id), 0)
   const extra = Math.max(0, done - planned)
 
   return { done, planned: planned + extra, remaining: Math.max(0, planned - done) }
 }
 
+/**
+ * Séries de trabalho já feitas de um item. Duas linhas do mesmo índice são os
+ * dois lados de uma série só — ver `domain/sets.ts`.
+ */
+function setsOf(logged: LoggedSet[], itemId: string, keep: (set: LoggedSet) => boolean = () => true): number {
+  return new Set(logged
+    .filter((set) => set.templateItemId === itemId && !set.isWarmup && keep(set))
+    .map((set) => set.setIndex)).size
+}
+
 /** Progresso da interface de checklist: um exercício só conta quando foi todo resolvido. */
 export function exerciseProgress(items: SessionItem[], logged: LoggedSet[]) {
-  const done = items.filter((item) => (
-    logged.filter((set) => set.templateItemId === item.id && !set.isWarmup && !set.skipped).length >= item.sets
-  )).length
+  const done = items.filter((item) => setsOf(logged, item.id, (set) => !set.skipped) >= item.sets).length
 
   return { done, planned: items.length, remaining: items.length - done }
 }
 
 /** Distinguishes skipped exercises from completed ones in the live overview. */
 export function exerciseExecutionStatus(item: SessionItem, logged: LoggedSet[]): 'pending' | 'skipped' | 'done' {
-  const itemSets = logged.filter((set) => set.templateItemId === item.id && !set.isWarmup)
-  if (itemSets.filter((set) => !set.skipped).length >= item.sets) return 'done'
-  if (itemSets.some((set) => set.skipped)) return 'skipped'
+  if (setsOf(logged, item.id, (set) => !set.skipped) >= item.sets) return 'done'
+  if (logged.some((set) => set.templateItemId === item.id && !set.isWarmup && set.skipped)) return 'skipped'
   return 'pending'
 }
 
@@ -230,8 +237,7 @@ export function nextSlot(
   items: SessionItem[],
   logged: LoggedSet[],
 ): { itemIndex: number; setIndex: number } | null {
-  const done = new Map(items.map((item) =>
-    [item.id, logged.filter((s) => s.templateItemId === item.id && !s.isWarmup).length]))
+  const done = new Map(items.map((item) => [item.id, setsOf(logged, item.id)]))
   for (const block of planBlocks(items)) {
     for (const entry of supersetRounds(block.items).flat()) {
       if (entry.setIndex >= done.get(entry.itemId)!) {

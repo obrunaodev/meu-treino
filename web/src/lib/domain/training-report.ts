@@ -1,5 +1,6 @@
 import type { CardioLog, PainEvent, PlanSnapshotItem, SetLog, WorkoutSession } from '../types.js'
 import { totalLoadKg } from './load.js'
+import { countSets, setKey } from './sets.js'
 
 export interface ExerciseReport {
   exerciseId: string
@@ -90,8 +91,8 @@ export function buildTrainingReport(
     completedExercises,
     adherence: plannedExercises === 0 ? 0 : Math.round((completedExercises / plannedExercises) * 100),
     onPrescription: onPrescriptionCount(sessions, scopedSets),
-    workingSets: scopedSets.filter((set) => !set.isWarmup && !set.skipped).length,
-    warmupSets: scopedSets.filter((set) => set.isWarmup && !set.skipped).length,
+    workingSets: countSets(scopedSets.filter((set) => !set.isWarmup && !set.skipped)),
+    warmupSets: countSets(scopedSets.filter((set) => set.isWarmup && !set.skipped)),
     volumeKg: exercises.reduce((total, exercise) => total + exercise.volumeKg, 0),
     cardioSeconds: scopedCardio.reduce((total, entry) => total + entry.durationSeconds, 0),
     cardioDistanceKm: scopedCardio.reduce((total, entry) => total + (entry.distanceKm ?? 0), 0),
@@ -129,21 +130,49 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
     )
     const loadPerSide = perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false
     if (set.skipped) report.skipped = true
-    else if (set.isWarmup) report.warmupSets += 1
-    else {
-      const item = planned.get(`${set.sessionId}:${set.templateItemId}`)
-      report.workingSets += 1
+    else if (!set.isWarmup) {
+      // Repetições e volume somam as duas linhas de uma série com lados
+      // separados: o trabalho foi feito duas vezes, uma por lado.
       report.repetitions += set.reps ?? 0
       topLoad(report, set.weightKg, loadPerSide)
       report.volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0) * (loadPerSide ? 2 : 1)
-      if (item && !withinRange(set, item)) report.offPrescriptionSets += 1
       if (set.rir !== null) report.worstRir = Math.min(report.worstRir ?? set.rir, set.rir)
     }
     report.sets.push(setReport(set, sessionById.get(set.sessionId), loadPerSide))
     reports.set(set.exerciseId, report)
   }
 
+  const counted = setCounts(sets, planned)
+  for (const [exerciseId, report] of reports) {
+    report.workingSets = counted.working.get(exerciseId)?.size ?? 0
+    report.warmupSets = counted.warmup.get(exerciseId)?.size ?? 0
+    report.offPrescriptionSets = counted.offRange.get(exerciseId)?.size ?? 0
+  }
   return [...reports.values()]
+}
+
+/**
+ * O que se conta por série e não por linha. Uma série com lados separados
+ * grava duas linhas, e contá-las diria o dobro de séries — e diria "2 séries
+ * fora da faixa" quando foi uma só, com os dois lados curtos.
+ */
+function setCounts(sets: SetLog[], planned: Map<string, PlanSnapshotItem>) {
+  const working = new Map<string, Set<string>>()
+  const warmup = new Map<string, Set<string>>()
+  const offRange = new Map<string, Set<string>>()
+  const add = (into: Map<string, Set<string>>, set: SetLog) => {
+    const keys = into.get(set.exerciseId) ?? new Set<string>()
+    into.set(set.exerciseId, keys.add(setKey(set)))
+  }
+
+  for (const set of sets) {
+    if (set.skipped) continue
+    if (set.isWarmup) { add(warmup, set); continue }
+    add(working, set)
+    const item = planned.get(`${set.sessionId}:${set.templateItemId}`)
+    if (item && !withinRange(set, item)) add(offRange, set)
+  }
+  return { working, warmup, offRange }
 }
 
 /** Uma série como os relatórios a mostram; a história de um exercício usa a mesma linha. */
@@ -229,7 +258,7 @@ function onPrescriptionCount(sessions: WorkoutSession[], sets: SetLog[]): number
   for (const session of sessions) {
     for (const item of session.planSnapshot?.items ?? []) {
       const logged = done.get(`${session.id}:${item.id}`) ?? []
-      if (logged.length >= item.sets && logged.every((set) => withinRange(set, item))) count += 1
+      if (countSets(logged) >= item.sets && logged.every((set) => withinRange(set, item))) count += 1
     }
   }
   return count
