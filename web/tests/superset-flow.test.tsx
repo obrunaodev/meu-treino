@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../src/lib/i18n'
 
@@ -46,8 +46,9 @@ async function renderFlow(logs: unknown[] = []) {
       restSeconds={90} restRemaining={0} onRest={vi.fn()} onContinue={vi.fn()} onDone={onDone}
     />,
   )
-  // As preferências e o histórico chegam do IndexedDB depois do primeiro render.
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)) })
+  // Os exercícios chegam do IndexedDB depois do primeiro render; esperar o
+  // nome aparecer é esperar a consulta viva, que um tempo fixo não garante.
+  await screen.findByText('Supino reto')
 }
 
 const checkNames = () => screen.getAllByRole('button', { name: /^Marcar série/ }).map((button) => button.getAttribute('aria-label'))
@@ -130,7 +131,7 @@ describe('bi-set ao vivo', () => {
 describe('bi-set na lista de exercícios', () => {
   const renderList = async (logs: unknown[] = []) => {
     render(<SessionExerciseChecklist sessionId="hoje" items={[supino, remada, agacho]} logs={logs as never} onSelect={vi.fn()} />)
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)) })
+    await screen.findByText('Supino reto')
   }
 
   it('os membros do grupo ficam juntos, sob o rótulo do bloco', async () => {
