@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../src/lib/i18n'
 
@@ -25,7 +25,9 @@ async function seed(restAutoStart: boolean) {
     startedAt: new Date().toISOString(), planSnapshot: null,
   } as never)
   await localDb.table_('user_settings').put({
-    ...base, id: 'settings', unit: 'kg', showPlates: true, theme: 'dark', locale: 'pt-BR',
+    // A unidade é o que a preferência muda na tela, e é por ela que o teste
+    // sabe que ela chegou. 'kg' seria indistinguível do padrão de antes dela.
+    ...base, id: 'settings', unit: 'lb', showPlates: true, theme: 'dark', locale: 'pt-BR',
     remindersEnabled: false, restAutoStart, onboardedAt: null,
   } as never)
 }
@@ -44,8 +46,13 @@ function renderFlow(activeRestAfter: number | null = null) {
 
 const check = (n: number) => fireEvent.click(screen.getByRole('button', { name: `Marcar série ${n} como concluída` }))
 
-/** A preferência vem do IndexedDB por consulta viva: sem esperar, o clique acontece antes dela chegar. */
-const settingsLoaded = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)) })
+/**
+ * A preferência vem do IndexedDB por consulta viva: sem esperar, o clique
+ * acontece antes dela chegar. Um tempo fixo perde essa corrida quando a suíte
+ * roda sob carga, então o teste espera o valor aparecer de verdade — o sufixo
+ * da carga só vira 'lb' depois que a preferência chega.
+ */
+const settingsLoaded = () => screen.findAllByText('lb')
 
 beforeEach(async () => {
   onRest.mockClear()
