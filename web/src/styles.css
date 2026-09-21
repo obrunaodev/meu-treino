@@ -1083,6 +1083,18 @@ p { margin: 0; line-height: 1.55; }
 .report-exercises dl > div, .report-series__row > div { min-width: 0; }
 .report-exercises dt { font: 400 9.5px/1.2 var(--font-mono); color: var(--dim); text-transform: uppercase; }
 .report-exercises dd { margin: 3px 0 0; overflow-wrap: anywhere; font: 400 12px/1.3 var(--font-mono); color: var(--ink-2); }
+/* Comparação com a última vez: o rótulo curto à esquerda e os números ao lado,
+   para que as duas linhas se leiam em coluna sem precisar de tabela. */
+.report-progress {
+  display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0 38px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-field); background: var(--surface);
+}
+.report-progress__rows { display: grid; gap: 6px; margin: 0; }
+.report-progress__rows > div { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: baseline; gap: 10px; }
+.report-progress__rows dd { margin: 0; }
+.report-progress .progression-hint { margin: 0; font: 400 11px/1.4 var(--font-mono); color: var(--ink-2); }
+.report-progress .progression-hint--increase { color: var(--good); }
+.report-progress .progression-hint--reduce { color: var(--accent); }
 .report-series { display: flex; flex-direction: column; gap: 14px; margin: 18px 0 0 38px; }
 /* Na história do exercício a série não fica sob um cabeçalho numerado: sem o recuo, que sobra a 390 px. */
 .exercise-history__month { display: flex; flex-direction: column; gap: 10px; }

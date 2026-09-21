@@ -180,7 +180,17 @@ flags visible without disclosure controls.
 
 An individual session report is read-only. Its sole action after the exercise
 breakdown links to a dedicated edit route; mutable forms and destructive
-controls never compete with report data on the same page.
+controls never compete with report data on the same page. Its header states the
+position in plain training language — the block, then session N of M — followed
+by the interval since the same workout last ran and the count for the calendar
+week. Each exercise carries a comparison block between its totals and its set
+list: today's exposure, the previous session of the same workout, and the
+progression decision as a quiet line that adds positive or accent color and
+names the suggested load when the decision moves it. Effort is reported as the
+hardest set rather than an average, and a set recorded at very heavy carries
+that word beside it. Summary metrics keep adherence, which counts exercises
+performed, separate from prescription, which counts exercises whose sets all
+closed inside the planned range.
 
 ## Data visualization
 
