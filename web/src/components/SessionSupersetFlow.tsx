@@ -2,8 +2,11 @@ import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActions } from '../lib/actions.js'
 import { lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
-import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
-import { initialSetDraft, prefillSource, type SetDraft } from '../lib/domain/session.js'
+import { SESSION_RECORD_KEY, liveRecordKey, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
+import {
+  initialSetDraft, logsBothSides, prefillSource, setRowsToLog, sideValues, withLeftSide, withSideValues,
+  type SetDraft, type SetSide, type SideDraft,
+} from '../lib/domain/session.js'
 import { supersetKind, supersetRounds } from '../lib/domain/supersets.js'
 import { useEquipment, useExercises, useMedia, useRecordBaselines, useSessions, useSetLogs, useSettings } from '../lib/repo.js'
 import type { Equipment, Exercise, ExerciseMedia, PlanSnapshotEquipment, SetLog } from '../lib/types.js'
@@ -23,6 +26,7 @@ interface Member {
   gear: Equipment | PlanSnapshotEquipment | null
   media: ExerciseMedia | null
   loadPerSide: boolean
+  bothSides: boolean
   /** Séries de trabalho já gravadas — o aquecimento e o pulado ficam de fora. */
   workLogs: SetLog[]
   skipped: boolean
@@ -73,6 +77,7 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
       gear: snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null,
       media: allMedia.find((entry) => entry.exerciseId === item.exerciseId) ?? null,
       loadPerSide: snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false,
+      bothSides: logsBothSides(snapshot ?? exercise),
       workLogs: own.filter((log) => !log.skipped).sort((a, b) => a.setIndex - b.setIndex),
       skipped: own.length > 0 && own.every((log) => log.skipped),
     }
@@ -82,18 +87,34 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
     member.item.id,
     currentSession ? prefillSource(currentSession, sessions, allLogs, member.item.exerciseId) : null,
   ]))
+  // Com lados separados cada lado tem a sua história: sem separar, o esquerdo
+  // voltaria pré-preenchido com a carga do lado forte.
+  const ofSide = <L extends { side: string }>(rows: L[], side: SetSide) =>
+    rows.filter((row) => (row.side === 'E') === (side === 'E'))
+  const draftOfSide = (member: Member, setIndex: number, side: SetSide) => {
+    const source = sources.get(member.item.id) ?? null
+    return initialSetDraft(
+      member.item, setIndex,
+      ofSide(member.workLogs, side).find((log) => log.setIndex === setIndex),
+      source && { ...source, sets: ofSide(source.sets, side) },
+    )
+  }
   const initialDrafts = (): Record<string, SetDraft[]> => Object.fromEntries(members.map((member) => [
     member.item.id,
-    Array.from({ length: member.item.sets }, (_, setIndex) => initialSetDraft(
-      member.item, setIndex, member.workLogs.find((log) => log.setIndex === setIndex), sources.get(member.item.id) ?? null,
-    )),
+    Array.from({ length: member.item.sets }, (_, setIndex) => (member.bothSides
+      ? withLeftSide(draftOfSide(member, setIndex, 'D'), draftOfSide(member, setIndex, 'E'))
+      : initialSetDraft(
+        member.item, setIndex, member.workLogs.find((log) => log.setIndex === setIndex), sources.get(member.item.id) ?? null,
+      ))),
   ]))
   const [drafts, setDrafts] = useState<Record<string, SetDraft[]>>(initialDrafts)
   const [showPain, setShowPain] = useState(false)
 
   // Mesma regra do exercício sozinho: os rascunhos recomeçam quando muda a
   // fonte que os preencheu, não a cada array novo vindo do Dexie.
-  const blockKey = members.map((member) => `${member.item.id}:${member.item.sets}`).join('|')
+  // `bothSides` entra na chave: o exercício chega do IndexedDB depois do
+  // primeiro render, e sem ele os rascunhos ficariam de um lado só.
+  const blockKey = members.map((member) => `${member.item.id}:${member.item.sets}:${member.bothSides}`).join('|')
   const sourceKey = members.flatMap((member) => {
     const source = sources.get(member.item.id) ?? null
     return [String(source?.origin), ...[...member.workLogs, ...(source?.sets ?? [])].map((log) => `${log.id}:${log.updatedAt}`)]
@@ -104,7 +125,8 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
   const active = members.filter((member) => !member.skipped)
   const byId = new Map(members.map((member) => [member.item.id, member]))
   const rounds = supersetRounds(items, new Set(members.filter((member) => member.skipped).map((member) => member.item.id)))
-  const completed = members.every((member) => member.skipped || member.workLogs.length >= member.item.sets)
+  const completed = members.every((member) => member.skipped
+    || new Set(member.workLogs.map((log) => log.setIndex)).size >= member.item.sets)
   const allChecked = active.length > 0 && active.every((member) => (drafts[member.item.id] ?? []).every((draft) => draft.checked))
 
   function updateDraft(itemId: string, setIndex: number, patch: Partial<SetDraft>) {
@@ -114,25 +136,34 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
     }))
   }
 
-  function stepLoad(member: Member, setIndex: number, direction: 1 | -1) {
-    const current = (drafts[member.item.id] ?? [])[setIndex]!
-    updateDraft(member.item.id, setIndex, nextLoadStep(
+  function updateSide(itemId: string, setIndex: number, side: SetSide, patch: Partial<SideDraft>) {
+    setDrafts((current) => ({
+      ...current,
+      [itemId]: (current[itemId] ?? []).map((draft, position) => (
+        position === setIndex ? withSideValues(draft, side, patch) : draft
+      )),
+    }))
+  }
+
+  function stepLoad(member: Member, setIndex: number, direction: 1 | -1, side: SetSide) {
+    const values = sideValues((drafts[member.item.id] ?? [])[setIndex]!, side)
+    updateSide(member.item.id, setIndex, side, nextLoadStep(
       member.gear ?? { loadType: 'livre', plateTable: [], incrementKg: null },
-      { kg: current.kg, plate: current.plate }, direction,
+      { kg: values.kg, plate: values.plate }, direction,
     ))
   }
 
-  function typeLoad(member: Member, setIndex: number, displayValue: number | null) {
+  function typeLoad(member: Member, setIndex: number, displayValue: number | null, side: SetSide) {
     const normalized = displayValue === null ? null : Math.min(settings?.unit === 'lb' ? 2202 : 999, Math.max(0, displayValue))
     const kg = normalized === null ? null : settings?.unit === 'lb' ? lbToKg(normalized) : normalized
     const plate = kg !== null && member.gear?.loadType === 'pino' ? plateForKg(member.gear, kg) : null
     setDrafts((current) => ({
       ...current,
       [member.item.id]: (current[member.item.id] ?? []).map((draft, position) => {
-        if (position === setIndex) return { ...draft, kg, plate }
+        if (position === setIndex) return withSideValues(draft, side, { kg, plate })
         // A carga informada vira o padrão das séries seguintes ainda vazias
         // — só deste exercício, nunca do outro membro do grupo.
-        if (position > setIndex && draft.kg === null) return { ...draft, kg, plate }
+        if (position > setIndex && sideValues(draft, side).kg === null) return withSideValues(draft, side, { kg, plate })
         return draft
       }),
     }))
@@ -141,23 +172,28 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
   const recordsOf = (member: Member) => {
     const baseline = baselines.get(member.item.exerciseId)
     if (!baseline) return new Map<string, RecordKind[]>()
-    const checked = (drafts[member.item.id] ?? []).flatMap((draft, setIndex): ComparableSet[] => (draft.checked ? [{
-      key: String(setIndex), setIndex, totalKg: totalLoadKg(draft.kg, member.loadPerSide),
-      reps: member.item.isTimeBased ? null : draft.result,
-      seconds: member.item.isTimeBased ? draft.result : null,
-      bodyweight: member.gear?.loadType === 'corporal',
-    }] : []))
+    const checked = (drafts[member.item.id] ?? []).flatMap((draft, setIndex): ComparableSet[] => (draft.checked
+      ? setRowsToLog(draft, member.item.isTimeBased).map((row) => ({
+        key: liveRecordKey(setIndex, row.side), setIndex, totalKg: totalLoadKg(row.weightKg, member.loadPerSide),
+        reps: row.reps, seconds: row.seconds, bodyweight: member.gear?.loadType === 'corporal',
+      }))
+      : []))
     return sessionRecordKinds(baseline, checked)
   }
   const records = new Map(members.map((member) => [member.item.id, recordsOf(member)]))
+  // Cada lado concorre por conta própria, mas a bandeira é uma, no cartão da série.
+  const recordsFor = (itemId: string, setIndex: number) => {
+    const own = records.get(itemId)
+    const kinds = [...(own?.get(liveRecordKey(setIndex, 'ambos')) ?? []), ...(own?.get(liveRecordKey(setIndex, 'E')) ?? [])]
+    return kinds.length > 0 ? [...new Set(kinds)] : undefined
+  }
 
   async function writeSets(member: Member) {
     for (const log of logs.filter((entry) => entry.templateItemId === member.item.id && !entry.isWarmup)) await removeSet(log.id)
     for (const [setIndex, draft] of (drafts[member.item.id] ?? []).entries()) {
-      await logSet({ sessionId, templateItemId: member.item.id, exerciseId: member.item.exerciseId, setIndex,
-        weightKg: draft.kg, plateCount: draft.plate,
-        reps: member.item.isTimeBased ? null : draft.result,
-        seconds: member.item.isTimeBased ? draft.result : null, rir: draft.rir })
+      for (const row of setRowsToLog(draft, member.item.isTimeBased)) {
+        await logSet({ sessionId, templateItemId: member.item.id, exerciseId: member.item.exerciseId, setIndex, ...row })
+      }
     }
   }
 
@@ -176,12 +212,11 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
   }
 
   async function addWarmup(member: Member) {
-    const draft = (drafts[member.item.id] ?? [])[0]!
-    const warmupIndex = logs.filter((log) => log.templateItemId === member.item.id && log.isWarmup).length
-    await logSet({ sessionId, templateItemId: member.item.id, exerciseId: member.item.exerciseId, setIndex: warmupIndex,
-      isWarmup: true, weightKg: draft.kg, plateCount: draft.plate,
-      reps: member.item.isTimeBased ? null : draft.result,
-      seconds: member.item.isTimeBased ? draft.result : null, rir: draft.rir })
+    const warmups = logs.filter((log) => log.templateItemId === member.item.id && log.isWarmup)
+    const warmupIndex = new Set(warmups.map((log) => log.setIndex)).size
+    for (const row of setRowsToLog((drafts[member.item.id] ?? [])[0]!, member.item.isTimeBased)) {
+      await logSet({ sessionId, templateItemId: member.item.id, exerciseId: member.item.exerciseId, setIndex: warmupIndex, isWarmup: true, ...row })
+    }
   }
 
   async function reopenBlock() {
@@ -238,10 +273,11 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
                 draft={draft}
                 unit={settings?.unit ?? 'kg'}
                 loadPerSide={member.loadPerSide}
-                recordKinds={records.get(itemId)?.get(String(setIndex))}
+                recordKinds={recordsFor(itemId, setIndex)}
                 onToggle={() => updateDraft(itemId, setIndex, { checked: !draft.checked })}
-                onTypeLoad={(value) => typeLoad(member, setIndex, value)}
-                onStepLoad={(direction) => stepLoad(member, setIndex, direction)}
+                onTypeLoad={(value, side) => typeLoad(member, setIndex, value, side)}
+                onStepLoad={(direction, side) => stepLoad(member, setIndex, direction, side)}
+                onResult={(value, side) => updateSide(itemId, setIndex, side, { result: value })}
                 onUpdate={(patch) => updateDraft(itemId, setIndex, patch)}
               />
             })}

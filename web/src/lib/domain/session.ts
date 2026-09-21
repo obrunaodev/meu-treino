@@ -172,7 +172,68 @@ function workingSetsBySession<L extends HistoryLog>(logs: L[], exerciseId: strin
   return bySession
 }
 
-export interface SetDraft { kg: number | null; plate: number | null; result: number | null; rir: number | null; checked: boolean }
+export type SetSide = 'ambos' | 'D' | 'E'
+
+export interface SideDraft { kg: number | null; plate: number | null; result: number | null }
+
+export interface SetDraft extends SideDraft {
+  rir: number | null
+  checked: boolean
+  /**
+   * O segundo lado, só em exercício que registra lados separados. Quando ele
+   * existe, os campos de cima são o lado direito; sem ele, são a série inteira.
+   * O esforço e a marcação são da série, não de um lado: o que a assimetria
+   * precisa mostrar é carga e resultado.
+   */
+  left: SideDraft | null
+}
+
+/** Registra lados separados: unilateral e marcado como assimétrico na biblioteca. */
+export function logsBothSides(source: { laterality: string; unilateralAsymmetric: boolean } | null | undefined): boolean {
+  return source?.laterality === 'unilateral' && source.unilateralAsymmetric
+}
+
+/** Junta o rascunho do lado esquerdo ao do direito; o esforço fica o da série. */
+export function withLeftSide(right: SetDraft, left: SetDraft): SetDraft {
+  return { ...right, left: { kg: left.kg, plate: left.plate, result: left.result } }
+}
+
+/** Os valores de um lado do rascunho; sem lados separados, a série inteira. */
+export function sideValues(draft: SetDraft, side: SetSide): SideDraft {
+  return side === 'E' && draft.left ? draft.left : draft
+}
+
+/** O rascunho com um lado alterado. O outro lado, o esforço e a marcação ficam. */
+export function withSideValues(draft: SetDraft, side: SetSide, patch: Partial<SideDraft>): SetDraft {
+  if (side === 'E' && draft.left) return { ...draft, left: { ...draft.left, ...patch } }
+  return { ...draft, ...patch }
+}
+
+export interface SetRowDraft {
+  side: SetSide
+  weightKg: number | null
+  plateCount: number | null
+  reps: number | null
+  seconds: number | null
+  rir: number | null
+}
+
+/**
+ * As linhas que uma série grava: uma, ou uma por lado quando o exercício os
+ * separa. As duas levam o mesmo índice — é ele que as reúne numa série só em
+ * toda contagem — e o mesmo esforço, que é da série.
+ */
+export function setRowsToLog(draft: SetDraft, isTimeBased: boolean): SetRowDraft[] {
+  const row = (side: SetSide, values: SideDraft): SetRowDraft => ({
+    side,
+    weightKg: values.kg,
+    plateCount: values.plate,
+    reps: isTimeBased ? null : values.result,
+    seconds: isTimeBased ? values.result : null,
+    rir: draft.rir,
+  })
+  return draft.left === null ? [row('ambos', draft)] : [row('D', draft), row('E', draft.left)]
+}
 
 interface DraftItem {
   repMin: number | null
@@ -209,11 +270,11 @@ export function initialSetDraft(
   if (current) return draftFromLog(item, current, prescribed, true)
   if (source?.origin === 'other_workout') {
     const last = source.sets.at(-1)!
-    return { kg: last.weightKg, plate: last.plateCount, result: prescribed, rir: item.rirTarget, checked: false }
+    return { kg: last.weightKg, plate: last.plateCount, result: prescribed, rir: item.rirTarget, checked: false, left: null }
   }
   const previous = source ? previousSetForDraft([], source.sets, setIndex, item.trackingMode ?? 'compact') : null
   if (previous) return draftFromLog(item, previous, prescribed, false)
-  return { kg: null, plate: null, result: prescribed, rir: item.rirTarget, checked: false }
+  return { kg: null, plate: null, result: prescribed, rir: item.rirTarget, checked: false, left: null }
 }
 
 function draftFromLog(item: DraftItem, log: DraftLog, prescribed: number | null, checked: boolean): SetDraft {
@@ -223,6 +284,7 @@ function draftFromLog(item: DraftItem, log: DraftLog, prescribed: number | null,
     result: (item.isTimeBased ? log.seconds : log.reps) ?? prescribed,
     rir: log.rir ?? item.rirTarget,
     checked,
+    left: null,
   }
 }
 

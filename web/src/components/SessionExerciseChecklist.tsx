@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
-import { SESSION_RECORD_KEY, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
-import { exerciseExecutionStatus, initialSetDraft, prefillSource, restCommandForToggle, type SetDraft } from '../lib/domain/session.js'
+import { SESSION_RECORD_KEY, liveRecordKey, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
+import {
+  exerciseExecutionStatus, initialSetDraft, logsBothSides, prefillSource, restCommandForToggle,
+  setRowsToLog, sideValues, withLeftSide, withSideValues, type SetDraft, type SetSide, type SideDraft,
+} from '../lib/domain/session.js'
 import { planBlocks, supersetKind } from '../lib/domain/supersets.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { rirLabelKey } from '../lib/domain/rir.js'
@@ -134,15 +137,27 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const snapshot = 'exerciseName' in item ? item : null
   const gear = snapshot?.equipment ?? equipment.find((entry) => entry.id === exercise?.equipmentId) ?? null
   const loadPerSide = snapshot?.loadPerSide ?? exercise?.loadPerSide ?? false
+  const bothSides = logsBothSides(snapshot ?? exercise)
   const name = snapshot?.exerciseName ?? exercise?.name ?? t('library.gone')
   const workLogs = logs.filter((log) => !log.isWarmup && !log.skipped).sort((a, b) => a.setIndex - b.setIndex)
   const currentSession = sessions.find((entry) => entry.id === sessionId) ?? null
   const source = currentSession ? prefillSource(currentSession, sessions, allLogs, item.exerciseId) : null
+  // Com lados separados cada lado tem a sua história: o esquerdo tem de voltar
+  // como esquerdo, senão o pré-preenchimento copiaria a carga do lado forte.
+  const ofSide = <L extends { side: string }>(rows: L[], side: SetSide) =>
+    rows.filter((row) => (row.side === 'E') === (side === 'E'))
+  const draftOfSide = (setIndex: number, side: SetSide) => initialSetDraft(
+    item, setIndex,
+    ofSide(workLogs, side).find((log) => log.setIndex === setIndex),
+    source && { ...source, sets: ofSide(source.sets, side) },
+  )
   // A chave é só da fonte escolhida: os rascunhos recomeçam quando essa fonte
   // muda, não a cada pull que traz séries de outras sessões.
   const sourceKey = [...workLogs, ...(source?.sets ?? [])].map((log) => `${log.id}:${log.updatedAt}`).concat(String(source?.origin)).join('|')
   const initialDrafts = (): SetDraft[] => Array.from({ length: item.sets }, (_, setIndex) => (
-    initialSetDraft(item, setIndex, workLogs.find((log) => log.setIndex === setIndex), source)
+    bothSides
+      ? withLeftSide(draftOfSide(setIndex, 'D'), draftOfSide(setIndex, 'E'))
+      : initialSetDraft(item, setIndex, workLogs.find((log) => log.setIndex === setIndex), source)
   ))
   const [drafts, setDrafts] = useState<SetDraft[]>(initialDrafts)
   const [showImage, setShowImage] = useState(false)
@@ -151,7 +166,9 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
 
   // O histórico chega do IndexedDB depois do primeiro render. A chave atualiza
   // os rascunhos quando ele chega, sem depender da identidade do array Dexie.
-  useEffect(() => setDrafts(initialDrafts()), [item.id, item.sets, sourceKey])
+  // `bothSides` entra junto: o exercício chega depois do primeiro render, e sem
+  // ele os rascunhos nasceriam de um lado só e nunca ganhariam o outro.
+  useEffect(() => setDrafts(initialDrafts()), [item.id, item.sets, sourceKey, bothSides])
   useEffect(() => {
     if (!exercise?.catalogExerciseId) return
     let current = true
@@ -163,7 +180,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   const lang = i18n.language.startsWith('pt') ? 'pt' : 'en'
   const videoUrl = catalog?.video?.[lang] ?? catalog?.video?.pt ?? catalog?.video?.en ?? null
   const description = catalog?.description?.[lang] ?? catalog?.description?.pt ?? catalog?.description?.en ?? null
-  const completed = workLogs.length >= item.sets
+  const completed = new Set(workLogs.map((log) => log.setIndex)).size >= item.sets
   const allChecked = drafts.every((draft) => draft.checked)
 
   function toggleSet(setIndex: number) {
@@ -179,20 +196,26 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   }
   // As séries marcadas ainda são rascunho (só gravam ao finalizar), então o
   // recorde é calculado sobre elas, contra o que já estava gravado antes.
-  const checkedSets = drafts.flatMap((draft, setIndex): ComparableSet[] => (draft.checked ? [{
-    key: String(setIndex), setIndex, totalKg: totalLoadKg(draft.kg, loadPerSide),
-    reps: item.isTimeBased ? null : draft.result, seconds: item.isTimeBased ? draft.result : null,
-    bodyweight: gear?.loadType === 'corporal',
-  }] : []))
+  const checkedSets = drafts.flatMap((draft, setIndex): ComparableSet[] => (draft.checked
+    ? setRowsToLog(draft, item.isTimeBased).map((row) => ({
+      key: liveRecordKey(setIndex, row.side), setIndex, totalKg: totalLoadKg(row.weightKg, loadPerSide),
+      reps: row.reps, seconds: row.seconds, bodyweight: gear?.loadType === 'corporal',
+    }))
+    : []))
   const records = recordBaseline ? sessionRecordKinds(recordBaseline, checkedSets) : new Map<string, RecordKind[]>()
+  // Cada lado concorre por conta própria, mas a bandeira é uma, no cartão da série.
+  const recordsFor = (setIndex: number) => {
+    const kinds = [...(records.get(liveRecordKey(setIndex, 'ambos')) ?? []), ...(records.get(liveRecordKey(setIndex, 'E')) ?? [])]
+    return kinds.length > 0 ? [...new Set(kinds)] : undefined
+  }
 
   async function completeExercise() {
     if (!allChecked) return
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
     for (const [setIndex, draft] of drafts.entries()) {
-      await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex,
-        weightKg: draft.kg, plateCount: draft.plate, reps: item.isTimeBased ? null : draft.result,
-        seconds: item.isTimeBased ? draft.result : null, rir: draft.rir })
+      for (const row of setRowsToLog(draft, item.isTimeBased)) {
+        await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex, ...row })
+      }
     }
     onDone()
   }
@@ -206,11 +229,10 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   }
 
   async function addWarmup() {
-    const draft = drafts[0]!
-    const warmupIndex = logs.filter((log) => log.isWarmup).length
-    await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex: warmupIndex,
-      isWarmup: true, weightKg: draft.kg, plateCount: draft.plate,
-      reps: item.isTimeBased ? null : draft.result, seconds: item.isTimeBased ? draft.result : null, rir: draft.rir })
+    const warmupIndex = new Set(logs.filter((log) => log.isWarmup).map((log) => log.setIndex)).size
+    for (const row of setRowsToLog(drafts[0]!, item.isTimeBased)) {
+      await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex: warmupIndex, isWarmup: true, ...row })
+    }
   }
 
   async function reopenExercise() {
@@ -221,20 +243,24 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     setDrafts((current) => current.map((draft, index) => index === setIndex ? { ...draft, ...patch } : draft))
   }
 
-  function stepLoad(setIndex: number, direction: 1 | -1) {
-    const current = drafts[setIndex]!
-    updateDraft(setIndex, nextLoadStep(gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, { kg: current.kg, plate: current.plate }, direction))
+  function updateSide(setIndex: number, side: SetSide, patch: Partial<SideDraft>) {
+    setDrafts((current) => current.map((draft, index) => index === setIndex ? withSideValues(draft, side, patch) : draft))
   }
 
-  function typeLoad(setIndex: number, displayValue: number | null) {
+  function stepLoad(setIndex: number, direction: 1 | -1, side: SetSide) {
+    const values = sideValues(drafts[setIndex]!, side)
+    updateSide(setIndex, side, nextLoadStep(gear ?? { loadType: 'livre', plateTable: [], incrementKg: null }, { kg: values.kg, plate: values.plate }, direction))
+  }
+
+  function typeLoad(setIndex: number, displayValue: number | null, side: SetSide) {
     const normalized = displayValue === null ? null : Math.min(settings?.unit === 'lb' ? 2202 : 999, Math.max(0, displayValue))
     const kg = normalized === null ? null : settings?.unit === 'lb' ? lbToKg(normalized) : normalized
     const plate = kg !== null && gear?.loadType === 'pino' ? plateForKg(gear, kg) : null
     setDrafts((current) => current.map((draft, index) => {
-      if (index === setIndex) return { ...draft, kg, plate }
+      if (index === setIndex) return withSideValues(draft, side, { kg, plate })
       // A primeira carga informada vira o padrão das séries seguintes ainda
       // vazias, mas nunca apaga a progressão que veio do treino anterior.
-      if (index > setIndex && draft.kg === null) return { ...draft, kg, plate }
+      if (index > setIndex && sideValues(draft, side).kg === null) return withSideValues(draft, side, { kg, plate })
       return draft
     }))
   }
@@ -266,10 +292,11 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
           draft={draft}
           unit={settings?.unit ?? 'kg'}
           loadPerSide={loadPerSide}
-          recordKinds={records.get(String(setIndex))}
+          recordKinds={recordsFor(setIndex)}
           onToggle={() => toggleSet(setIndex)}
-          onTypeLoad={(value) => typeLoad(setIndex, value)}
-          onStepLoad={(direction) => stepLoad(setIndex, direction)}
+          onTypeLoad={(value, side) => typeLoad(setIndex, value, side)}
+          onStepLoad={(direction, side) => stepLoad(setIndex, direction, side)}
+          onResult={(value, side) => updateSide(setIndex, side, { result: value })}
           onUpdate={(patch) => updateDraft(setIndex, patch)}
         />
         {setIndex < drafts.length - 1 && <RestCard

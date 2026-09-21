@@ -135,6 +135,13 @@ consecutive sets; activating one runs its countdown in place and never gates
 input. Each set card reuses the wide green completion button from the
 exercise-card pattern at the upper-left, and the exercise can only be finished
 after every planned set is checked.
+An exercise the library marks as logging sides separately keeps one card per
+prescribed set and repeats the load and result fields once per side, each field
+naming its side inside its own label so the two are never announced alike. The
+perceived effort and the completion control belong to the set, not to a side.
+Completing writes one row per side under the same set index, and every count in
+the application reads sets rather than rows, so three prescribed sets stay three
+however many sides they record.
 Completing the exercise returns to the overview. Recorded-set details do not
 repeat below the live exercise list; they remain grouped in session history.
 Before an exercise begins, progression guidance appears as a quiet textual line
