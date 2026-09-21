@@ -1,4 +1,5 @@
-import type { CardioLog, PainEvent, SetLog, WorkoutSession } from '../types.js'
+import type { CardioLog, PainEvent, PlanSnapshotItem, SetLog, WorkoutSession } from '../types.js'
+import { totalLoadKg } from './load.js'
 
 export interface ExerciseReport {
   exerciseId: string
@@ -11,8 +12,13 @@ export interface ExerciseReport {
   targetRir: number[]
   equipment: string[]
   maxWeightKg: number | null
+  /** Se a carga mais pesada foi registrada por lado: "60 kg" e "60 kg/lado" não são o mesmo peso. */
+  maxLoadPerSide: boolean
   repetitions: number
-  averageRir: number | null
+  /** O menor RIR de todas as séries. Uma média de percepção esconde justamente a série que decide o ajuste. */
+  worstRir: number | null
+  /** Séries de trabalho cujo resultado caiu fora da faixa prescrita naquele dia. */
+  offPrescriptionSets: number
   volumeKg: number
   sets: ExerciseSetReport[]
 }
@@ -43,6 +49,8 @@ export interface TrainingReport {
   plannedExercises: number
   completedExercises: number
   adherence: number
+  /** Exercícios planejados que saíram como prescritos: séries completas e resultados dentro da faixa. */
+  onPrescription: number
   workingSets: number
   warmupSets: number
   volumeKg: number
@@ -81,6 +89,7 @@ export function buildTrainingReport(
     plannedExercises,
     completedExercises,
     adherence: plannedExercises === 0 ? 0 : Math.round((completedExercises / plannedExercises) * 100),
+    onPrescription: onPrescriptionCount(sessions, scopedSets),
     workingSets: scopedSets.filter((set) => !set.isWarmup && !set.skipped).length,
     warmupSets: scopedSets.filter((set) => set.isWarmup && !set.skipped).length,
     volumeKg: exercises.reduce((total, exercise) => total + exercise.volumeKg, 0),
@@ -95,6 +104,7 @@ export function buildTrainingReport(
 function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNames: Map<string, string>): ExerciseReport[] {
   const reports = new Map<string, ExerciseReport>()
   const perSide = new Map<string, boolean>()
+  const planned = plannedItems(sessions)
   const sessionById = new Map(sessions.map((session) => [session.id, session]))
 
   for (const session of sessions) {
@@ -113,27 +123,26 @@ function exerciseReports(sessions: WorkoutSession[], sets: SetLog[], exerciseNam
     }
   }
 
-  const rirValues = new Map<string, number[]>()
   for (const set of sets) {
     const report = reports.get(set.exerciseId) ?? emptyExercise(
       set.exerciseId, exerciseNames.get(set.exerciseId) ?? set.exerciseId,
     )
+    const loadPerSide = perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false
     if (set.skipped) report.skipped = true
     else if (set.isWarmup) report.warmupSets += 1
     else {
+      const item = planned.get(`${set.sessionId}:${set.templateItemId}`)
       report.workingSets += 1
       report.repetitions += set.reps ?? 0
-      if (set.weightKg !== null) report.maxWeightKg = Math.max(report.maxWeightKg ?? 0, set.weightKg)
-      report.volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0) * (perSide.get(`${set.sessionId}:${set.exerciseId}`) ? 2 : 1)
-      if (set.rir !== null) rirValues.set(set.exerciseId, [...(rirValues.get(set.exerciseId) ?? []), set.rir])
+      topLoad(report, set.weightKg, loadPerSide)
+      report.volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0) * (loadPerSide ? 2 : 1)
+      if (item && !withinRange(set, item)) report.offPrescriptionSets += 1
+      if (set.rir !== null) report.worstRir = Math.min(report.worstRir ?? set.rir, set.rir)
     }
-    report.sets.push(setReport(set, sessionById.get(set.sessionId), perSide.get(`${set.sessionId}:${set.exerciseId}`) ?? false))
+    report.sets.push(setReport(set, sessionById.get(set.sessionId), loadPerSide))
     reports.set(set.exerciseId, report)
   }
 
-  for (const [exerciseId, values] of rirValues) {
-    reports.get(exerciseId)!.averageRir = values.reduce((sum, value) => sum + value, 0) / values.length
-  }
   return [...reports.values()]
 }
 
@@ -162,9 +171,68 @@ export function setReport(set: SetLog, session: WorkoutSession | undefined, load
 function emptyExercise(exerciseId: string, name: string): ExerciseReport {
   return {
     exerciseId, name, plannedSets: 0, workingSets: 0, warmupSets: 0, skipped: false,
-    targets: [], targetRir: [], equipment: [], maxWeightKg: null, repetitions: 0, averageRir: null, volumeKg: 0,
+    targets: [], targetRir: [], equipment: [], maxWeightKg: null, maxLoadPerSide: false, repetitions: 0,
+    worstRir: null, offPrescriptionSets: 0, volumeKg: 0,
     sets: [],
   }
+}
+
+/** Item prescrito de cada série, por sessão: é ele que diz a faixa daquele dia. */
+function plannedItems(sessions: WorkoutSession[]): Map<string, PlanSnapshotItem> {
+  const items = new Map<string, PlanSnapshotItem>()
+  for (const session of sessions) {
+    for (const item of session.planSnapshot?.items ?? []) items.set(`${session.id}:${item.id}`, item)
+  }
+  return items
+}
+
+/**
+ * A carga mais pesada se decide pelo peso movido, não pelo número registrado:
+ * 60 kg por lado são 120 kg, e num relatório de bloco perderiam para 100 kg
+ * totais de outra sessão se a comparação fosse pelo valor cru. O que fica
+ * guardado continua sendo o número como foi registrado, com a sua base.
+ */
+function topLoad(report: ExerciseReport, weightKg: number | null, loadPerSide: boolean) {
+  if (weightKg === null) return
+  const moved = totalLoadKg(weightKg, loadPerSide)!
+  const best = totalLoadKg(report.maxWeightKg, report.maxLoadPerSide)
+  if (best !== null && best >= moved) return
+  report.maxWeightKg = weightKg
+  report.maxLoadPerSide = loadPerSide
+}
+
+/** Dentro da faixa do plano: repetições, ou segundos quando o exercício é por tempo. */
+function withinRange(set: SetLog, item: PlanSnapshotItem): boolean {
+  const measure = item.isTimeBased ? set.seconds : set.reps
+  if (measure === null) return false
+  return measure >= (item.repMin ?? -Infinity) && measure <= (item.repMax ?? Infinity)
+}
+
+/**
+ * Exercícios que saíram como prescritos.
+ *
+ * "Aderência 100%" só diz que os exercícios aconteceram; não diz se a
+ * prescrição foi respeitada. Aqui um exercício conta quando fechou as séries
+ * planejadas e nenhuma delas caiu fora da faixa. A carga fica de fora de
+ * propósito: o plano prescreve séries, faixa e esforço — nunca um peso —,
+ * então subir a carga entre as séries não é desvio de prescrição.
+ */
+function onPrescriptionCount(sessions: WorkoutSession[], sets: SetLog[]): number {
+  const done = new Map<string, SetLog[]>()
+  for (const set of sets) {
+    if (set.isWarmup || set.skipped || set.templateItemId === null) continue
+    const key = `${set.sessionId}:${set.templateItemId}`
+    done.set(key, [...(done.get(key) ?? []), set])
+  }
+
+  let count = 0
+  for (const session of sessions) {
+    for (const item of session.planSnapshot?.items ?? []) {
+      const logged = done.get(`${session.id}:${item.id}`) ?? []
+      if (logged.length >= item.sets && logged.every((set) => withinRange(set, item))) count += 1
+    }
+  }
+  return count
 }
 
 function sessionDuration(session: WorkoutSession, now: Date) {

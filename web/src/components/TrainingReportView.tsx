@@ -1,24 +1,27 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { kgToLb, type Unit } from '../lib/domain/load.js'
+import type { ExerciseExposure, ExerciseProgress } from '../lib/domain/session-review.js'
 import type { ExerciseSetReport, TrainingReport } from '../lib/domain/training-report.js'
 import { exerciseHistoryRoute, historyRoute } from '../lib/routes.js'
 import { Card } from './ui.js'
-import { rirLabelKey } from '../lib/domain/rir.js'
+import { rirLabelKey, rirLevel } from '../lib/domain/rir.js'
 import type { RecordKind } from '../lib/domain/records.js'
 import { RecordFlag } from './RecordFlag.js'
 
 /** Resumo numérico e detalhamento por exercício compartilhado pelos três relatórios. */
 /**
- * `supersetLabels` só chega no relatório de uma sessão: lá o plano capturado
- * diz o que era bi-set naquele dia. No relatório de bloco o mesmo exercício
- * atravessa sessões que podem ter sido agrupadas de formas diferentes, e um
- * rótulo só seria uma meia-verdade.
+ * `supersetLabels` e `progress` só chegam no relatório de uma sessão. Lá o plano
+ * capturado diz o que era bi-set naquele dia, e "a sessão anterior" tem um
+ * significado único. No relatório de bloco o mesmo exercício atravessa sessões
+ * que podem ter sido agrupadas de formas diferentes e comparadas entre si, e os
+ * dois seriam meia-verdade.
  */
-export function TrainingReportView({ report, unit, supersetLabels }: {
+export function TrainingReportView({ report, unit, supersetLabels, progress }: {
   report: TrainingReport
   unit: Unit
   supersetLabels?: Map<string, string>
+  progress?: Map<string, ExerciseProgress>
 }) {
   const { i18n } = useTranslation()
   const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 })
@@ -28,7 +31,8 @@ export function TrainingReportView({ report, unit, supersetLabels }: {
   return (
     <div className="report">
       <ReportSummary report={report} number={number} volume={volume} />
-      <ExerciseBreakdown report={report} number={number} load={load} volume={volume} supersetLabels={supersetLabels} />
+      <ExerciseBreakdown report={report} number={number} load={load} volume={volume}
+        supersetLabels={supersetLabels} progress={progress} />
     </div>
   )
 }
@@ -41,6 +45,7 @@ function ReportSummary({ report, number, volume }: {
   const { t } = useTranslation()
   return <Card title={t('reports.summary')}><div className="report__stats">
     <Metric label={t('reports.adherence')} value={`${report.adherence}%`} hint={t('reports.exercises_done', { done: report.completedExercises, total: report.plannedExercises })} />
+    <Metric label={t('reports.on_prescription')} value={`${report.onPrescription}/${report.plannedExercises}`} hint={t('reports.on_prescription_hint')} />
     <Metric label={t('reports.duration')} value={duration(report.durationSeconds)} hint={t('reports.sessions', { count: report.sessions })} />
     <Metric label={t('reports.working_sets')} value={report.workingSets} hint={t('reports.warmups', { count: report.warmupSets })} />
     <Metric label={t('reports.volume')} value={volume(report.volumeKg)} hint={t('reports.total_load')} />
@@ -49,12 +54,13 @@ function ReportSummary({ report, number, volume }: {
   </div></Card>
 }
 
-function ExerciseBreakdown({ report, number, load, volume, supersetLabels }: {
+function ExerciseBreakdown({ report, number, load, volume, supersetLabels, progress }: {
   report: TrainingReport
   number: Intl.NumberFormat
   load: (kg: number) => string
   volume: (kg: number) => string
   supersetLabels: Map<string, string> | undefined
+  progress: Map<string, ExerciseProgress> | undefined
 }) {
   const { t, i18n } = useTranslation()
   return <section className="report-breakdown" aria-labelledby="report-breakdown-title">
@@ -74,6 +80,7 @@ function ExerciseBreakdown({ report, number, load, volume, supersetLabels }: {
             {exercise.targets.join(' · ') || '—'}
             {exercise.targetRir.length ? ` · ${exercise.targetRir.map((rir) => t(rirLabelKey(rir)!)).join(' / ')}` : ''}
             {exercise.equipment.length ? ` · ${exercise.equipment.join(', ')}` : ''}
+            {exercise.offPrescriptionSets > 0 ? ` · ${t('reports.off_prescription', { count: exercise.offPrescriptionSets })}` : ''}
           </p></div>
           <span className={`badge${exercise.workingSets ? '' : ' badge--muted'}`}>
             {t(exercise.workingSets ? 'reports.recorded' : exercise.skipped ? 'reports.skipped' : 'reports.pending')}
@@ -82,14 +89,64 @@ function ExerciseBreakdown({ report, number, load, volume, supersetLabels }: {
         <dl className="report-exercises__totals">
           <Datum label={t('reports.sets')} value={`${exercise.workingSets}/${exercise.plannedSets || '—'}`} />
           <Datum label={t('reports.repetitions')} value={number.format(exercise.repetitions)} />
-          <Datum label={t('reports.top_load')} value={exercise.maxWeightKg === null ? '—' : load(exercise.maxWeightKg)} />
-          <Datum label={t('reports.average_effort')} value={exercise.averageRir === null ? '—' : t(rirLabelKey(Math.round(exercise.averageRir))!)} />
+          <Datum label={t('reports.top_load')} value={exercise.maxWeightKg === null ? '—'
+            : `${load(exercise.maxWeightKg)}${exercise.maxLoadPerSide ? `/${t('session.per_side_short')}` : ''}`} />
+          <Datum label={t('reports.worst_effort')} value={exercise.worstRir === null ? '—' : t(rirLabelKey(exercise.worstRir)!)} />
           <Datum label={t('reports.volume')} value={volume(exercise.volumeKg)} />
         </dl>
+        {progress?.has(exercise.exerciseId) && (
+          <ExerciseProgressLine progress={progress.get(exercise.exerciseId)!} load={load} locale={i18n.language} />
+        )}
         <ExerciseSets sets={exercise.sets} load={load} locale={i18n.language} />
       </li>)}</ol>
     )}
   </section>
+}
+
+/**
+ * A comparação com a última vez e a decisão que ela sugere.
+ *
+ * É o que separa um registro de um instrumento: a dupla progressão se decide
+ * olhando hoje contra a vez anterior do mesmo treino, e sem esta linha a conta
+ * fica com o leitor a cada relatório. A carga sugerida vem do equipamento
+ * daquele dia, então é um valor que a máquina aceita — mas continua sendo uma
+ * sugestão: nada aqui reescreve o plano.
+ */
+function ExerciseProgressLine({ progress, load, locale }: {
+  progress: ExerciseProgress
+  load: (kg: number) => string
+  locale: string
+}) {
+  const { t } = useTranslation()
+  const perSide = progress.loadPerSide ? `/${t('session.per_side_short')}` : ''
+  const line = (exposure: ExerciseExposure) => [
+    exposure.topLoadKg === null ? '—' : `${load(exposure.topLoadKg)}${perSide}`,
+    `${exposure.workingSets}×${resultRange(exposure, progress.metric)}`,
+    exposure.worstRir === null ? '—' : t(rirLabelKey(exposure.worstRir)!),
+  ].join(' · ')
+  const when = progress.previous === null ? t('reports.last_time')
+    : new Date(progress.previous.startedAt).toLocaleDateString(locale, { day: '2-digit', month: 'short' })
+  const nextLoad = progress.suggested === null ? null : [
+    progress.suggested.kg === null ? null : `${load(progress.suggested.kg)}${perSide}`,
+    progress.suggested.plate === null ? null : t('reports.plate_position', { number: progress.suggested.plate }),
+  ].filter(Boolean).join(' · ')
+
+  return <div className="report-progress">
+    <dl className="report-progress__rows">
+      <Datum label={t('reports.today')} value={line(progress.current)} />
+      <Datum label={when} value={progress.previous ? line(progress.previous) : t('reports.no_previous')} />
+    </dl>
+    {progress.messageKey && <p className={`progression-hint progression-hint--${progress.action}`}>
+      {t(progress.messageKey)}{nextLoad ? ` → ${nextLoad}` : ''}
+    </p>}
+  </div>
+}
+
+/** "12" quando todas fecharam o mesmo número, "10–12" quando variaram. */
+function resultRange(exposure: ExerciseExposure, metric: ExerciseProgress['metric']) {
+  if (exposure.low === null) return '—'
+  const span = exposure.low === exposure.high ? `${exposure.low}` : `${exposure.low}–${exposure.high}`
+  return metric === 'seconds' ? `${span}s` : span
 }
 
 function ExerciseSets({ sets, load, locale }: {
@@ -141,6 +198,7 @@ export function ReportSetRow({ set, load, locale, recordKinds }: {
     <Datum label={t('session.side')} value={t(`session.side_${set.side === 'ambos' ? 'both' : set.side === 'D' ? 'right' : 'left'}`)} />
     <div className="report-series__flags">
       {set.skipped && <span>{t('reports.skipped')}</span>}
+      {!set.skipped && rirLevel(set.rir) === 'very_heavy' && <span>{t('rir.very_heavy')}</span>}
       {set.hadPain && <span>{t('reports.pain_marked')}</span>}
       <RecordFlag kinds={recordKinds} />
     </div>

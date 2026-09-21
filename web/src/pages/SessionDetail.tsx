@@ -8,6 +8,7 @@ import {
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
+import { progressReview } from '../lib/domain/session-review.js'
 import { planBlocks, supersetKind } from '../lib/domain/supersets.js'
 import { historyEditRoute, historyRoute, routes } from '../lib/routes.js'
 import { usePainRegions } from '../components/PainCapture.js'
@@ -26,6 +27,8 @@ export function SessionDetail() {
   const session = sessions.find((s) => s.id === sessionId) ?? null
   const templates = useTemplatesEver()
   const logs = useSetLogs(sessionId)
+  // A comparação com a sessão anterior precisa do histórico inteiro, não só do desta.
+  const allLogs = useSetLogs()
   const cardio = useCardioLogs(sessionId)
   const exercises = useExercises()
   const pain = usePainEvents().filter((event) => event.sessionId === sessionId)
@@ -73,7 +76,9 @@ export function SessionDetail() {
         {session.autoClosedAt && <span className="mono muted">{t('session.auto_closed')}</span>}
       </Card>
 
-      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'} supersetLabels={supersetLabels(session.planSnapshot?.items ?? [], t)} />
+      <TrainingReportView report={report} unit={settings?.unit ?? 'kg'}
+        supersetLabels={supersetLabels(session.planSnapshot?.items ?? [], t)}
+        progress={progressReview(session, sessions, allLogs)} />
 
       <Link className="session-detail__edit" to={historyEditRoute(session.id)}>{t('history.edit_session')} →</Link>
     </div>
