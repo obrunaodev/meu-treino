@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Exercise, PainEvent, SetLog, WorkoutSession } from '../src/lib/types'
 import {
   loadTrendValues, muscleGroupsForWeek, painByWeek, recentLoadTrends, sessionsByWeek,
-  workingSetsByCycle, weeksToBlockEnd,
+  sessionsInWeekOf, workingSetsByCycle, weeksToBlockEnd,
 } from '../src/lib/domain/dashboard'
 
 const session = (id: string, startedAt: string, status = 'concluida') => ({
@@ -146,5 +146,25 @@ describe('sessionsByWeek', () => {
       { weekStart: '2026-08-17', value: 0 },
       { weekStart: '2026-08-24', value: 1 },
     ])
+  })
+})
+
+describe('sessionsInWeekOf', () => {
+  // 2026-08-05 é uma quarta-feira: a semana vai de segunda 03 a domingo 09.
+  const week = [
+    session('mon', '2026-08-03T10:00:00'),
+    session('wed', '2026-08-05T10:00:00'),
+    session('sun', '2026-08-09T22:00:00'),
+    session('next-mon', '2026-08-10T10:00:00'),
+  ]
+
+  it('conta a semana civil da sessão, de segunda a domingo', () => {
+    expect(sessionsInWeekOf(week, '2026-08-05T10:00:00').map((entry) => entry.id))
+      .toEqual(['mon', 'wed', 'sun'])
+  })
+
+  it('sessão ainda aberta não entra na contagem da semana', () => {
+    const open = [...week, session('open', '2026-08-04T10:00:00', 'em_andamento')]
+    expect(sessionsInWeekOf(open, '2026-08-05T10:00:00')).toHaveLength(3)
   })
 })

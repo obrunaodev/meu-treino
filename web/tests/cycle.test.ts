@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  assignCycleNumbers, averageIntervalDays, blockJustClosed, calendarTrainingPosition,
+  assignCycleNumbers, averageIntervalDays, blockJustClosed, blockPosition, calendarTrainingPosition,
   currentStreak, cyclePosition,
   groupSessionsByBlock, nextTemplate,
 } from '../src/lib/domain/cycle'
@@ -192,5 +192,27 @@ describe('groupSessionsByBlock', () => {
     const groups = groupSessionsByBlock([s('a', '2026-08-01'), open], 2, 2)
 
     expect(groups[0]?.cycles[0]?.sessions).toEqual([open, expect.objectContaining({ templateId: 'a' })])
+  })
+})
+
+describe('blockPosition', () => {
+  // Dois treinos por ciclo e dois ciclos por bloco: o bloco tem quatro sessões.
+  const done = ['2026-08-01', '2026-08-03', '2026-08-05', '2026-08-07', '2026-08-09']
+    .map((day, index) => session(index % 2 === 0 ? 'a' : 'b', day))
+
+  it('numera dentro do bloco, não desde o começo do programa', () => {
+    expect(blockPosition(done[0]!, done, 2, 2)).toEqual({ index: 1, total: 4 })
+    expect(blockPosition(done[3]!, done, 2, 2)).toEqual({ index: 4, total: 4 })
+    expect(blockPosition(done[4]!, done, 2, 2)).toEqual({ index: 1, total: 4 })
+  })
+
+  it('sessão incompleta ocupou o lugar dela e conta', () => {
+    const partial = [session('a', '2026-08-01', 'incompleta'), session('b', '2026-08-03')]
+    expect(blockPosition(partial[1]!, partial, 2, 2)).toEqual({ index: 2, total: 4 })
+  })
+
+  it('sessão ainda aberta ocupa o lugar seguinte ao que já passou', () => {
+    const open = session('a', '2026-08-11', 'em_andamento')
+    expect(blockPosition(open, [...done, open], 2, 2)).toEqual({ index: 2, total: 4 })
   })
 })

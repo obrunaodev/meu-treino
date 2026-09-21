@@ -165,6 +165,28 @@ export function assignCycleNumbers(
   return out
 }
 
+/**
+ * Onde uma sessão cai dentro do bloco, em linguagem de treino: "sessão 5 de 8".
+ *
+ * "Ciclo 7 · bloco 3 · período 1" é exato e não diz nada na prática; o que
+ * orienta é quanto falta para o bloco fechar. Sessão ainda aberta não entra na
+ * contagem que avança o ciclo, então ocupa o lugar seguinte ao que já passou.
+ */
+export function blockPosition(
+  session: CycleSession,
+  sessions: CycleSession[],
+  sessionsPerCycle: number,
+  cyclesPerBlock: number,
+): { index: number; total: number } {
+  const total = Math.max(1, sessionsPerCycle) * Math.max(1, cyclesPerBlock)
+  const advancing = advancingSessions(sessions)
+  const place = advancing.indexOf(session)
+  const order = place === -1
+    ? advancing.filter((entry) => entry.startedAt < session.startedAt).length
+    : place
+  return { index: (order % total) + 1, total }
+}
+
 /** Agrupa todo o histórico por bloco e ciclo, do período mais recente ao mais antigo. */
 export function groupSessionsByBlock<T extends CycleSession>(
   sessions: T[],

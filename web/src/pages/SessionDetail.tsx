@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  useCardioLogs, useCardioOptions, useEquipment, useExercises, usePainEvents,
+  useCardioLogs, useCardioOptions, useEquipment, useExercises, usePainEvents, usePrograms,
   useSessions, useSetLogs, useSettings, useTemplateItems, useTemplatesEver,
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
+import { blockPosition } from '../lib/domain/cycle.js'
+import { calendarDaysBetween } from '../lib/domain/calendar.js'
+import { sessionsInWeekOf } from '../lib/domain/dashboard.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
 import { progressReview } from '../lib/domain/session-review.js'
 import { planBlocks, supersetKind } from '../lib/domain/supersets.js'
@@ -49,19 +52,14 @@ export function SessionDetail() {
       <Link className="button button--ghost" to={routes.history}>← {t('common.back')}</Link>
 
       <header className="page__title">
-        <span className="eyebrow">
-          {t('dashboard.cycle', {
-            cycle: session.cycleNumber,
-            block: session.blockNumber,
-            period: session.periodNumber ?? 1,
-          })}
-        </span>
+        <span className="eyebrow"><SessionPlace session={session} sessions={sessions} /></span>
         <h1>{session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}</h1>
         <span className="mono muted">
           {date.toLocaleString(i18n.language, { dateStyle: 'long', timeStyle: 'short' })}
           {' · '}
           {t('history.sets', { count: working.length })}
         </span>
+        <SessionCadence session={session} sessions={sessions} />
       </header>
 
       <Card title={t('history.session')}>
@@ -145,6 +143,51 @@ export function SessionEdit() {
       </div> : <button type="button" className="button button--ghost" onClick={() => setConfirming(true)}>{t('history.delete')}</button>}
     </Card>
   </div>
+}
+
+/**
+ * A posição da sessão em linguagem de treino.
+ *
+ * "Ciclo 7 · bloco 3 · período 1" é exato e não orienta nada; o que orienta é
+ * quanto falta para o bloco fechar. O programa da sessão é que define o
+ * tamanho do bloco — o ativo de hoje pode ser outro.
+ */
+function SessionPlace({ session, sessions }: { session: WorkoutSession; sessions: WorkoutSession[] }) {
+  const { t } = useTranslation()
+  const program = usePrograms().find((entry) => entry.id === session.programId)
+  if (!program) return <>{t('history.block', { number: session.blockNumber })}</>
+
+  const place = blockPosition(session, sessions, program.sessionsPerCycle, program.cyclesPerBlock)
+  return <>
+    {t('history.block', { number: session.blockNumber })}
+    {' · '}
+    {t('history.session_place', { index: place.index, total: place.total })}
+  </>
+}
+
+/**
+ * O intervalo desde o último treino igual e a semana.
+ *
+ * Voltar depois de dez dias parado muda a leitura das cargas, e sem o intervalo
+ * a comparação com a sessão anterior parece uma queda de desempenho. A meta da
+ * semana só existe no modo semanal: no contínuo não há dia planejado para contar.
+ */
+function SessionCadence({ session, sessions }: { session: WorkoutSession; sessions: WorkoutSession[] }) {
+  const { t } = useTranslation()
+  const program = usePrograms().find((entry) => entry.id === session.programId)
+  const previous = sessions
+    .filter((entry) => entry.templateId === session.templateId && entry.startedAt < session.startedAt)
+    .at(-1)
+  const gap = previous ? calendarDaysBetween(previous.startedAt, new Date(session.startedAt)) : null
+  const week = sessionsInWeekOf(sessions, session.startedAt).length
+  const target = program?.scheduleMode === 'weekly' ? program.weekdays.length : null
+  const since = gap === null ? 'history.first_of_workout' : gap === 0 ? 'history.same_day' : 'history.days_since'
+
+  return <span className="mono muted">
+    {t(since, { count: gap ?? 0 })}
+    {' · '}
+    {target === null ? t('history.week_count', { count: week }) : t('history.week_target', { done: week, total: target })}
+  </span>
 }
 
 function Datum({ label, value }: { label: string; value: string }) {

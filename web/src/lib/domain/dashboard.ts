@@ -95,6 +95,11 @@ export function sessionsForWeek(sessions: WorkoutSession[], weekStart: string) {
   })
 }
 
+/** Sessões encerradas na mesma semana civil de uma data, a semana começando na segunda. */
+export function sessionsInWeekOf(sessions: WorkoutSession[], at: string) {
+  return sessionsForWeek(sessions, dateKey(startOfWeek(new Date(at))))
+}
+
 /** Maior intensidade de dor por semana; zero preserva semanas sem ocorrência. */
 export function painByWeek(events: PainEvent[], weeks = 8, today = new Date()) {
   const buckets = sessionsByWeek([], weeks, today)
