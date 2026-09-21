@@ -1,6 +1,7 @@
 import type { Exercise, PainEvent, SetLog, WorkoutSession } from '../types.js'
 import { assignCycleNumbers, averageIntervalDays } from './cycle.js'
 import { kgToLb, type Unit } from './load.js'
+import { setKey } from './sets.js'
 
 export interface LoadTrend {
   exerciseId: string
@@ -28,19 +29,20 @@ export function workingSetsByCycle(
 ) {
   const positions = assignCycleNumbers(sessions, sessionsPerCycle, cyclesPerBlock)
   const cycleBySession = new Map(sessions.map((session) => [session.id, positions.get(session)?.cycleNumber]))
-  const totals = new Map<number, number>()
+  // Chaves e não contador: os dois lados de uma série unilateral são uma série.
+  const totals = new Map<number, Set<string>>()
 
   for (const set of sets) {
     if (set.isWarmup || set.skipped) continue
     const cycle = cycleBySession.get(set.sessionId)
     if (cycle === undefined) continue
-    totals.set(cycle, (totals.get(cycle) ?? 0) + 1)
+    totals.set(cycle, (totals.get(cycle) ?? new Set<string>()).add(setKey(set)))
   }
 
   return [...totals.entries()]
     .sort((a, b) => a[0] - b[0])
     .slice(-8)
-    .map(([cycle, value]) => ({ label: `C${cycle}`, value }))
+    .map(([cycle, keys]) => ({ label: `C${cycle}`, value: keys.size }))
 }
 
 /** Conta sessões encerradas nas últimas semanas civis, incluindo semanas vazias. */

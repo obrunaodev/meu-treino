@@ -70,7 +70,8 @@ function summarize(session: WorkoutSession, sets: HistorySet[]): ExerciseSession
     volumeKg: working.reduce((total, set) => total + (set.totalKg ?? 0) * (set.reps ?? 0), 0),
     bestReps: maxOf(working.map((set) => set.reps)),
     bestSeconds: maxOf(working.map((set) => set.seconds)),
-    workingSets: working.length,
+    // Séries, não linhas: com lados separados, os dois lados são uma série só.
+    workingSets: new Set(working.map((set) => set.setIndex)).size,
   }
 }
 
