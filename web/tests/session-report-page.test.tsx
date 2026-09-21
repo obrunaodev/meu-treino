@@ -107,4 +107,12 @@ describe('relatório da sessão como instrumento de decisão', () => {
     expect(within(adherence).getByText('100%')).toBeInTheDocument()
   })
 
+  it('o cabeçalho diz a posição no bloco, o intervalo e a semana', async () => {
+    await seedSession('antes', '2026-09-14T10:00:00.000Z', [{}, {}, {}])
+    await seedSession('hoje', '2026-09-21T10:00:00.000Z', [{}, {}, {}])
+    renderReport()
+
+    expect(await screen.findByText('Bloco 1 · sessão 2 de 4')).toBeInTheDocument()
+    expect(screen.getByText(/7 dias desde o treino anterior · 1 de 3 nesta semana/)).toBeInTheDocument()
+  })
 })
