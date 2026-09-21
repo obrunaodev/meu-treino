@@ -215,7 +215,7 @@ describe('initialSetDraft', () => {
   const fromOther = { origin: 'other_workout' as const, session: null, sets: [log(0, 80, 5, 0), log(1, 82.5, 5, 1)], earlierSets: [] }
 
   it('do mesmo treino copia carga, repetições e esforço por série no modo completo', () => {
-    expect(initialSetDraft(item, 1, undefined, fromTemplate)).toEqual({ kg: 55, plate: null, result: 10, rir: 2, checked: false })
+    expect(initialSetDraft(item, 1, undefined, fromTemplate)).toEqual({ kg: 55, plate: null, result: 10, rir: 2, checked: false, left: null })
   })
 
   it('do mesmo treino no modo compacto repete a última série', () => {
@@ -223,7 +223,7 @@ describe('initialSetDraft', () => {
   })
 
   it('de outro treino copia só a carga da última série; repetições e esforço seguem a prescrição', () => {
-    expect(initialSetDraft(item, 0, undefined, fromOther)).toEqual({ kg: 82.5, plate: null, result: 12, rir: 2, checked: false })
+    expect(initialSetDraft(item, 0, undefined, fromOther)).toEqual({ kg: 82.5, plate: null, result: 12, rir: 2, checked: false, left: null })
   })
 
   it('exercício por tempo vindo de outro treino recebe os segundos prescritos', () => {
@@ -232,11 +232,11 @@ describe('initialSetDraft', () => {
   })
 
   it('o que já foi feito hoje vence e vem marcado', () => {
-    expect(initialSetDraft(item, 0, log(0, 70, 12, 2), fromOther)).toEqual({ kg: 70, plate: null, result: 12, rir: 2, checked: true })
+    expect(initialSetDraft(item, 0, log(0, 70, 12, 2), fromOther)).toEqual({ kg: 70, plate: null, result: 12, rir: 2, checked: true, left: null })
   })
 
   it('sem histórico nenhum, só a prescrição', () => {
-    expect(initialSetDraft(item, 0, undefined, null)).toEqual({ kg: null, plate: null, result: 12, rir: 2, checked: false })
+    expect(initialSetDraft(item, 0, undefined, null)).toEqual({ kg: null, plate: null, result: 12, rir: 2, checked: false, left: null })
   })
 })
 

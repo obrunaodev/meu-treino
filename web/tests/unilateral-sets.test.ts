@@ -109,6 +109,21 @@ describe('contagem nos relatórios', () => {
       .toMatchObject({ workingSets: 3, low: 9, high: 12 })
   })
 
+  it('só sobe a carga quando o lado fraco também fecha a faixa', () => {
+    const before = session('antes', '2026-09-14T10:00:00Z')
+    const weakLeft = [0, 1, 2].flatMap((index) => [
+      bothSides('hoje', index)[0]!,
+      { ...bothSides('hoje', index)[1]!, reps: 9 },
+    ])
+    const both = threeSets('hoje', { reps: 12 })
+    const history = threeSets('antes', { reps: 12, rir: 4 })
+
+    expect(progressReview(today, [before, today], [...weakLeft, ...history]).get('extensora')!.action)
+      .toBe('progress_reps')
+    expect(progressReview(today, [before, today], [...both, ...history]).get('extensora')!.action)
+      .toBe('increase')
+  })
+
   it('a história do exercício e o gráfico do ciclo contam séries', () => {
     const history = exerciseSessionHistory('extensora', null, [today], threeSets('hoje'), [])
     expect(history[0]).toMatchObject({ workingSets: 3, bestReps: 12 })

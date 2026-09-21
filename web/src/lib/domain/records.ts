@@ -12,6 +12,15 @@ export const LOAD_EPSILON_KG = 0.01
 /** Chave do recorde que é da sessão inteira, não de uma série. */
 export const SESSION_RECORD_KEY = 'session'
 
+/**
+ * Chave do recorde de um lado dentro da série ao vivo. Cada lado de um
+ * exercício com lados separados concorre por conta própria — 40 kg na perna
+ * direita são 40 kg —, mas o direito usa a chave da própria série para que o
+ * exercício comum, de um lado só, continue com a chave que sempre teve.
+ */
+export const liveRecordKey = (setIndex: number, side: 'ambos' | 'D' | 'E') =>
+  (side === 'E' ? `${setIndex}|E` : String(setIndex))
+
 export interface ComparableSet {
   key: string
   setIndex: number
