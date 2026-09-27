@@ -1,6 +1,7 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActions } from '../lib/actions.js'
+import { useSessionDrafts } from '../lib/session-drafts.js'
 import { lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
 import { SESSION_RECORD_KEY, liveRecordKey, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
 import {
@@ -107,19 +108,10 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
         member.item, setIndex, member.workLogs.find((log) => log.setIndex === setIndex), sources.get(member.item.id) ?? null,
       ))),
   ]))
-  const [drafts, setDrafts] = useState<Record<string, SetDraft[]>>(initialDrafts)
+  const persisted = useSessionDrafts(sessionId, initialDrafts())
+  const { drafts, update: setDrafts } = persisted
   const [showPain, setShowPain] = useState(false)
 
-  // Mesma regra do exercício sozinho: os rascunhos recomeçam quando muda a
-  // fonte que os preencheu, não a cada array novo vindo do Dexie.
-  // `bothSides` entra na chave: o exercício chega do IndexedDB depois do
-  // primeiro render, e sem ele os rascunhos ficariam de um lado só.
-  const blockKey = members.map((member) => `${member.item.id}:${member.item.sets}:${member.bothSides}`).join('|')
-  const sourceKey = members.flatMap((member) => {
-    const source = sources.get(member.item.id) ?? null
-    return [String(source?.origin), ...[...member.workLogs, ...(source?.sets ?? [])].map((log) => `${log.id}:${log.updatedAt}`)]
-  }).join('|')
-  useEffect(() => setDrafts(initialDrafts()), [blockKey, sourceKey])
 
   const kind = supersetKind(members.length) ?? 'biset'
   const active = members.filter((member) => !member.skipped)
@@ -201,6 +193,7 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
     if (!allChecked) return
     // O membro pulado fica como está: apagar os registros dele apagaria o pulo.
     for (const member of active) await writeSets(member)
+    await persisted.clear(items.map((item) => item.id))
     onDone()
   }
 
@@ -209,6 +202,7 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
     for (let setIndex = 0; setIndex < member.item.sets; setIndex++) {
       await logSet({ sessionId, templateItemId: member.item.id, exerciseId: member.item.exerciseId, setIndex, skipped: true, completedAt: null })
     }
+    await persisted.clear([member.item.id])
   }
 
   async function addWarmup(member: Member) {
@@ -220,9 +214,11 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
   }
 
   async function reopenBlock() {
+    await persisted.clear(items.map((item) => item.id))
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
   }
 
+  if (!persisted.ready) return <section className="session-focus">…</section>
   if (completed) return <section className="session-focus">
     <span className="session-focus__done">✓</span>
     <h2>{t(`session.superset_${kind}`)}</h2>

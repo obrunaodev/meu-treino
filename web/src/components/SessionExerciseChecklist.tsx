@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { useActions } from '../lib/actions.js'
+import { useSessionDrafts } from '../lib/session-drafts.js'
 import { formatLoad, lbToKg, nextLoadStep, plateForKg, totalLoadKg } from '../lib/domain/load.js'
 import { SESSION_RECORD_KEY, liveRecordKey, sessionRecordKinds, type ComparableSet, type RecordKind } from '../lib/domain/records.js'
 import {
@@ -151,24 +152,18 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     ofSide(workLogs, side).find((log) => log.setIndex === setIndex),
     source && { ...source, sets: ofSide(source.sets, side) },
   )
-  // A chave é só da fonte escolhida: os rascunhos recomeçam quando essa fonte
-  // muda, não a cada pull que traz séries de outras sessões.
-  const sourceKey = [...workLogs, ...(source?.sets ?? [])].map((log) => `${log.id}:${log.updatedAt}`).concat(String(source?.origin)).join('|')
   const initialDrafts = (): SetDraft[] => Array.from({ length: item.sets }, (_, setIndex) => (
     bothSides
       ? withLeftSide(draftOfSide(setIndex, 'D'), draftOfSide(setIndex, 'E'))
       : initialSetDraft(item, setIndex, workLogs.find((log) => log.setIndex === setIndex), source)
   ))
-  const [drafts, setDrafts] = useState<SetDraft[]>(initialDrafts)
+  const persisted = useSessionDrafts(sessionId, { [item.id]: initialDrafts() })
+  const drafts = persisted.drafts[item.id]!
+  const setDrafts = (change: (current: SetDraft[]) => SetDraft[]) => persisted.update((current) => ({ ...current, [item.id]: change(current[item.id]!) }))
   const [showImage, setShowImage] = useState(false)
   const [showPain, setShowPain] = useState(false)
   const [catalog, setCatalog] = useState<CatalogExercise | null>(null)
 
-  // O histórico chega do IndexedDB depois do primeiro render. A chave atualiza
-  // os rascunhos quando ele chega, sem depender da identidade do array Dexie.
-  // `bothSides` entra junto: o exercício chega depois do primeiro render, e sem
-  // ele os rascunhos nasceriam de um lado só e nunca ganhariam o outro.
-  useEffect(() => setDrafts(initialDrafts()), [item.id, item.sets, sourceKey, bothSides])
   useEffect(() => {
     if (!exercise?.catalogExerciseId) return
     let current = true
@@ -217,6 +212,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
         await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex, ...row })
       }
     }
+    await persisted.clear([item.id])
     onDone()
   }
 
@@ -225,6 +221,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     for (let skippedIndex = 0; skippedIndex < item.sets; skippedIndex++) {
       await logSet({ sessionId, templateItemId: item.id, exerciseId: item.exerciseId, setIndex: skippedIndex, skipped: true, completedAt: null })
     }
+    await persisted.clear([item.id])
     onDone()
   }
 
@@ -236,6 +233,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
   }
 
   async function reopenExercise() {
+    await persisted.clear([item.id])
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
   }
 
@@ -265,6 +263,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     }))
   }
 
+  if (!persisted.ready) return <section className="session-focus">…</section>
   if (completed) return <section className="session-focus">
     <span className="session-focus__done">✓</span><h2>{name}</h2><p className="muted">{t('session.exercise_completed')}</p>
     <div className="row">

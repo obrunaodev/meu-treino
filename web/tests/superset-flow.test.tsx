@@ -100,7 +100,7 @@ describe('bi-set ao vivo', () => {
     const logs = await localDb.table_('set_logs').toArray()
     expect(logs.filter((log: never) => (log as { templateItemId: string }).templateItemId === 'item-a')).toHaveLength(2)
     expect(logs.filter((log: never) => (log as { templateItemId: string }).templateItemId === 'item-b')).toHaveLength(2)
-    expect(onDone).toHaveBeenCalled()
+    await waitFor(() => expect(onDone).toHaveBeenCalled())
   })
 
   it('membro pulado sai das rodadas e o outro segue sozinho', async () => {

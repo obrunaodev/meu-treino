@@ -68,7 +68,10 @@ test('monta um bi-set no treino e executa as rodadas alternadas', async ({ page 
   await expect(page.getByRole('button', { name: /Iniciar intervalo após a rodada/ })).toHaveCount(2)
 
   // Marcar troca o rótulo para "Desmarcar", então a série marcada sai da lista.
-  for (let remaining = 6; remaining > 0; remaining--) await checks.first().click()
+  await checks.first().click()
+  await page.reload()
+  await expect(checks).toHaveCount(5)
+  for (let remaining = 5; remaining > 0; remaining--) await checks.first().click()
   await page.getByRole('button', { name: 'Finalizar bloco' }).click()
 
   // Os dois membros fecham juntos: a visão geral volta sem nenhum pendente.
