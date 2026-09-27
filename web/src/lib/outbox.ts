@@ -10,17 +10,17 @@ import { localDb, type SyncEntity, type SyncRow } from './db.js'
 export async function mutate(entity: SyncEntity, patch: Partial<SyncRow> & { id?: string }) {
   const id = patch.id ?? uuidv7()
   const table = localDb.table_(entity)
-  const existing = await table.get(id)
+  return localDb.transaction('rw', table, localDb.outbox, async () => {
+    const existing = await table.get(id)
 
-  const row: SyncRow = {
-    ...(existing ?? {}),
-    ...patch,
-    id,
-    ownerId: (patch.ownerId ?? existing?.ownerId ?? '') as string,
-    updatedAt: new Date().toISOString(),
-  } as SyncRow
+    const row: SyncRow = {
+      ...(existing ?? {}),
+      ...patch,
+      id,
+      ownerId: (patch.ownerId ?? existing?.ownerId ?? '') as string,
+      updatedAt: new Date().toISOString(),
+    } as SyncRow
 
-  await localDb.transaction('rw', table, localDb.outbox, async () => {
     await table.put(row)
     await localDb.outbox.put({
       opId: uuidv7(),
@@ -41,19 +41,16 @@ export async function mutate(entity: SyncEntity, patch: Partial<SyncRow> & { id?
       queuedAt: new Date().toISOString(),
       attempts: 0,
     })
+    return row
   })
-
-  return row
 }
 
 export async function remove(entity: SyncEntity, id: string) {
   const table = localDb.table_(entity)
-  const existing = await table.get(id)
-  if (!existing) return
-
-  const row = { ...existing, deletedAt: new Date().toISOString() }
-
   await localDb.transaction('rw', table, localDb.outbox, async () => {
+    const existing = await table.get(id)
+    if (!existing) return
+    const row = { ...existing, deletedAt: new Date().toISOString() }
     await table.put(row)
     await localDb.outbox.put({
       opId: uuidv7(),

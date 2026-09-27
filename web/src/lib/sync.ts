@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { v7 as uuidv7 } from 'uuid'
 import { apiFetch } from './api.js'
-import { getMeta, localDb, setMeta, type SyncEntity, type SyncRow } from './db.js'
+import { getMeta, localDb, setMeta, SYNC_STORES, type OutboxEntry, type SyncEntity, type SyncRow } from './db.js'
 
 const DEVICE_KEY = 'deviceId'
 /** Um rev por entidade. Ver o comentário de `cursors` em api/src/routes/sync.ts. */
@@ -43,6 +43,38 @@ type SyncResponse = {
   hasMore: boolean
 }
 
+async function acceptResponse(response: SyncResponse) {
+  // A pull and its acknowledgements are one local commit. Pending rows keep
+  // their local value until their own operation is acknowledged by the server.
+  return localDb.transaction('rw', [...SYNC_STORES.map((entity) => localDb.table_(entity)), localDb.outbox, localDb.meta], async () => {
+    const settled = response.results.filter((result) => result.status !== 'rejected').map((result) => result.opId)
+    await localDb.outbox.bulkDelete(settled)
+    const pending = await localDb.outbox.orderBy('queuedAt').toArray()
+    let pulled = 0
+    for (const [entity, rows] of Object.entries(response.changes)) {
+      if (!rows?.length) continue
+      await localDb.table_(entity as SyncEntity).bulkPut(rows.map((row) =>
+        withPendingEdits(row, pending.filter((op) => op.entity === entity && op.entityId === row.id))))
+      pulled += rows.length
+    }
+    await setMeta(CURSORS_KEY, response.cursors)
+    await setMeta('revisionProtocol', 2)
+    return { pushed: settled.length, pulled }
+  })
+}
+
+function withPendingEdits(remote: SyncRow, operations: OutboxEntry[]): SyncRow {
+  const row = { ...remote }
+  for (const operation of operations) {
+    for (const [field, value] of Object.entries(operation.data)) {
+      if (['id', 'ownerId', 'rev', 'createdAt', 'updatedAt'].includes(field)) continue
+      if (!operation.base || JSON.stringify(value) !== JSON.stringify(operation.base[field])) row[field] = value
+    }
+    if (operation.op === 'upsert') row.deletedAt = null
+  }
+  return row
+}
+
 /**
  * Push do outbox e pull incremental na mesma chamada. Uma viagem por rodada
  * importa: a rede da academia é ruim e cada round-trip a mais é uma chance de
@@ -66,6 +98,8 @@ async function execute(): Promise<SyncResult> {
 
   const device = await deviceId()
   let cursors = await getMeta<Record<string, number>>(CURSORS_KEY, {})
+  // Recover rows a pre-fix cursor may have skipped during concurrent commits.
+  if (await getMeta('revisionProtocol', 1) !== 2) cursors = {}
   let pushed = 0
   let pulled = 0
   let conflicts = 0
@@ -90,25 +124,14 @@ async function execute(): Promise<SyncResult> {
       }),
     })
 
-    // Só limpa o que o servidor confirmou. Uma resposta parcial deixa o resto
-    // na fila, e o opId garante que reenviar não duplica.
-    const settled = response.results.map((r) => r.opId)
-    if (settled.length) {
-      await localDb.outbox.bulkDelete(settled)
-      pushed += settled.length
-    }
-
-    for (const [entity, rows] of Object.entries(response.changes)) {
-      if (!rows?.length) continue
-      await localDb.table_(entity as SyncEntity).bulkPut(rows)
-      pulled += rows.length
-    }
+    const accepted = await acceptResponse(response)
+    pushed += accepted.pushed
+    pulled += accepted.pulled
+    if (response.results.some((result) => result.status === 'rejected')) throw new Error('sync_rejected')
 
     cursors = response.cursors
     conflicts = response.pendingConflicts
-    await setMeta(CURSORS_KEY, cursors)
-
-    hasMore = response.hasMore || (batch.length === BATCH && settled.length > 0)
+    hasMore = response.hasMore || (batch.length === BATCH && accepted.pushed > 0)
   }
 
   await setMeta(BOOTSTRAP_KEY, new Date().toISOString())
