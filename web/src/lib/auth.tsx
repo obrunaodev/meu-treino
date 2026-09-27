@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { apiFetch, refreshAccessToken, setAccessToken } from './api.js'
+import { ApiError, apiFetch, refreshAccessToken, setAccessToken } from './api.js'
 import { getMeta, localDb, setMeta } from './db.js'
 import { pendingCount } from './outbox.js'
 
@@ -26,6 +26,7 @@ interface AuthState {
 }
 
 const OWNER_KEY = 'ownerId'
+const USER_KEY = 'currentUser'
 
 /**
  * Apaga tudo que é do usuário neste aparelho.
@@ -49,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthState['status']>('carregando')
 
   const reload = useCallback(async () => {
-    // O access token vive só em memória, então todo boot começa pelo refresh.
-    const token = await refreshAccessToken()
-    if (!token) {
-      setUser(null)
-      setStatus('anonimo')
-      return
-    }
     try {
+      const token = await refreshAccessToken()
+      if (!token) {
+        await localDb.meta.delete(USER_KEY)
+        setUser(null)
+        setStatus('anonimo')
+        return
+      }
       const atual = await apiFetch<CurrentUser>('/auth/me')
 
       /**
@@ -74,12 +75,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       await setMeta(OWNER_KEY, atual.id)
+      await setMeta(USER_KEY, atual)
 
       setUser(atual)
       setStatus('autenticado')
-    } catch {
-      setUser(null)
-      setStatus('anonimo')
+    } catch (error) {
+      // Network failure permits the last verified account's local replica;
+      // an explicit authentication refusal never falls back to cached access.
+      const unavailable = error instanceof TypeError || (error instanceof ApiError && error.status >= 500)
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) await localDb.meta.delete(USER_KEY)
+      const cached = unavailable ? await getMeta<CurrentUser | null>(USER_KEY, null) : null
+      const owner = await getMeta<string | null>(OWNER_KEY, null)
+      const offlineUser = cached?.id === owner ? cached : null
+      setUser(offlineUser)
+      setStatus(offlineUser ? 'autenticado' : 'anonimo')
     }
   }, [])
 
@@ -90,7 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async (force = false) => {
     // A fila é a única cópia do que ainda não subiu. Apagar sem avisar perde
     // treino registrado offline, que é justamente o caso de uso do app.
-    const pendente = await pendingCount()
+    const drafts = await localDb.meta.where('key').startsWith('session-drafts:').toArray()
+    const pendente = await pendingCount() + drafts.reduce((count, row) => count + Object.keys(row.value as object).length, 0)
     if (pendente > 0 && !force) return { ok: false as const, pendente }
 
     await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined)
