@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 import { fetchMediaBlob } from './api.js'
-import { localDb, SYNC_STORES, type SyncEntity } from './db.js'
+import { getMeta, localDb, SYNC_STORES, type SyncEntity } from './db.js'
+import { backupForAccount } from './backup-ids.js'
 import { mutate, remove } from './outbox.js'
 import {
   BACKUP_ENTITIES, BACKUP_FORMAT, BACKUP_VERSION, portableRow,
@@ -13,8 +14,10 @@ export type { BackupDocument, BackupSummary } from './backup-format.js'
 /** Builds a portable account backup from the offline replica and private media. */
 export async function buildBackup(): Promise<{ blob: Blob; summary: BackupSummary }> {
   const entities: BackupDocument['entities'] = {}
+  let sourceOwnerId = await getMeta<string | null>('ownerId', null)
   for (const entity of BACKUP_ENTITIES) {
     const rows = await localDb.table_(entity).toArray()
+    sourceOwnerId ??= rows[0]?.ownerId ?? null
     entities[entity] = rows.filter((row) => !row.deletedAt).map(portableRow)
   }
 
@@ -22,6 +25,7 @@ export async function buildBackup(): Promise<{ blob: Blob; summary: BackupSummar
   const document: BackupDocument = {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
+    sourceOwnerId,
     exportedAt: new Date().toISOString(),
     entities,
     media,
@@ -33,7 +37,6 @@ export async function buildBackup(): Promise<{ blob: Blob; summary: BackupSummar
   }
 }
 
-/** Restores a backup into the signed-in account and queues every change for sync. */
 /**
  * O que uma linha de backup anterior ao recurso não traz.
  *
@@ -45,11 +48,13 @@ const RESTORE_DEFAULTS: Partial<Record<SyncEntity, Record<string, unknown>>> = {
   template_items: { supersetGroup: null },
 }
 
+/** Restores a backup into the signed-in account and queues every change for sync. */
 export async function restoreBackup(
   backup: BackupDocument,
   ownerId: string,
   mode: 'merge' | 'replace',
 ): Promise<BackupSummary> {
+  backup = await backupForAccount(backup, ownerId)
   // A preferência é lida ANTES de apagar: é ela que diz em qual linha as
   // configurações do arquivo entram, e uma linha já apagada não seria achada.
   const currentSettings = (await localDb.table_('user_settings').toArray()).find((row) => !row.deletedAt)
@@ -64,7 +69,7 @@ export async function restoreBackup(
   // mesmos ids parecia equivalente e não é: em entidade append-only o
   // servidor descarta o upsert numa linha existente, então a dor e os
   // resultados de teste voltariam apagados no próximo pull.
-  if (mode === 'replace') await removeCurrentData(restored)
+  if (mode === 'replace') await removeCurrentData(restored, new Set(Object.keys(backup.entities)))
   let rows = 0
 
   for (const entity of BACKUP_ENTITIES) {
@@ -101,9 +106,10 @@ async function exportMedia(): Promise<BackupMedia[]> {
   return [...files.values()]
 }
 
-async function removeCurrentData(keep: Map<SyncEntity, Set<string>>) {
+async function removeCurrentData(keep: Map<SyncEntity, Set<string>>, included: Set<string>) {
   await localDb.uploads.clear()
   for (const entity of [...SYNC_STORES].reverse()) {
+    if (entity !== 'exercise_media' && !included.has(entity)) continue
     const rows = await localDb.table_(entity).toArray()
     const restored = keep.get(entity)
     for (const row of rows) {

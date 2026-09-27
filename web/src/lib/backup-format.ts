@@ -1,7 +1,7 @@
 import { SYNC_STORES, type SyncEntity, type SyncRow } from './db.js'
 
 export const BACKUP_FORMAT = 'meu-treino-backup'
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
 export const MAX_BACKUP_BYTES = 250 * 1024 * 1024
 export const BACKUP_ENTITIES = SYNC_STORES.filter((entity) => entity !== 'exercise_media')
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -16,7 +16,8 @@ export interface BackupMedia {
 
 export interface BackupDocument {
   format: typeof BACKUP_FORMAT
-  version: typeof BACKUP_VERSION
+  version: 1 | typeof BACKUP_VERSION
+  sourceOwnerId?: string | null
   exportedAt: string
   entities: Partial<Record<SyncEntity, Array<Record<string, unknown>>>>
   media: BackupMedia[]
@@ -43,7 +44,7 @@ export function parseBackup(raw: string, byteLength = new Blob([raw]).size): Bac
   } catch {
     throw new Error('backup_invalid_json')
   }
-  if (!isRecord(value) || value.format !== BACKUP_FORMAT || value.version !== BACKUP_VERSION) {
+  if (!isRecord(value) || value.format !== BACKUP_FORMAT || (value.version !== 1 && value.version !== BACKUP_VERSION)) {
     throw new Error('backup_invalid_format')
   }
   if (typeof value.exportedAt !== 'string' || Number.isNaN(new Date(value.exportedAt).getTime()) ||
@@ -52,20 +53,21 @@ export function parseBackup(raw: string, byteLength = new Blob([raw]).size): Bac
   }
 
   const entities: BackupDocument['entities'] = {}
+  if (value.version === 2 && value.sourceOwnerId !== null &&
+      (typeof value.sourceOwnerId !== 'string' || !UUID.test(value.sourceOwnerId))) throw new Error('backup_invalid_format')
   for (const entity of BACKUP_ENTITIES) {
     const rows = value.entities[entity]
-    // Entidade ausente é um arquivo escrito antes dela existir, e isso não
-    // invalida o backup: exigir todas as listas faria cada tabela nova
-    // aposentar todos os arquivos já salvos. Lista presente com outra coisa
-    // dentro continua sendo arquivo corrompido.
-    if (rows === undefined) continue
+    // Only body measurements were added after the original v1 envelope.
+    // Absence is preserved so Replace cannot erase data the file never held.
+    if (rows === undefined && value.version === 1 && entity === 'body_measurements') continue
     if (!Array.isArray(rows)) throw new Error('backup_invalid_format')
     entities[entity] = rows.map(validateRow)
   }
   const media = value.media.map(validateMedia)
   return {
     format: BACKUP_FORMAT,
-    version: BACKUP_VERSION,
+    version: value.version,
+    sourceOwnerId: value.version === 2 ? value.sourceOwnerId as string | null : undefined,
     exportedAt: value.exportedAt,
     entities,
     media,

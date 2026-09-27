@@ -32,13 +32,17 @@ describe('personal backup', () => {
     const summary = await restoreBackup(backup, TARGET, 'merge')
 
     expect(summary).toMatchObject({ rows: 1, images: 0 })
-    expect(await localDb.table_('equipment').get(equipment.id)).toMatchObject({
+    const [imported] = await localDb.table_('equipment').toArray()
+    expect(imported!.id).not.toBe(equipment.id)
+    expect(imported).toMatchObject({
       ownerId: TARGET,
       name: 'Leg press',
       plateTable: [10, 20],
       deletedAt: null,
     })
     expect(await localDb.outbox.count()).toBe(1)
+    await restoreBackup(backup, TARGET, 'merge')
+    expect(await localDb.table_('equipment').count()).toBe(1)
   })
 
   it('replace soft-deletes active records absent from the backup', async () => {
@@ -69,7 +73,7 @@ describe('personal backup', () => {
       expect.objectContaining({ exerciseId, filename: 'exercise.png', mime: 'image/png' }),
     ])
     expect(await localDb.uploads.toArray()).toEqual([
-      expect.objectContaining({ exerciseId, filename: 'exercise.png' }),
+      expect.objectContaining({ exerciseId: expect.not.stringMatching(exerciseId), filename: 'exercise.png' }),
     ])
   })
 
@@ -110,18 +114,20 @@ describe('personal backup', () => {
   })
 
   it('arquivo anterior a uma tabela nova continua restaurando', async () => {
-    const gym = await mutate('gyms', { ownerId: SOURCE, name: 'Academia', isActive: true })
+    await mutate('gyms', { ownerId: SOURCE, name: 'Academia', isActive: true })
     const exported = await buildBackup()
     const raw = JSON.parse(await readBlob(exported.blob))
     // Como um arquivo escrito antes de a entidade existir: a lista some.
-    delete raw.entities.test_results
+    raw.version = 1
+    delete raw.sourceOwnerId
+    delete raw.entities.body_measurements
     await localDb.delete()
     await localDb.open()
 
     const summary = await restoreBackup(parseBackup(JSON.stringify(raw)), TARGET, 'merge')
 
     expect(summary.rows).toBeGreaterThan(0)
-    expect(await localDb.table_('gyms').get(gym.id)).toMatchObject({ name: 'Academia', ownerId: TARGET })
+    expect((await localDb.table_('gyms').toArray())[0]).toMatchObject({ name: 'Academia', ownerId: TARGET })
   })
 
   it('lista presente com outra coisa dentro ainda é arquivo corrompido', async () => {
@@ -130,6 +136,47 @@ describe('personal backup', () => {
     raw.entities.test_results = 'nao-e-lista'
 
     expect(() => parseBackup(JSON.stringify(raw))).toThrow('backup_invalid_format')
+  })
+
+  it('rejects missing required tables before Replace can remove anything', async () => {
+    const gym = await mutate('gyms', { ownerId: SOURCE, name: 'Keep me' })
+    const raw = JSON.parse(await readBlob((await buildBackup()).blob))
+    delete raw.entities.gyms
+    expect(() => parseBackup(JSON.stringify(raw))).toThrow('backup_invalid_format')
+    raw.version = 1
+    expect(() => parseBackup(JSON.stringify(raw))).toThrow('backup_invalid_format')
+    expect((await localDb.table_('gyms').get(gym.id))?.deletedAt).toBeUndefined()
+  })
+
+  it('keeps measurements when replacing from a legacy file without that table', async () => {
+    const raw = JSON.parse(await readBlob((await buildBackup()).blob))
+    raw.version = 1
+    delete raw.sourceOwnerId
+    delete raw.entities.body_measurements
+    const measurement = await mutate('body_measurements', { ownerId: TARGET, kind: 'weight', value: 80 })
+    await restoreBackup(parseBackup(JSON.stringify(raw)), TARGET, 'replace')
+    expect((await localDb.table_('body_measurements').get(measurement.id))?.deletedAt).toBeUndefined()
+  })
+
+  it('remaps relationships and immutable snapshots together across accounts', async () => {
+    const gym = await mutate('gyms', { ownerId: SOURCE, name: 'Gym' })
+    const gear = await mutate('equipment', { ownerId: SOURCE, name: 'Bar', gymId: gym.id })
+    const exercise = await mutate('exercises', { ownerId: SOURCE, name: 'Squat', equipmentId: gear.id })
+    const item = await mutate('template_items', { ownerId: SOURCE, exerciseId: exercise.id })
+    await mutate('workout_sessions', { ownerId: SOURCE, planSnapshot: { items: [{ id: item.id, exerciseId: exercise.id, equipment: { id: gear.id } }] } })
+    const backup = parseBackup(await readBlob((await buildBackup()).blob))
+    await localDb.delete()
+    await localDb.open()
+    await restoreBackup(backup, TARGET, 'merge')
+    const [newGym] = await localDb.table_('gyms').toArray()
+    const [newGear] = await localDb.table_('equipment').toArray()
+    const [newExercise] = await localDb.table_('exercises').toArray()
+    const [newItem] = await localDb.table_('template_items').toArray()
+    const [session] = await localDb.table_('workout_sessions').toArray()
+    expect(newGear!.gymId).toBe(newGym!.id)
+    expect(newExercise!.equipmentId).toBe(newGear!.id)
+    expect(newItem!.exerciseId).toBe(newExercise!.id)
+    expect(session!.planSnapshot).toMatchObject({ items: [{ id: newItem!.id, exerciseId: newExercise!.id, equipment: { id: newGear!.id } }] })
   })
 
   it('restaurar um backup anterior ao bi-set desfaz o grupo de hoje', async () => {
