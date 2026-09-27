@@ -63,6 +63,8 @@ export async function editTargetWorkout(ownerId: string, entry: ExerciseEntry) {
   const client = await pool.connect()
   try {
     await client.query('begin')
+    // Match the sync triggers' lock order before locking a session row.
+    await client.query('select pg_advisory_xact_lock(1937337955, 1)')
     const session = (await client.query(`select id,template_id,status,plan_snapshot from workout_sessions
       where owner_id=$1 and status in ('em_andamento','concluida','incompleta') and deleted_at is null
       order by started_at desc limit 1 for update`, [ownerId])).rows[0]

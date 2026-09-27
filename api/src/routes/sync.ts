@@ -61,6 +61,8 @@ async function loadRow(
 }
 
 async function applyOperation(tx: Executor, op: Operation, ownerId: string) {
+  // Read the merge base only after previous synchronized writers have committed.
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(1937337955, 1)`)
   const entity = op.entity as SyncEntity
   const { table, mergeStrategy } = SYNC_TABLES[entity]
   const incoming: Row = { ...coerceRow(entity, op.data), id: op.entityId, ownerId }
@@ -71,8 +73,8 @@ async function applyOperation(tx: Executor, op: Operation, ownerId: string) {
     if (SERVER_CREATED_ENTITIES.has(entity)) {
       return { entityId: op.entityId, status: 'rejected' as const }
     }
-    await tx.insert(table).values(incoming as never).onConflictDoNothing()
-    return { entityId: op.entityId, status: 'created' as const }
+    const inserted = await tx.insert(table).values(incoming as never).onConflictDoNothing().returning({ id: table.id })
+    return { entityId: op.entityId, status: inserted.length ? 'created' as const : 'rejected' as const }
   }
 
   if (op.op === 'delete') {
@@ -87,6 +89,12 @@ async function applyOperation(tx: Executor, op: Operation, ownerId: string) {
   const resurrect = current.deletedAt !== null && current.deletedAt !== undefined
 
   if (mergeStrategy === 'append-only') {
+    // Restoring a user's immutable observation revives the original data.
+    // Server-created media must stay deleted: its object may be purged already.
+    if (resurrect && op.data.deletedAt === null && !SERVER_CREATED_ENTITIES.has(entity)) {
+      await tx.update(table).set({ deletedAt: null } as never).where(eq(table.id, op.entityId))
+      return { entityId: op.entityId, status: 'resurrected' as const }
+    }
     // A linha não muda depois de criada; existir já significa que está em dia.
     return { entityId: op.entityId, status: 'noop' as const }
   }
@@ -182,7 +190,11 @@ syncRouter.post('/', async (req, res) => {
       if (claimed.length === 0) {
         return { entityId: op.entityId, status: 'duplicate' as const }
       }
-      return applyOperation(tx, op, ownerId)
+      const result = await applyOperation(tx, op, ownerId)
+      // A rejection is not an acknowledgement; a retry must not become a
+      // misleading "duplicate" that causes clients to discard unsaved data.
+      if (result.status === 'rejected') await tx.delete(syncOperations).where(eq(syncOperations.id, op.opId))
+      return result
     })
 
     results.push({ opId: op.opId, ...outcome })

@@ -65,6 +65,8 @@ export async function startTodayWorkout(ownerId: string): Promise<ActiveWorkout 
   const client = await pool.connect()
   try {
     await client.query('begin')
+    // Take the revision lock before SELECT FOR UPDATE to match the triggers' lock order.
+    await client.query('select pg_advisory_xact_lock(1937337955, 1)')
     const open = await findOpenSession(client, ownerId)
     const session = open ?? await createNextSession(client, ownerId)
     if (!session) {
@@ -87,6 +89,7 @@ export async function recordExercise(ownerId: string, entry: ExerciseEntry) {
   const client = await pool.connect()
   try {
     await client.query('begin')
+    await client.query('select pg_advisory_xact_lock(1937337955, 1)')
     const session = await findOpenSession(client, ownerId) ?? await findRevisableSession(client, ownerId)
     if (!session) return await rollback(client, { status: 'no_session' as const })
     const items = itemsForSession(session, await loadItems(client, ownerId, session.template_id))
@@ -121,6 +124,7 @@ export async function skipExercise(ownerId: string, exerciseNumber: number) {
   const client = await pool.connect()
   try {
     await client.query('begin')
+    await client.query('select pg_advisory_xact_lock(1937337955, 1)')
     const session = await findOpenSession(client, ownerId)
     if (!session) return await rollback(client, { status: 'no_session' as const })
     const items = itemsForSession(session, await loadItems(client, ownerId, session.template_id))
