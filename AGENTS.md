@@ -1,5 +1,15 @@
 # Agent guide
 
+## Commits
+
+Always commit completed and validated changes before handing off the task,
+including fixes, features, refactors, documentation, and configuration changes.
+Use Conventional Commits with an imperative subject of at most 50 characters
+(for example, `fix(ui): correct workout counter`). Keep one logical change per
+commit, include related tests, and do not include unrelated user changes.
+Report the commit hash and any verification limitations. Creating a commit
+does not authorize pushing or deploying; those require a separate request.
+
 ## Interface changes
 
 Read `docs/design-system.md` before changing any user interface.
