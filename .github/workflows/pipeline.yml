@@ -95,18 +95,20 @@ jobs:
           npm ci --prefix bot
       - name: Start MinIO
         run: |
+          docker build -t meu-treino-minio:2025-04-22 ./infra/minio
+          sh scripts/test-minio-image.sh
           docker run -d --name treino-minio \
             -p 9000:9000 \
             -e MINIO_ROOT_USER=treino \
             -e MINIO_ROOT_PASSWORD=integration-minio-password \
-            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+            meu-treino-minio:2025-04-22 server /data
           for attempt in $(seq 1 30); do
             curl --fail --silent http://127.0.0.1:9000/minio/health/live && break
             test "$attempt" -lt 30
             sleep 2
           done
           docker run --rm --network host --entrypoint /bin/sh \
-            quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            meu-treino-minio:2025-04-22 \
             -c 'mc alias set local http://127.0.0.1:9000 treino integration-minio-password && mc mb --ignore-existing local/treino-media'
       - name: Prepare database and services
         run: |
@@ -115,7 +117,8 @@ jobs:
           npm run presets:seed --prefix api
           npm run dev --prefix api > /tmp/meu-treino-api.log 2>&1 &
           PORT=3100 npm run dev --prefix bot > /tmp/meu-treino-bot.log 2>&1 &
-          npm run dev --prefix web > /tmp/meu-treino-web.log 2>&1 &
+          npm run build --prefix web
+          npm run preview --prefix web -- --host 127.0.0.1 --port 5173 > /tmp/meu-treino-web.log 2>&1 &
           for attempt in $(seq 1 40); do
             curl --fail --silent http://127.0.0.1:3000/health && break
             test "$attempt" -lt 40 || { cat /tmp/meu-treino-api.log; exit 1; }
@@ -152,6 +155,9 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       - name: Build production images
         run: |
+          docker buildx build --load --platform linux/amd64 \
+            --cache-from type=gha,scope=minio --cache-to type=gha,mode=max,scope=minio \
+            -t meu-treino-minio:2025-04-22 ./infra/minio
           docker buildx build --load --platform linux/amd64 --target production \
             --cache-from type=gha,scope=api --cache-to type=gha,mode=max,scope=api \
             -t meu-treino-api:${GITHUB_SHA} ./api
@@ -163,6 +169,7 @@ jobs:
             --build-arg VITE_API_URL= \
             -t meu-treino-web:${GITHUB_SHA} ./web
           docker save \
+            meu-treino-minio:2025-04-22 \
             meu-treino-api:${GITHUB_SHA} \
             meu-treino-whatsapp:${GITHUB_SHA} \
             meu-treino-web:${GITHUB_SHA} | gzip -1 > /tmp/meu-treino-release.tgz

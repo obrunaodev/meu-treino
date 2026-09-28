@@ -266,7 +266,7 @@ test.describe('jornada completa', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
     await page.setViewportSize({ width: 1280, height: 800 })
-    await page.getByRole('link', { name: /^WhatsApp$/i }).click()
+    await page.getByRole('main').getByRole('link', { name: /^WhatsApp$/i }).click()
     await expect(page.getByRole('heading', { name: /^WhatsApp$/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /conectar WhatsApp/i })).toBeVisible()
     await expect(page.getByText('/start [--link]', { exact: true })).toBeVisible()

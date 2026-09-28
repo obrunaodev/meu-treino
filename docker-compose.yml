@@ -29,7 +29,8 @@ services:
         limits: { memory: 320M }
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: meu-treino-minio:2025-04-22
+    build: ./infra/minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -51,7 +52,7 @@ services:
 
   # Cria o bucket uma vez e sai. Bucket privado: nenhuma policy anônima.
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: meu-treino-minio:2025-04-22
     depends_on:
       minio: { condition: service_healthy }
     entrypoint: >

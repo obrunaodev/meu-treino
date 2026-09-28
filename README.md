@@ -391,6 +391,12 @@ Playwright runs against an already-running web, API, Postgres, MinIO, and bot st
 
 ## Production deployment
 
+MinIO and its client are built from the official source commits for the existing
+April 2025 releases in `infra/minio/Dockerfile`, because their upstream container
+tags are no longer accessible. CI transfers this image with the application
+images; the production host does not compile it. Compose retains the existing
+`minio-data` volume. This restores image availability, not a MinIO version upgrade.
+
 The single Compose file also describes production. Core production values are:
 
 ```dotenv
