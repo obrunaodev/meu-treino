@@ -21,7 +21,7 @@ export function Tests() {
           <p className="page__description">{t('pages.tests')}</p>
         </div>
         <button type="button" className="button button--primary" onClick={() => setCreating((v) => !v)}>
-          {t('tests.add')}
+          {t(creating ? 'common.cancel' : 'tests.add')}
         </button>
       </div>
 
@@ -79,6 +79,8 @@ function TestCard({ test }: { test: FunctionalTest }) {
   const results = useTestResults(test.id)
   const { saveTestResult, removeTest } = useActions()
   const [value, setValue] = useState('')
+  const [confirming, setConfirming] = useState(false)
+  const valid = value.trim() !== '' && Number.isFinite(Number(value))
 
   const best = results.length
     ? results.reduce((a, b) => (test.higherIsBetter ? Math.max(a, b.value) : Math.min(a, b.value)),
@@ -122,25 +124,30 @@ function TestCard({ test }: { test: FunctionalTest }) {
         onSubmit={async (event) => {
           event.preventDefault()
           const parsed = Number(value)
-          if (!Number.isFinite(parsed)) return
+          if (!valid) return
           await saveTestResult({ testId: test.id, value: parsed })
           setValue('')
         }}
       >
-        <input
-          className="grow"
+        <label className="field">
+          {`${t('tests.value')} (${test.unit})`}
+          <input
           type="number"
           step="0.01"
           inputMode="decimal"
-          placeholder={t('tests.value')}
+          required
           value={value}
           onChange={(e) => setValue(e.target.value)}
         />
-        <button type="submit" className="button button--quiet">{t('tests.record')}</button>
-        <button type="button" className="button button--ghost" onClick={() => void removeTest(test.id)}>
-          {t('common.delete')}
-        </button>
+        </label>
+        <button type="submit" className="button button--quiet" disabled={!valid}>{t('tests.record')}</button>
       </form>
+      <div className="row">
+        {confirming ? <>
+          <button type="button" className="button button--danger" onClick={() => void removeTest(test.id)}>{t('common.confirm')} · {t('common.delete')}</button>
+          <button type="button" className="button button--ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</button>
+        </> : <button type="button" className="button button--ghost" onClick={() => setConfirming(true)}>{t('common.delete')}</button>}
+      </div>
     </Card>
   )
 }
