@@ -65,11 +65,30 @@ for (const width of [390, 980]) for (const theme of ['dark', 'light']) for (cons
       await expect(page.locator('html')).toHaveAttribute('lang', locale)
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
       if (path === '/') {
+        await expect(page.getByText(locale === 'pt-BR' ? 'Treinos registrados' : 'Recorded workouts', { exact: true })).toBeVisible()
         await page.keyboard.press('Tab')
         await expect(page.locator('.skip-link')).toBeFocused()
         await expect(page.locator('.skip-link')).toHaveCSS('clip-path', 'none')
         await page.keyboard.press('Enter')
         await expect(page.locator('#main-content')).toBeFocused()
+      }
+      if (path === '/settings' || path === '/history') {
+        await expect(page.locator('details.training-options')).not.toHaveAttribute('open')
+      }
+      if (path === '/settings') {
+        const options = page.locator('details.training-options')
+        await options.locator('summary').click()
+        await expect(options.locator('input').first()).toHaveValue('2')
+        await expect(options.locator('input').last()).toHaveValue('1')
+        await options.locator('summary').click()
+      }
+      if (path === '/history') {
+        const rows = page.locator('.history-sessions').first()
+        const count = await rows.locator('li').count()
+        await page.getByRole('button', { name: locale === 'pt-BR' ? 'Próximo mês' : 'Next month', exact: true }).click()
+        await expect(page.getByText(locale === 'pt-BR' ? 'Nenhum treino registrado neste mês.' : 'No workouts recorded this month.', { exact: true })).toBeVisible()
+        await page.getByRole('button', { name: locale === 'pt-BR' ? 'Mês anterior' : 'Previous month', exact: true }).click()
+        await expect(rows.locator('li')).toHaveCount(count)
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), path).toBe(true)
       const unnamed = await page.locator('input:not([hidden]), select, textarea').evaluateAll((elements) => elements
@@ -82,7 +101,7 @@ for (const width of [390, 980]) for (const theme of ['dark', 'light']) for (cons
         const heights = await nav.locator('a').evaluateAll((links) => links.map((link) => link.getBoundingClientRect().height))
         expect(heights.every((height) => height >= 44)).toBe(true)
       }
-      if (['/', '/functional-tests', '/body', '/more', '/settings', '/admin/presets'].includes(path)) {
+      if (['/', '/session', '/history', '/functional-tests', '/body', '/more', '/settings', '/admin/presets'].includes(path)) {
         await page.screenshot({ path: info.outputPath(`${path.slice(1).replaceAll('/', '-') || 'dashboard'}.png`), fullPage: true })
       }
     }

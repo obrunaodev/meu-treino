@@ -257,6 +257,9 @@ export function Onboarding() {
 
         {step === 'bloco' && (
           <div className="stack">
+            <p className="muted">{t('training.tracking_hint')}</p>
+            <details className="training-options">
+            <summary>{t('training.tracking_options')}</summary>
             <label className="field">
               {t('onboarding.block.weeks')}
               <input
@@ -278,6 +281,7 @@ export function Onboarding() {
               />
             </label>
             <span className="mono muted">{t('onboarding.block.calendar_hint')}</span>
+            </details>
             <span className="mono muted">{t('rir.progression_rule')}</span>
             <label className="field">
               {t('onboarding.block.rest')}

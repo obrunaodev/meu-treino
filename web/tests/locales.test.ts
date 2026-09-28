@@ -4,6 +4,9 @@ import ptBR from '../src/locales/pt-BR.json'
 
 /** Toda cópia existe nos dois idiomas: faltar uma chave mostra o identificador cru na tela. */
 describe('paridade de idiomas', () => {
+  it('o acompanhamento simplificado existe nos dois idiomas', () => {
+    expect(Object.keys(enUS.training).sort()).toEqual(Object.keys(ptBR.training).sort())
+  })
   it('a história do exercício tem as mesmas chaves em pt-BR e en-US', () => {
     expect(Object.keys(enUS.exercise_history).sort()).toEqual(Object.keys(ptBR.exercise_history).sort())
   })

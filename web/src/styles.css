@@ -1066,6 +1066,8 @@ p { margin: 0; line-height: 1.55; }
   padding: 14px 16px; background: var(--shell); cursor: pointer; font-weight: 600;
 }
 .history-block > summary::marker { color: var(--accent); }
+.training-options > summary { cursor: pointer; min-height: var(--touch-target); padding: 12px 0; color: var(--ink-2); }
+.training-options[open] > :not(summary) { margin-top: 14px; }
 .history-block__actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .history-block__actions > a {
   color: var(--ink-2); font: 400 10.5px/1 var(--font-mono); text-transform: uppercase;

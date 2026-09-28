@@ -75,9 +75,7 @@ export function SessionGate() {
         </div>
         {selected.focus && <p className="muted">{selected.focus}</p>}
         <p className="mono muted">
-          {t('dashboard.cycle', {
-            cycle: position.cycleNumber, block: position.blockNumber, period: position.periodNumber,
-          })}
+          {t('training.sequence_hint')}
         </p>
       </header>
 

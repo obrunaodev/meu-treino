@@ -91,6 +91,9 @@ export function Settings() {
             <Link className="button button--ghost" to={routes.workouts}>{t('settings.manage_cycle')}</Link>
           </div>
 
+          <details className="training-options">
+          <summary>{t('training.tracking_options')}</summary>
+          <p className="mono muted">{t('training.tracking_hint')}</p>
           <label className="field">
             {t('settings.block_weeks')}
             <input
@@ -117,6 +120,7 @@ export function Settings() {
             />
           </label>
           <span className="mono muted">{t('settings.cadence_hint')}</span>
+          </details>
 
           <span className="mono muted">{t('rir.progression_rule')}</span>
 

@@ -189,8 +189,15 @@ Adjacent dates complete a partial first or last week with reduced emphasis
 while retaining session links when activity exists on those dates. The current
 local day always carries an accent ring and an accessible current-date state,
 independent of its workout status.
-Below the calendar, history is grouped by period and block; individual sessions
-appear directly inside each block without an intermediate cycle section.
+Below the calendar, workouts from the selected month are listed by date, newest
+first. Period/block reports remain inside an optional disclosure; they do not
+compete with finding an individual workout.
+
+The main screen names the next workout and shows weekly attendance, completed
+streak, recorded workouts and the last workout date. Workout rotation never
+resets on Monday. Cycle/block/period counters stay out of the everyday flow;
+report cadence is optional in onboarding and settings and does not prescribe
+training frequency. Existing cadence and historical grouping are preserved.
 
 Cycle and block reports use flat exercise sections rather than nested cards.
 Each section keeps aggregate metrics near the exercise heading, then lists the
@@ -200,9 +207,10 @@ flags visible without disclosure controls.
 An individual session report is read-only. Its sole action after the exercise
 breakdown links to a dedicated edit route; mutable forms and destructive
 controls never compete with report data on the same page. Its header states the
-position in plain training language — the block, then session N of M — followed
-by the interval since the same workout last ran and the count for the calendar
-week. Each exercise carries a comparison block between its totals and its set
+workout date, followed by the interval since the same workout last ran and the
+count for the calendar week within the same program. A calendar-based block has
+no fixed session quota, so never show a fabricated "session N of M" total.
+Each exercise carries a comparison block between its totals and its set
 list: today's exposure, the previous session of the same workout, and the
 progression decision as a quiet line that adds positive or accent color and
 names the suggested load when the decision moves it. Effort is reported as the

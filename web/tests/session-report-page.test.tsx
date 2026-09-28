@@ -102,17 +102,29 @@ describe('relatório da sessão como instrumento de decisão', () => {
 
     const prescription = (await screen.findByText('Na prescrição')).closest('.report-metric')!
     expect(within(prescription).getByText('0/1')).toBeInTheDocument()
-    expect(screen.getByText('1 série fora da faixa', { exact: false })).toBeInTheDocument()
+    expect(await screen.findByText('1 série fora da faixa', { exact: false })).toBeInTheDocument()
     const adherence = screen.getByText('Aderência').closest('.report-metric')!
     expect(within(adherence).getByText('100%')).toBeInTheDocument()
   })
 
-  it('o cabeçalho diz a posição no bloco, o intervalo e a semana', async () => {
+  it('mostra intervalo e semana sem inventar uma cota de sessões por bloco', async () => {
     await seedSession('antes', '2026-09-14T10:00:00.000Z', [{}, {}, {}])
     await seedSession('hoje', '2026-09-21T10:00:00.000Z', [{}, {}, {}])
     renderReport()
 
-    expect(await screen.findByText('Bloco 1 · sessão 2 de 4')).toBeInTheDocument()
-    expect(screen.getByText(/7 dias desde o treino anterior · 1 de 3 nesta semana/)).toBeInTheDocument()
+    expect(await screen.findByText(/7 dias desde o treino anterior · 1 de 3 nesta semana/)).toBeInTheDocument()
+    expect(screen.queryByText(/Bloco 1 · sessão/)).not.toBeInTheDocument()
+  })
+
+  it('não mistura outros planos ou sessões abertas na frequência do treino', async () => {
+    await seedSession('antes', '2026-09-14T10:00:00.000Z', [{}])
+    await seedSession('outro', '2026-09-21T08:00:00.000Z', [{}])
+    await localDb.table_('workout_sessions').update('outro', { programId: 'outro-plano' })
+    await seedSession('aberta', '2026-09-21T09:00:00.000Z', [{}])
+    await localDb.table_('workout_sessions').update('aberta', { status: 'em_andamento' })
+    await seedSession('hoje', '2026-09-21T10:00:00.000Z', [{}])
+    renderReport()
+
+    expect(await screen.findByText(/7 dias desde o treino anterior · 1 de 3 nesta semana/)).toBeInTheDocument()
   })
 })

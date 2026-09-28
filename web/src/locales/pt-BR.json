@@ -56,9 +56,9 @@
     "body": "Corpo"
   },
   "pages": {
-    "dashboard": "Acompanhe sua semana, evolução, ciclo, volume e sinais de dor.",
+    "dashboard": "Acompanhe seus treinos da semana e sua evolução.",
     "session": "Consulte o treino previsto, registre sua execução e acompanhe o progresso de hoje.",
-    "templates": "Monte os treinos do seu ciclo e defina como cada exercício será executado.",
+    "templates": "Organize a ordem dos seus treinos e os exercícios de cada um.",
     "library": "Gerencie os exercícios disponíveis, imagens, equipamentos e instruções de execução.",
     "academy": "Cadastre os equipamentos e aparelhos de cardio disponíveis na sua academia.",
     "history": "Revise sessões anteriores, cargas, séries, cardio e observações.",
@@ -225,6 +225,18 @@
     "exercises_other": "{{count}} exercícios",
     "deload_hint": "O bloco {{block}} fechou pesado. Considere uma semana mais leve, com menos carga ou menos séries. Nada muda sozinho."
   },
+  "training": {
+    "sequence_hint": "Siga a ordem dos seus treinos, mesmo quando a semana mudar.",
+    "total_workouts": "Treinos registrados",
+    "this_plan": "neste plano",
+    "last_workout": "Último treino",
+    "tracking_options": "Ajustar acompanhamento (opcional)",
+    "tracking_hint": "Esses intervalos organizam relatórios. Não definem quantos dias você deve treinar nem mudam seus exercícios.",
+    "reports": "Relatórios de acompanhamento (opcional)",
+    "reports_hint": "Compare etapas anteriores do seu plano. Para ver um treino, use a lista por data acima.",
+    "month_workouts": "Treinos deste mês",
+    "empty_month": "Nenhum treino registrado neste mês."
+  },
   "errors": {
     "nao_autenticado": "Sessão expirada. Entre novamente.",
     "token_invalido": "Sessão inválida. Entre novamente.",
@@ -309,31 +321,31 @@
       "default": "Meu programa"
     },
     "ritmo": {
-      "title": "Ritmo do ciclo",
-      "desc": "O ciclo é o que manda. O calendário só registra o que aconteceu.",
-      "continuous": "Ciclo contínuo",
+      "title": "Quando você quer treinar?",
+      "desc": "Escolha dias fixos ou treine quando puder. A ordem dos treinos continua a mesma.",
+      "continuous": "Quando eu puder",
       "continuous_desc": "O próximo treino é o que você não fez da última vez, em qualquer dia.",
-      "weekly": "Ciclo semanal",
-      "weekly_desc": "O mesmo ciclo, amarrado a dias fixos da semana."
+      "weekly": "Em dias fixos",
+      "weekly_desc": "Escolha seus dias da semana. O treino continua de onde você parou."
     },
     "ciclo": {
-      "title": "Tamanho do ciclo",
+      "title": "Seus treinos",
       "desc": "Quantos treinos formam uma volta completa."
     },
     "cycle": {
-      "size": "Treinos por ciclo",
+      "size": "Quantos treinos diferentes?",
       "prefix": "Treino",
       "hint": "Dois treinos = A/B. Três = A/B/C. Você renomeia como quiser."
     },
     "bloco": {
-      "title": "Bloco e descanso",
-      "desc": "Defina a duração do bloco em semanas e do período completo em meses."
+      "title": "Descanso e acompanhamento",
+      "desc": "Ajuste o descanso entre séries. Os relatórios são opcionais."
     },
     "block": {
       "cycles": "Ciclos por bloco",
-      "weeks": "Duração do bloco (semanas)",
-      "period_months": "Período completo (meses)",
-      "calendar_hint": "O ciclo continua sendo uma volta pelos treinos A, B e demais. Bloco e período seguem o calendário.",
+      "weeks": "Comparar resultados a cada (semanas)",
+      "period_months": "Agrupar relatórios a cada (meses)",
+      "calendar_hint": "Você pode continuar com os mesmos treinos quando um relatório fechar.",
       "rir": "Mudança de RIR ao fechar o bloco",
       "rir_hint": "Sugestão, nunca aplicada sozinha: você confirma na hora.",
       "rest": "Descanso padrão (segundos)"
@@ -520,14 +532,14 @@
     "cardio_configure": "Configurar agora",
     "cardio_minutes": "Duração planejada (minutos)",
     "focus_hint": "quadríceps · glúteo · empurrar",
-    "position": "Posição {{position}} de {{total}} no ciclo",
-    "cycle_size": "{{count}} treino no ciclo",
-    "cycle_size_other": "{{count}} treinos no ciclo",
+    "position": "Posição {{position}} de {{total}} na sequência",
+    "cycle_size": "{{count}} treino na sequência",
+    "cycle_size_other": "{{count}} treinos na sequência",
     "delete": "Apagar treino",
-    "delete_confirm": "Apagar este treino? O ciclo passa a ter um treino a menos.",
-    "delete_used": "Este treino tem {{count}} sessão registrada. Ela continua no histórico, mas o treino sai do ciclo.",
-    "delete_used_other": "Este treino tem {{count}} sessões registradas. Elas continuam no histórico, mas o treino sai do ciclo.",
-    "delete_last": "o ciclo precisa de pelo menos um treino"
+    "delete_confirm": "Apagar este treino? Ele será removido da sequência.",
+    "delete_used": "Este treino tem {{count}} sessão registrada. Ela continua no histórico, mas o treino sai da sequência.",
+    "delete_used_other": "Este treino tem {{count}} sessões registradas. Elas continuam no histórico, mas o treino sai da sequência.",
+    "delete_last": "seu plano precisa de pelo menos um treino"
   },
   "library": {
     "title": "Exercícios",
@@ -822,13 +834,13 @@
     "clear_hint": "Apaga sessões, séries, dor e resultados de teste. Programa e exercícios ficam.",
     "clear_confirm": "Apagar mesmo? Isso não tem volta.",
     "program": "Programa",
-    "cycle_structure": "Estrutura do ciclo",
-    "cycle_workouts_one": "{{count}} treino por ciclo",
-    "cycle_workouts_other": "{{count}} treinos por ciclo",
-    "cycle_structure_hint": "Uma volta por todos os treinos forma um ciclo completo.",
-    "manage_cycle": "Gerenciar treinos do ciclo",
-    "block_weeks": "Duração do bloco (semanas)",
-    "period_months": "Período completo (meses)",
+    "cycle_structure": "Ordem dos treinos",
+    "cycle_workouts_one": "{{count}} treino na sequência",
+    "cycle_workouts_other": "{{count}} treinos na sequência",
+    "cycle_structure_hint": "Exemplo: A → B → A → B. A semana pode mudar; o próximo treino segue a ordem.",
+    "manage_cycle": "Organizar meus treinos",
+    "block_weeks": "Comparar resultados a cada (semanas)",
+    "period_months": "Agrupar relatórios a cada (meses)",
     "cadence_hint": "Mudanças valem para as próximas sessões. O histórico mantém os números já registrados.",
     "block_rir": "Mudança de RIR ao fechar o bloco",
     "rest_auto_start": "Iniciar o descanso ao marcar a série",

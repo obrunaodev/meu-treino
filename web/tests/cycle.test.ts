@@ -81,6 +81,13 @@ describe('cyclePosition', () => {
 })
 
 describe('calendarTrainingPosition', () => {
+  it('cinco treinos AB não encerram o bloco nem reiniciam a sequência na segunda-feira', () => {
+    const done = Array.from({ length: 5 }, (_, index) => session(index % 2 === 0 ? 'a' : 'b', `2026-09-${21 + index}T12:00:00Z`))
+    expect(nextTemplate(templates.slice(0, 2), done)?.id).toBe('b')
+    expect(calendarTrainingPosition(2, done.length, '2026-09-21T12:00:00Z', 2, 1, new Date('2026-09-28T12:00:00Z')))
+      .toMatchObject({ cycleNumber: 3, blockNumber: 1, periodNumber: 1 })
+  })
+
   it('A e B fecham um ciclo sem depender da duração do bloco', () => {
     const position = calendarTrainingPosition(2, 2, '2026-01-01T12:00:00Z', 2, 1, new Date('2026-01-05T12:00:00Z'))
     expect(position.cycleNumber).toBe(2)

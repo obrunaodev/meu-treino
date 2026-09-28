@@ -7,7 +7,6 @@ import {
 } from '../lib/repo.js'
 import { useActions } from '../lib/actions.js'
 import { formatLoad, nextLoadStep } from '../lib/domain/load.js'
-import { blockPosition } from '../lib/domain/cycle.js'
 import { calendarDaysBetween } from '../lib/domain/calendar.js'
 import { sessionsInWeekOf } from '../lib/domain/dashboard.js'
 import { groupByExercise, topWorkingSet } from '../lib/domain/session.js'
@@ -52,7 +51,7 @@ export function SessionDetail() {
       <Link className="button button--ghost" to={routes.history}>← {t('common.back')}</Link>
 
       <header className="page__title">
-        <span className="eyebrow"><SessionPlace session={session} sessions={sessions} /></span>
+        <span className="eyebrow">{t('history.session')}</span>
         <h1>{session.planSnapshot?.templateName ?? template?.name ?? t('history.gone_template')}</h1>
         <span className="mono muted">
           {date.toLocaleString(i18n.language, { dateStyle: 'long', timeStyle: 'short' })}
@@ -146,26 +145,6 @@ export function SessionEdit() {
 }
 
 /**
- * A posição da sessão em linguagem de treino.
- *
- * "Ciclo 7 · bloco 3 · período 1" é exato e não orienta nada; o que orienta é
- * quanto falta para o bloco fechar. O programa da sessão é que define o
- * tamanho do bloco — o ativo de hoje pode ser outro.
- */
-function SessionPlace({ session, sessions }: { session: WorkoutSession; sessions: WorkoutSession[] }) {
-  const { t } = useTranslation()
-  const program = usePrograms().find((entry) => entry.id === session.programId)
-  if (!program) return <>{t('history.block', { number: session.blockNumber })}</>
-
-  const place = blockPosition(session, sessions, program.sessionsPerCycle, program.cyclesPerBlock)
-  return <>
-    {t('history.block', { number: session.blockNumber })}
-    {' · '}
-    {t('history.session_place', { index: place.index, total: place.total })}
-  </>
-}
-
-/**
  * O intervalo desde o último treino igual e a semana.
  *
  * Voltar depois de dez dias parado muda a leitura das cargas, e sem o intervalo
@@ -175,11 +154,13 @@ function SessionPlace({ session, sessions }: { session: WorkoutSession; sessions
 function SessionCadence({ session, sessions }: { session: WorkoutSession; sessions: WorkoutSession[] }) {
   const { t } = useTranslation()
   const program = usePrograms().find((entry) => entry.id === session.programId)
-  const previous = sessions
+  const programSessions = sessions.filter((entry) => entry.programId === session.programId)
+  const previous = programSessions
+    .filter((entry) => entry.status !== 'em_andamento')
     .filter((entry) => entry.templateId === session.templateId && entry.startedAt < session.startedAt)
     .at(-1)
   const gap = previous ? calendarDaysBetween(previous.startedAt, new Date(session.startedAt)) : null
-  const week = sessionsInWeekOf(sessions, session.startedAt).length
+  const week = sessionsInWeekOf(programSessions, session.startedAt).length
   const target = program?.scheduleMode === 'weekly' ? program.weekdays.length : null
   const since = gap === null ? 'history.first_of_workout' : gap === 0 ? 'history.same_day' : 'history.days_since'
 

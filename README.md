@@ -85,10 +85,10 @@ The UI uses a four-level effort scale while retaining numeric RIR in storage for
 
 ### History, health, and analytics
 
-- The dashboard presents weekly workouts, exercise load or volume progression, pain history, muscle groups trained, and progress toward the current block and period.
+- The dashboard presents the next workout, weekly attendance, recorded workouts, the last workout date, load or volume progression, pain history and muscle groups trained. Workout rotation continues across calendar weeks.
 - Charts provide direct values and table alternatives without internal scrollbars.
 - History uses a navigable monthly calendar. Adjacent dates appear only to complete partial first and last weeks.
-- Sessions are grouped by period and block, with individual sessions listed directly inside each block.
+- History lists workouts by date for the selected month. Period/block reports remain available in an optional disclosure; cadence settings are also optional in onboarding and settings and never set a weekly training quota.
 - Session details include the captured plan, sets, cardio, pain, notes, status, and timestamps.
 - Session history can be edited or deleted. Deleting a session also soft-deletes its sets, cardio, and pain records.
 - Cycle and block reports summarize adherence and training data for their scope.

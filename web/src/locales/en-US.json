@@ -56,9 +56,9 @@
     "body": "Body"
   },
   "pages": {
-    "dashboard": "See your week, progression, cycle, training volume, and pain signals at a glance.",
+    "dashboard": "See your workouts this week and your progress.",
     "session": "Preview the expected workout, log your execution, and follow today's progress.",
-    "templates": "Build the workouts in your cycle and decide how every exercise should be performed.",
+    "templates": "Organize your workout order and the exercises in each workout.",
     "library": "Manage available exercises, images, equipment, and execution guidance.",
     "academy": "Register the strength and cardio equipment available at your gym.",
     "history": "Review past workouts, loads, sets, cardio, and session notes.",
@@ -225,6 +225,18 @@
     "exercises_other": "{{count}} exercises",
     "deload_hint": "Block {{block}} closed heavy. Consider a lighter week, with less load or fewer sets. Nothing changes automatically."
   },
+  "training": {
+    "sequence_hint": "Follow your workout order, even when a new week starts.",
+    "total_workouts": "Recorded workouts",
+    "this_plan": "in this plan",
+    "last_workout": "Last workout",
+    "tracking_options": "Adjust tracking (optional)",
+    "tracking_hint": "These intervals organize reports. They do not set how many days you should train or change your exercises.",
+    "reports": "Progress reports (optional)",
+    "reports_hint": "Compare earlier stages of your plan. To view a workout, use the date list above.",
+    "month_workouts": "Workouts this month",
+    "empty_month": "No workouts recorded this month."
+  },
   "errors": {
     "nao_autenticado": "Session expired. Sign in again.",
     "token_invalido": "Invalid session. Sign in again.",
@@ -309,31 +321,31 @@
       "default": "My program"
     },
     "ritmo": {
-      "title": "Cycle rhythm",
-      "desc": "The cycle drives everything. The calendar only records what happened.",
-      "continuous": "Continuous cycle",
+      "title": "When do you want to train?",
+      "desc": "Choose fixed days or train when you can. Your workout order stays the same.",
+      "continuous": "When I can",
       "continuous_desc": "Next workout is whatever you didn't do last time, on any day.",
-      "weekly": "Weekly cycle",
-      "weekly_desc": "Same cycle, tied to fixed weekdays."
+      "weekly": "On fixed days",
+      "weekly_desc": "Choose your weekdays. Your next workout picks up where you left off."
     },
     "ciclo": {
-      "title": "Cycle size",
+      "title": "Your workouts",
       "desc": "How many workouts make one full turn."
     },
     "cycle": {
-      "size": "Workouts per cycle",
+      "size": "How many different workouts?",
       "prefix": "Workout",
       "hint": "Two workouts = A/B. Three = A/B/C. Rename them however you like."
     },
     "bloco": {
-      "title": "Block and rest",
-      "desc": "Set the block length in weeks and the complete period in months."
+      "title": "Rest and progress tracking",
+      "desc": "Adjust rest between sets. Progress reports are optional."
     },
     "block": {
       "cycles": "Cycles per block",
-      "weeks": "Block length (weeks)",
-      "period_months": "Complete period (months)",
-      "calendar_hint": "A cycle remains one pass through workouts A, B, and the rest. Blocks and periods follow the calendar.",
+      "weeks": "Compare results every (weeks)",
+      "period_months": "Group reports every (months)",
+      "calendar_hint": "You can keep the same workouts when a reporting window ends.",
       "rir": "RIR change when the block closes",
       "rir_hint": "A suggestion, never applied on its own: you confirm it.",
       "rest": "Default rest (seconds)"
@@ -520,14 +532,14 @@
     "cardio_configure": "Configure now",
     "cardio_minutes": "Planned duration (minutes)",
     "focus_hint": "quads · glutes · push",
-    "position": "Position {{position}} of {{total}} in the cycle",
-    "cycle_size": "{{count}} workout in the cycle",
-    "cycle_size_other": "{{count}} workouts in the cycle",
+    "position": "Position {{position}} of {{total}} in the sequence",
+    "cycle_size": "{{count}} workout in the sequence",
+    "cycle_size_other": "{{count}} workouts in the sequence",
     "delete": "Delete workout",
-    "delete_confirm": "Delete this workout? The cycle loses one slot.",
-    "delete_used": "This workout has {{count}} recorded session. It stays in the history, but the workout leaves the cycle.",
-    "delete_used_other": "This workout has {{count}} recorded sessions. They stay in the history, but the workout leaves the cycle.",
-    "delete_last": "the cycle needs at least one workout"
+    "delete_confirm": "Delete this workout? It will be removed from the sequence.",
+    "delete_used": "This workout has {{count}} recorded session. It stays in the history, but the workout leaves the sequence.",
+    "delete_used_other": "This workout has {{count}} recorded sessions. They stay in the history, but the workout leaves the sequence.",
+    "delete_last": "your plan needs at least one workout"
   },
   "library": {
     "title": "Exercise Catalog",
@@ -822,13 +834,13 @@
     "clear_hint": "Deletes sessions, sets, pain and test results. Program and exercises stay.",
     "clear_confirm": "Really delete? This cannot be undone.",
     "program": "Program",
-    "cycle_structure": "Cycle structure",
-    "cycle_workouts_one": "{{count}} workout per cycle",
-    "cycle_workouts_other": "{{count}} workouts per cycle",
-    "cycle_structure_hint": "One pass through every workout forms a complete cycle.",
-    "manage_cycle": "Manage cycle workouts",
-    "block_weeks": "Block length (weeks)",
-    "period_months": "Complete period (months)",
+    "cycle_structure": "Workout order",
+    "cycle_workouts_one": "{{count}} workout in the sequence",
+    "cycle_workouts_other": "{{count}} workouts in the sequence",
+    "cycle_structure_hint": "Example: A → B → A → B. A new week does not reset the next workout.",
+    "manage_cycle": "Organize my workouts",
+    "block_weeks": "Compare results every (weeks)",
+    "period_months": "Group reports every (months)",
     "cadence_hint": "Changes apply to future sessions. History keeps its recorded numbering.",
     "block_rir": "RIR change when the block closes",
     "rest_auto_start": "Start rest when a set is checked",

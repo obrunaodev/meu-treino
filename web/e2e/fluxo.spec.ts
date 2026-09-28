@@ -260,9 +260,11 @@ test.describe('jornada completa', () => {
 
   test('configuração do WhatsApp funciona em mobile e desktop', async () => {
     await page.getByRole('link', { name: /configurações/i }).first().click()
-    await expect(page.getByLabel(/duração do bloco/i)).toHaveValue('2')
-    await expect(page.getByLabel(/período completo/i)).toHaveValue('1')
-    await expect(page.getByText(/2 treinos por ciclo/i)).toBeVisible()
+    await expect(page.getByLabel(/comparar resultados a cada/i)).not.toBeVisible()
+    await page.getByText('Ajustar acompanhamento (opcional)', { exact: true }).click()
+    await expect(page.getByLabel(/comparar resultados a cada/i)).toHaveValue('2')
+    await expect(page.getByLabel(/agrupar relatórios a cada/i)).toHaveValue('1')
+    await expect(page.getByText(/2 treinos na sequência/i)).toBeVisible()
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
     await page.setViewportSize({ width: 1280, height: 800 })
@@ -306,9 +308,13 @@ test.describe('jornada completa', () => {
     await expect(page.locator('[aria-current="date"]')).toHaveCount(1)
     await expect(page.locator('[aria-current="date"]')).toHaveClass(/calendar__day--today/)
     await expect(page.locator('.calendar__day--concluida')).toHaveCount(1)
+    await expect(page.getByRole('heading', { name: 'Treinos deste mês' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Período 1' })).not.toBeVisible()
+    await expect(page.locator('.history-sessions').first()).toContainText('Treino A')
+    await page.getByText('Relatórios de acompanhamento (opcional)', { exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Período 1' })).toBeVisible()
     await expect(page.getByText('Bloco 1', { exact: true })).toBeVisible()
-    await expect(page.locator('.history-sessions')).toContainText('Treino A')
+    await expect(page.locator('.history-sessions').first()).toContainText('Treino A')
     await expect(page.getByRole('heading', { name: /ciclo 1/i })).toHaveCount(0)
     await page.getByRole('link', { name: /relatório do bloco 1/i }).click()
     await expect(page.getByRole('heading', { name: /relatório do bloco 1/i })).toBeVisible()
@@ -470,11 +476,11 @@ test.describe('jornada completa', () => {
 
   test('cria, renomeia, reordena e apaga um treino', async () => {
     await page.getByRole('link', { name: /gerenciar treinos/i }).first().click()
-    await expect(page.getByText(/2 treinos no ciclo/i)).toBeVisible()
+    await expect(page.getByText(/2 treinos na sequência/i)).toBeVisible()
 
     // Criar: o ciclo cresce junto, senão a numeração de bloco derivaria.
     await page.getByRole('button', { name: /novo treino/i }).click()
-    await expect(page.getByText(/3 treinos no ciclo/i)).toBeVisible()
+    await expect(page.getByText(/3 treinos na sequência/i)).toBeVisible()
 
     // Renomear.
     const name = page.getByLabel(/^nome$/i)
@@ -488,7 +494,7 @@ test.describe('jornada completa', () => {
     // Apagar, com confirmação.
     await page.getByRole('button', { name: /apagar treino/i }).click()
     await page.getByRole('button', { name: /^apagar$/i }).click()
-    await expect(page.getByText(/2 treinos no ciclo/i)).toBeVisible()
+    await expect(page.getByText(/2 treinos na sequência/i)).toBeVisible()
     await expect(page.locator('.pill', { hasText: 'Treino Z' })).toHaveCount(0)
   })
 
@@ -501,7 +507,7 @@ test.describe('jornada completa', () => {
     await expect(page.getByText(/1 sessão registrada/i)).toBeVisible()
     await page.getByRole('button', { name: /^apagar$/i }).click()
 
-    await expect(page.getByText(/1 treino no ciclo/i)).toBeVisible()
+    await expect(page.getByText(/1 treino na sequência/i)).toBeVisible()
 
     // Soft delete: a sessão continua no calendário, com a letra do treino.
     // Ela está como incompleta desde o teste que mexeu no status.

@@ -15,7 +15,7 @@ import { DashboardAnalytics } from '../components/DashboardAnalytics.js'
 import { BlockReviewCard } from '../components/BlockReviewCard.js'
 
 export function Dashboard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const program = useActiveProgram()
   const templates = useTemplates(program?.id)
@@ -42,7 +42,6 @@ export function Dashboard() {
   const completed = finished.filter((session) => session.status === 'concluida').length
   const adherence = finished.length === 0 ? 0 : Math.round((completed / finished.length) * 100)
   const streak = currentStreak(programSessions)
-  const sessionsInCycle = finished.length % (program?.sessionsPerCycle ?? 1)
   const currentWeekSessions = sessionsByWeek(programSessions).at(-1)?.value ?? 0
   const blockKey = `${position.periodNumber}:${position.blockNumber}`
   const lastFinished = finished.at(-1)
@@ -89,11 +88,7 @@ export function Dashboard() {
     <div className="page dashboard">
       <header className="dashboard__head">
         <div className="page__title">
-          <span className="eyebrow">
-            {t('dashboard.cycle', {
-              cycle: position.cycleNumber, block: position.blockNumber, period: position.periodNumber,
-            })}
-          </span>
+          <span className="eyebrow">{program.name}</span>
           <h1>{t('dashboard.title')}</h1>
           <p className="page__description">{t('pages.dashboard')}</p>
         </div>
@@ -102,7 +97,7 @@ export function Dashboard() {
         </Link>
       </header>
 
-      {blockClosed && lastFinished && closedBlock && program && (
+      {blockClosed && signal.suggest && lastFinished && closedBlock && program && (
         <BlockReviewCard
           blockNumber={lastFinished.blockNumber}
           effort={effort}
@@ -122,6 +117,7 @@ export function Dashboard() {
             ? openSession.planSnapshot?.templateName ?? templates.find((x) => x.id === openSession.templateId)?.name
             : upcoming?.name}</strong>
           <span>{t('dashboard.exercises', { count: items.length })}</span>
+          <span>{t('training.sequence_hint')}</span>
         </div>
         {openSession ? (
           <Link className="button button--primary" to={sessionRoute(openSession.id)}>
@@ -141,13 +137,12 @@ export function Dashboard() {
           <div className="dashboard__stats">
             <DashboardMetric label={t('dashboard.week_sessions')} value={currentWeekSessions} hint={t('dashboard.current_week')} tone="good" />
             <DashboardMetric label={t('dashboard.streak')} value={streak} hint={t('dashboard.adherence_value', { value: adherence })} />
-            <DashboardMetric label={t('dashboard.cycle_progress')} value={`${sessionsInCycle}/${program.sessionsPerCycle}`} hint={t('dashboard.cycle_progress_hint')} />
+            <DashboardMetric label={t('training.total_workouts')} value={finished.length} hint={t('training.this_plan')} />
             <DashboardMetric
-              label={t('dashboard.block_review')}
-              value={t('dashboard.weeks_value', { count: program.blockDurationWeeks ?? 2 })}
-              hint={t('dashboard.period_value', { count: program.periodDurationMonths ?? 1 })}
+              label={t('training.last_workout')}
+              value={new Date(lastFinished!.startedAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
+              hint={t(`history.${lastFinished!.status}`)}
               tone="quiet"
-              progress={{ value: position.blockProgress, max: 1 }}
             />
           </div>
 

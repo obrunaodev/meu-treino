@@ -84,6 +84,10 @@ export function History() {
   const todayKey = calendarDayKey(new Date())
 
   const monthLabel = cursor.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
+  const monthSessions = sessions.filter((session) => {
+    const date = new Date(session.startedAt)
+    return date.getFullYear() === year && date.getMonth() === month
+  }).sort((a, b) => b.startedAt.localeCompare(a.startedAt))
   const weekdayKeys = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
 
   return (
@@ -169,6 +173,23 @@ export function History() {
             </div>
           </Card>
 
+          <Card title={t('training.month_workouts')}>
+            {monthSessions.length === 0 ? <Empty message={t('training.empty_month')} /> :
+              <ul className="history-sessions">
+                {monthSessions.map((session) => <li key={session.id}>
+                  <Link to={historyRoute(session.id)} className="loglist__link">
+                    {session.planSnapshot?.templateName ?? templates.find((entry) => entry.id === session.templateId)?.name ?? t('history.gone_template')}
+                  </Link>
+                  <span className="mono muted">
+                    {new Date(session.startedAt).toLocaleDateString(i18n.language)} · {t(`history.${session.status}`)}
+                  </span>
+                </li>)}
+              </ul>}
+          </Card>
+
+          <details className="training-options">
+          <summary>{t('training.reports')}</summary>
+          <p className="mono muted">{t('training.reports_hint')}</p>
           <Card title={t('history.by_block')}>
             <div className="history-groups">
               {sessionGroups.map((programGroup) => (
@@ -221,6 +242,7 @@ export function History() {
               ))}
             </div>
           </Card>
+          </details>
         </>
       )}
     </div>
