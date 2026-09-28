@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { routes } from '../lib/routes.js'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth.js'
+import { Card } from '../components/ui.js'
 
 /**
  * Portal mobile para recursos e sistema que não cabem entre os quatro destinos
@@ -17,12 +18,18 @@ const GROUPS = [
   ] },
   { key: 'system', entries: [
     { to: routes.settings, key: 'settings' },
+    { to: routes.whatsapp, key: 'whatsapp' },
   ] },
 ]
 
 export function More() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+
+  async function signOut() {
+    const result = await logout()
+    if (!result.ok && window.confirm(t('logout_pendente', { count: result.pendente }))) await logout(true)
+  }
 
   return (
     <div className="page">
@@ -49,6 +56,11 @@ export function More() {
           </Link>
         </section>
       </nav>}
+      <Card title={t('nav.account')}>
+        <p>{user?.name}</p>
+        <p className="mono muted">{user?.email}</p>
+        <button type="button" className="button button--quiet" onClick={() => void signOut()}>{t('logout')}</button>
+      </Card>
     </div>
   )
 }

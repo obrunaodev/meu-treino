@@ -382,7 +382,7 @@ function ItemRow({ item, name, first, last, onMove, onGroup, onLeaveGroup, onSav
   return (
     <li className="item">
       <div className="item__head">
-        <button type="button" className="item__name" onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="item__name" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           <strong>{name}</strong>
           <span className="mono muted">
             {t('session.target', {

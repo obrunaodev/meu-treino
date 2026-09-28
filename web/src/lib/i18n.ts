@@ -17,3 +17,7 @@ void i18n.use(initReactI18next).init({
 })
 
 export default i18n
+
+// Keep screen-reader pronunciation aligned with the saved interface language.
+document.documentElement.lang = i18n.language
+i18n.on('languageChanged', (language) => { document.documentElement.lang = language })

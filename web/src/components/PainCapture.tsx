@@ -81,12 +81,15 @@ export function BodyMap({ levels, selected, onSelect }: {
                 tone ? `bodymap__spot--${tone}` : '',
                 selected === spot.slug ? 'bodymap__spot--on' : '',
               ].filter(Boolean).join(' ')}
-              onClick={() => onSelect?.(spot.slug)}
-              role={onSelect ? 'button' : undefined}
-              tabIndex={onSelect ? 0 : undefined}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') onSelect?.(spot.slug)
-              }}
+              {...(onSelect ? {
+                role: 'button', 'aria-pressed': selected === spot.slug, tabIndex: 0,
+                onClick: () => onSelect(spot.slug),
+                onKeyDown: (event: React.KeyboardEvent<SVGCircleElement>) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  event.preventDefault()
+                  onSelect(spot.slug)
+                },
+              } : {})}
             >
               <title>{level === undefined ? nameOf(spot.slug) : `${nameOf(spot.slug)} · ${level}`}</title>
             </circle>

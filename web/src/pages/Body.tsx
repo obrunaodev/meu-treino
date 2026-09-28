@@ -48,6 +48,7 @@ export function Body() {
             key={entry.slug}
             type="button"
             className={`pill${entry.slug === kind.slug ? ' pill--on' : ''}`}
+            aria-pressed={entry.slug === kind.slug}
             onClick={() => setViewing(entry.slug)}
           >
             {t(`body.kinds.${entry.slug}`)}

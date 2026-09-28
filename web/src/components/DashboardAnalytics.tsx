@@ -138,7 +138,7 @@ function ExerciseProgressCard({ trends, selected, metric, unit, exerciseId, labe
 function MetricSwitch({ selected, onSelect }: { selected: Metric; onSelect: (metric: Metric) => void }) {
   const { t } = useTranslation()
   return <div className="pills dashboard__metric-switch">{(['weight', 'volume'] as const).map((metric) => (
-    <button key={metric} type="button" className={`pill${selected === metric ? ' pill--on' : ''}`} onClick={() => onSelect(metric)}>
+    <button key={metric} type="button" className={`pill${selected === metric ? ' pill--on' : ''}`} aria-pressed={selected === metric} onClick={() => onSelect(metric)}>
       {t(`dashboard.metric_${metric}`)}
     </button>
   ))}</div>

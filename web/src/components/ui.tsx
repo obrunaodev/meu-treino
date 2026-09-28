@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * `title` é o rótulo de seção: mono, versalete, discreto.
@@ -65,6 +66,21 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
   )
 }
 
+/** Announces loading without presenting an empty or failed result. */
+export function Loading() {
+  const { t } = useTranslation()
+  return <p className="muted" role="status">{t('common.loading')}</p>
+}
+
+/** Keeps a recoverable failure visible beside its retry action. */
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { t } = useTranslation()
+  return <div className="feedback">
+    <p role="alert">{message}</p>
+    {onRetry && <button type="button" className="button button--quiet" onClick={onRetry}>{t('error_boundary.retry')}</button>}
+  </div>
+}
+
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
     <div className="stat">
@@ -86,13 +102,15 @@ export function Stepper({ label, value, onStep, disabled }: {
   onStep: (direction: 1 | -1) => void
   disabled?: boolean
 }) {
+  const id = useId()
+  const { t } = useTranslation()
   return (
     <div className="stepper">
-      <span className="stepper__label">{label}</span>
+      <span id={id} className="stepper__label">{label}</span>
       <div className="stepper__row">
-        <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-label="−">−</button>
+        <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-labelledby={`${id}-decrease ${id}`}><span id={`${id}-decrease`} className="sr-only">{t('common.decrease')}</span><span aria-hidden="true">−</span></button>
         <span className="stepper__value">{value}</span>
-        <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-label="+">+</button>
+        <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-labelledby={`${id}-increase ${id}`}><span id={`${id}-increase`} className="sr-only">{t('common.increase')}</span><span aria-hidden="true">+</span></button>
       </div>
     </div>
   )
@@ -111,11 +129,12 @@ export function NumberStepper({ label, value, onChange, onStep, min = 0, max, st
   disabled?: boolean
 }) {
   const id = useId()
+  const { t } = useTranslation()
   return (
     <div className="stepper">
-      <label className="stepper__label" htmlFor={id}>{label}</label>
+      <label id={`${id}-label`} className="stepper__label" htmlFor={id}>{label}</label>
       <div className="stepper__row">
-        <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-label="−">−</button>
+        <button type="button" onClick={() => onStep(-1)} disabled={disabled} aria-labelledby={`${id}-decrease ${id}-label`}><span id={`${id}-decrease`} className="sr-only">{t('common.decrease')}</span><span aria-hidden="true">−</span></button>
         <span className="stepper__entry">
           <input
             id={id}
@@ -131,7 +150,7 @@ export function NumberStepper({ label, value, onChange, onStep, min = 0, max, st
           />
           {suffix && <span className="stepper__suffix">{suffix}</span>}
         </span>
-        <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-label="+">+</button>
+        <button type="button" onClick={() => onStep(1)} disabled={disabled} aria-labelledby={`${id}-increase ${id}-label`}><span id={`${id}-increase`} className="sr-only">{t('common.increase')}</span><span aria-hidden="true">+</span></button>
       </div>
     </div>
   )
@@ -152,6 +171,7 @@ export function Modal({ title, closeLabel, onClose, children, wide = false }: {
   wide?: boolean
 }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
 
   useEffect(() => {
     ref.current?.showModal()
@@ -160,6 +180,7 @@ export function Modal({ title, closeLabel, onClose, children, wide = false }: {
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       className={`modal${wide ? ' modal--wide' : ''}`}
       onClose={onClose}
       // Alvo igual ao próprio dialog significa clique no backdrop: o conteúdo
@@ -170,7 +191,7 @@ export function Modal({ title, closeLabel, onClose, children, wide = false }: {
     >
       <div className="modal__panel">
         <header className="modal__head">
-          <h2 className="card__title">{title}</h2>
+          <h2 id={titleId} className="card__title">{title}</h2>
           <button
             type="button"
             className="modal__close"

@@ -18,7 +18,7 @@ import type { CatalogExercise, PlanSnapshotItem, SetLog, TemplateItem, WorkoutSe
 import { MediaImage } from './MediaImage.js'
 import { PainCapture } from './PainCapture.js'
 import { SetCard, RestCard } from './SessionSetCard.js'
-import { Modal } from './ui.js'
+import { Loading, Modal } from './ui.js'
 
 export type SessionChecklistItem = TemplateItem | PlanSnapshotItem
 
@@ -263,7 +263,7 @@ export function SessionExerciseFlow({ sessionId, item, index, logs, activeRestAf
     }))
   }
 
-  if (!persisted.ready) return <section className="session-focus">…</section>
+  if (!persisted.ready) return <section className="session-focus"><Loading /></section>
   if (completed) return <section className="session-focus">
     <span className="session-focus__done">✓</span><h2>{name}</h2><p className="muted">{t('session.exercise_completed')}</p>
     <div className="row">

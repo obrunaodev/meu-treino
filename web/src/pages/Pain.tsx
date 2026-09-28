@@ -81,6 +81,7 @@ export function Pain() {
               key={mode}
               type="button"
               className={`pill${view === mode ? ' pill--on' : ''}`}
+              aria-pressed={view === mode}
               onClick={() => setView(mode)}
             >
               {t(mode === 'lista' ? 'pain.list' : 'pain.by_region')}

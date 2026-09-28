@@ -352,7 +352,10 @@ function ExerciseDetail({ exercise, onBack }: { exercise: Exercise; onBack: () =
             setCue('')
           }}
         >
-          <input className="grow" value={cue} onChange={(e) => setCue(e.target.value)} />
+          <label className="field">
+            {t('library.add_cue')}
+            <input value={cue} onChange={(e) => setCue(e.target.value)} />
+          </label>
           <button type="submit" className="button button--quiet">{t('library.add_cue')}</button>
         </form>
       </Card>

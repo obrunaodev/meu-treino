@@ -115,7 +115,7 @@ function EquipmentCard({ item, open, onToggle }: {
     <Card
       heading={item.name}
       action={
-        <button type="button" className="button button--ghost" onClick={onToggle}>
+        <button type="button" className="button button--ghost" aria-expanded={open} onClick={onToggle}>
           {open ? t('common.close') : t('common.edit')}
         </button>
       }

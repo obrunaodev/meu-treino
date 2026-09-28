@@ -28,6 +28,9 @@
     "fact_cardio": "20 min cardio"
   },
   "nav": {
+    "primary": "Main navigation",
+    "skip_content": "Skip to content",
+    "account": "Account",
     "dashboard": "Dashboard",
     "session": "Today's Workout",
     "templates": "Manage Workouts",
@@ -236,6 +239,12 @@
   "logout_pendente": "You have {{count}} change(s) that haven't synced. Signing out now erases them from this device, and the server never received them. Sign out anyway?",
   "logout": "Sign out",
   "common": {
+    "theme_dark": "Dark",
+    "theme_light": "Light",
+    "increase": "Increase",
+    "decrease": "Decrease",
+    "load_error": "Unable to load this content. Check your connection and try again.",
+    "save_error": "Unable to save. Your changes are still here; try again.",
     "back": "back",
     "next": "Continue",
     "saving": "Saving…",

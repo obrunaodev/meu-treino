@@ -237,7 +237,7 @@ test.describe('jornada completa', () => {
         .map((tab) => getComputedStyle(tab).flexGrow),
     }))
     expect(mobileTabs.distribution).toBe('space-between')
-    expect(mobileTabs.flexGrow).toEqual(['0', '0', '0', '0', '0'])
+    expect(mobileTabs.flexGrow).toEqual(['1', '1', '1', '1', '1'])
     const mobileActionFillsRow = await page.locator('.dashboard__next').evaluate((section) => {
       const button = section.querySelector<HTMLElement>('.button')!
       return Math.abs(button.getBoundingClientRect().width - section.clientWidth + 32) < 1

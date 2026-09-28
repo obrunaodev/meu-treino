@@ -30,7 +30,7 @@ export function AdminPresetEditor({ value, catalog, saving, onChange, onSave, on
   }
 
   return <form className="admin-preset-editor stack" onSubmit={(event) => { event.preventDefault(); onSave() }}>
-    <div className="form-grid">
+    <div className="grid grid--2">
       <label className="field">{t('admin_presets.slug')}<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
         value={value.slug} onChange={(event) => patch({ slug: event.target.value })} /></label>
       <label className="field">{t('admin_presets.name_pt')}<input required value={value.name['pt-BR']}
@@ -60,11 +60,11 @@ export function AdminPresetEditor({ value, catalog, saving, onChange, onSave, on
     {value.workouts.map((workout, workoutIndex) => <section className="admin-preset-workout" key={workout.id ?? workoutIndex}>
       <header className="row-between">
         <strong>{t('admin_presets.workout', { number: workoutIndex + 1 })}</strong>
-        {value.workouts.length > 1 && <button type="button" className="text-action" onClick={() => patch({
+        {value.workouts.length > 1 && <button type="button" className="button button--ghost" onClick={() => patch({
           workouts: value.workouts.filter((_, current) => current !== workoutIndex),
         })}>{t('common.delete')}</button>}
       </header>
-      <div className="form-grid">
+      <div className="grid grid--2">
         <label className="field">{t('admin_presets.name_pt')}<input required value={workout.name['pt-BR']}
           onChange={(event) => patchWorkout(workoutIndex, { name: { ...workout.name, 'pt-BR': event.target.value } })} /></label>
         <label className="field">{t('admin_presets.name_en')}<input required value={workout.name['en-US']}
@@ -100,21 +100,21 @@ export function AdminPresetEditor({ value, catalog, saving, onChange, onSave, on
           </Select>
           <label className="field field--row">{t('admin_presets.per_side')}<input type="checkbox" checked={item.loadPerSide}
             onChange={(event) => patchItem(workoutIndex, itemIndex, { loadPerSide: event.target.checked })} /></label>
-          <button type="button" className="text-action" onClick={() => patchWorkout(workoutIndex, {
+          <button type="button" className="button button--ghost" onClick={() => patchWorkout(workoutIndex, {
             items: workout.items.filter((_, current) => current !== itemIndex),
           })}>{t('common.delete')}</button>
         </div>)}
       </div>
-      <button type="button" className="text-action" disabled={catalog.length === 0}
+      <button type="button" className="button button--quiet" disabled={catalog.length === 0}
         onClick={() => patchWorkout(workoutIndex, { items: [...workout.items, blankItem(catalog[0]!.id)] })}>
         {t('admin_presets.add_exercise')}
       </button>
     </section>)}
-    <button type="button" className="text-action" onClick={() => patch({ workouts: [...value.workouts, {
+    <button type="button" className="button button--quiet" onClick={() => patch({ workouts: [...value.workouts, {
       name: { 'pt-BR': `Treino ${String.fromCharCode(65 + value.workouts.length)}`, 'en-US': `Workout ${String.fromCharCode(65 + value.workouts.length)}` },
       focus: { 'pt-BR': '', 'en-US': '' }, items: [],
     }] })}>{t('admin_presets.add_workout')}</button>
-    <div className="row-actions">
+    <div className="row">
       <button type="button" className="button button--ghost" onClick={onCancel}>{t('common.cancel')}</button>
       <button type="submit" className="button button--primary" disabled={saving || value.workouts.some((workout) => workout.items.length === 0)}>
         {saving ? t('common.saving') : t('common.save')}

@@ -97,6 +97,7 @@ export function BackupCard() {
     </div>
 
     {backup && <SelectedBackupView
+      busy={state === 'working'}
       backup={backup}
       confirmReplace={confirmReplace}
       locale={i18n.language}
@@ -119,8 +120,9 @@ export function BackupCard() {
   </Card>
 }
 
-function SelectedBackupView({ backup, confirmReplace, locale, onMerge, onReplace, onConfirmReplace, onCancelReplace }: {
+function SelectedBackupView({ backup, busy, confirmReplace, locale, onMerge, onReplace, onConfirmReplace, onCancelReplace }: {
   backup: SelectedBackup
+  busy: boolean
   confirmReplace: boolean
   locale: string
   onMerge: () => void
@@ -138,11 +140,11 @@ function SelectedBackupView({ backup, confirmReplace, locale, onMerge, onReplace
     </span>
     <p>{t('settings.backup_merge_hint')}</p>
     <div className="backup-actions">
-      <button type="button" className="button button--quiet" onClick={onMerge}>{t('settings.backup_merge')}</button>
+      <button type="button" className="button button--quiet" disabled={busy} onClick={onMerge}>{t('settings.backup_merge')}</button>
       {confirmReplace ? <>
-        <button type="button" className="button button--danger" onClick={onReplace}>{t('settings.backup_replace_confirm')}</button>
-        <button type="button" className="button button--ghost" onClick={onCancelReplace}>{t('common.cancel')}</button>
-      </> : <button type="button" className="button button--ghost" onClick={onConfirmReplace}>{t('settings.backup_replace')}</button>}
+        <button type="button" className="button button--danger" disabled={busy} onClick={onReplace}>{t('settings.backup_replace_confirm')}</button>
+        <button type="button" className="button button--ghost" disabled={busy} onClick={onCancelReplace}>{t('common.cancel')}</button>
+      </> : <button type="button" className="button button--ghost" disabled={busy} onClick={onConfirmReplace}>{t('settings.backup_replace')}</button>}
     </div>
   </div>
 }

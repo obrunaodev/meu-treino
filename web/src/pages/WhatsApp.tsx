@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, apiFetch } from '../lib/api.js'
-import { Card, Empty, Select } from '../components/ui.js'
+import { Card, ErrorState, Loading, Select } from '../components/ui.js'
 
 interface WhatsAppStatus {
   state: 'disconnected' | 'connecting' | 'qr' | 'connected'
@@ -91,9 +91,9 @@ export function WhatsApp() {
         <h1>{t('whatsapp.title')}</h1>
       </header>
 
-      {error && <div className="whatsapp__error" role="alert">{t(`errors.${error}`)}</div>}
+      {error && <ErrorState message={t(`errors.${error}`, t('common.load_error'))} onRetry={() => void refresh()} />}
 
-      {!status ? <Empty message={t('common.loading')} /> : (
+      {!status ? !error && <Loading /> : (
         <div className="whatsapp__layout">
           <Card title={t('whatsapp.connection')}>
             <div className={`whatsapp__state whatsapp__state--${status.state}`}>

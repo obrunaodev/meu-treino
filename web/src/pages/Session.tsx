@@ -220,6 +220,7 @@ export function Session() {
                 key={level}
                 type="button"
                 className={`pill${intensity === level ? ' pill--on' : ''}`}
+                aria-pressed={intensity === level}
                 onClick={() => setIntensity(level)}
               >
                 {t(`session.${level}`)}

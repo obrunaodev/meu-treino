@@ -15,6 +15,7 @@ import { PainCapture } from './PainCapture.js'
 import type { SessionChecklistItem } from './SessionExerciseChecklist.js'
 import { SupersetMemberRow } from './SupersetMemberRow.js'
 import { RestCard, SetCard } from './SessionSetCard.js'
+import { Loading } from './ui.js'
 
 /** A, B, C identificam o membro na tarja de cada série e nas ações. */
 const LETTERS = ['A', 'B', 'C']
@@ -218,7 +219,7 @@ export function SessionSupersetFlow({ sessionId, items, index, logs, activeRound
     for (const log of logs.filter((entry) => !entry.isWarmup)) await removeSet(log.id)
   }
 
-  if (!persisted.ready) return <section className="session-focus">…</section>
+  if (!persisted.ready) return <section className="session-focus"><Loading /></section>
   if (completed) return <section className="session-focus">
     <span className="session-focus__done">✓</span>
     <h2>{t(`session.superset_${kind}`)}</h2>

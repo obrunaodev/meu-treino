@@ -65,8 +65,8 @@ export function Settings() {
           value={settings?.theme ?? 'dark'}
           onChange={(value) => void saveSettings({ theme: value })}
         >
-          <option value="dark">dark</option>
-          <option value="light">light</option>
+          <option value="dark">{t('common.theme_dark')}</option>
+          <option value="light">{t('common.theme_light')}</option>
         </Select>
 
         <Select

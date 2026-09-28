@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiFetch } from '../lib/api.js'
 import { runSync } from '../lib/sync.js'
-import { Card, Empty } from '../components/ui.js'
+import { Card, Empty, ErrorState, Loading } from '../components/ui.js'
 
 interface Conflict {
   id: string
@@ -25,14 +25,16 @@ export function Conflicts() {
   const { t } = useTranslation()
   const [conflicts, setConflicts] = useState<Conflict[]>([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
+    setFailed(false)
     try {
       const body = await apiFetch<{ conflicts: Conflict[] }>('/api/sync/conflicts')
       setConflicts(body.conflicts)
     } catch {
-      setConflicts([])
+      setFailed(true)
     } finally {
       setLoading(false)
     }
@@ -50,17 +52,17 @@ export function Conflicts() {
     await load()
   }
 
-  if (loading) return <p className="muted">{t('common.loading')}</p>
-
   return (
     <div className="page">
-      <h1>{t('conflicts.title')}</h1>
+      <header className="page__title">
+        <h1>{t('conflicts.title')}</h1>
+        <p className="page__description">{t('conflicts.explain')}</p>
+      </header>
 
-      {conflicts.length === 0 ? (
+      {loading ? <Loading /> : failed ? <ErrorState message={t('common.load_error')} onRetry={() => void load()} /> : conflicts.length === 0 ? (
         <Empty message={t('conflicts.empty')} />
       ) : (
         <>
-          <p className="muted">{t('conflicts.explain')}</p>
           {conflicts.map((conflict) => (
             <ConflictCard key={conflict.id} conflict={conflict} onResolve={resolve} />
           ))}
@@ -77,6 +79,7 @@ function ConflictCard({ conflict, onResolve }: {
   const { t } = useTranslation()
   const [choices, setChoices] = useState<Record<string, 'local' | 'remote'>>({})
   const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const complete = conflict.conflictingFields.every((field) => choices[field])
 
@@ -91,6 +94,8 @@ function ConflictCard({ conflict, onResolve }: {
                 key={side}
                 type="button"
                 className={`conflict__side${choices[field] === side ? ' conflict__side--on' : ''}`}
+                aria-pressed={choices[field] === side}
+                disabled={busy}
                 onClick={() => setChoices((c) => ({ ...c, [field]: side }))}
               >
                 <span className="mono muted">{t(`conflicts.${side}`)}</span>
@@ -107,11 +112,13 @@ function ConflictCard({ conflict, onResolve }: {
         disabled={!complete || busy}
         onClick={async () => {
           setBusy(true)
-          try { await onResolve(conflict, choices) } finally { setBusy(false) }
+          setFailed(false)
+          try { await onResolve(conflict, choices) } catch { setFailed(true) } finally { setBusy(false) }
         }}
       >
-        {t('conflicts.resolve')}
+        {t(busy ? 'common.saving' : 'conflicts.resolve')}
       </button>
+      {failed && <ErrorState message={t('common.save_error')} />}
     </Card>
   )
 }

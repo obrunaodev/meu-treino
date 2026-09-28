@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { NumberStepper } from '../src/components/ui.js'
+import '../src/lib/i18n.js'
 
 describe('NumberStepper', () => {
   it('accepts direct numeric entry and keeps increment buttons', () => {
@@ -10,7 +11,7 @@ describe('NumberStepper', () => {
 
     const input = screen.getByRole('spinbutton', { name: /carga/i })
     fireEvent.change(input, { target: { value: '72.5' } })
-    fireEvent.click(screen.getByRole('button', { name: '+' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar Carga' }))
 
     expect(input.parentElement).toHaveClass('stepper__entry')
     expect(screen.getByText('kg').parentElement).toBe(input.parentElement)

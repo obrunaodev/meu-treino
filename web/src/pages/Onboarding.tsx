@@ -191,6 +191,7 @@ export function Onboarding() {
                   key={mode}
                   type="button"
                   className={`choice${draft.scheduleMode === mode ? ' choice--on' : ''}`}
+                  aria-pressed={draft.scheduleMode === mode}
                   onClick={() => patch({ scheduleMode: mode })}
                 >
                   <strong>{t(`onboarding.ritmo.${mode}`)}</strong>
@@ -206,6 +207,7 @@ export function Onboarding() {
                     key={key}
                     type="button"
                     className={`pill${draft.weekdays.includes(day) ? ' pill--on' : ''}`}
+                    aria-pressed={draft.weekdays.includes(day)}
                     onClick={() =>
                       patch({
                         weekdays: draft.weekdays.includes(day)
@@ -322,6 +324,7 @@ export function Onboarding() {
                       key={station.code}
                       type="button"
                       className={`checkitem${selected.has(station.code) ? ' checkitem--on' : ''}`}
+                      aria-pressed={selected.has(station.code)}
                       onClick={() => toggleStation(station)}
                     >
                       <span>{station.name}</span>
@@ -340,6 +343,7 @@ export function Onboarding() {
                           key={key}
                           type="button"
                           className={`checkitem${draft.cardioNames.includes(name) ? ' checkitem--on' : ''}`}
+                          aria-pressed={draft.cardioNames.includes(name)}
                           onClick={() => toggleCardio(name)}
                         >
                           <span>{name}</span>

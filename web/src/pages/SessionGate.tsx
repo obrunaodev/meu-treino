@@ -114,6 +114,7 @@ export function SessionGate() {
                   key={template.id}
                   type="button"
                   className={`checkitem${template.id === selected.id ? ' checkitem--on' : ''}`}
+                  aria-pressed={template.id === selected.id}
                   onClick={() => { setSelectedId(template.id); setChoosing(false) }}
                 >
                   <span>{template.name}</span>
@@ -126,7 +127,7 @@ export function SessionGate() {
       )}
 
       <div className="session-preview__actions">
-        <button type="button" className="button button--ghost" onClick={() => setChoosing(!choosing)}>
+        <button type="button" className="button button--ghost" aria-expanded={choosing} onClick={() => setChoosing(!choosing)}>
           {t('session.choose_other')}
         </button>
         <button type="button" className="button button--primary" onClick={() => void begin(selected.id)}>

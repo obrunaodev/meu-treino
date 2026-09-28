@@ -593,6 +593,7 @@ function CardioEditor({ sessionId, logs }: { sessionId: string; logs: ReturnType
                 key={level}
                 type="button"
                 className={`pill${entry.perceivedIntensity === level ? ' pill--on' : ''}`}
+                aria-pressed={entry.perceivedIntensity === level}
                 onClick={() => void updateCardio(entry.id, { perceivedIntensity: level })}
               >
                 {t(`session.${level}`)}

@@ -40,13 +40,17 @@ toasts.
 | Ink | `#f2efe8` | `#16150f` | Primary text |
 | Secondary ink | `#c2bcae` | `#34302a` | Supporting text |
 | Muted | `#8f8a7d` | `#6d685c` | Labels and metadata |
-| Dim | `#6d685c` | `#8b8578` | Disabled and low emphasis |
+| Dim | alias of Muted | alias of Muted | Low-emphasis readable labels |
 | Accent | `#b23a26` | `#b23a26` | Primary actions and active state |
 | Accent hover | `#7d2617` | `#7d2617` | Accent interaction |
+| Accent text | `#ed8e7b` | `#9e301f` | Links, errors and keyboard focus |
 | Positive | `#7f9a6a` | `#5d7a48` | Success and completion |
 
 Always consume these through CSS variables. Add a semantic token before
 repeating a new raw color across components.
+The brick-red accent is a filled-control background, not small text on dark
+surfaces. Use `--accent-text` for readable links and feedback. Filled action
+links retain their contrasting text color on hover.
 
 ## Type
 
@@ -74,8 +78,8 @@ full-width action, such as the main session action on mobile.
 
 ## Responsive layout
 
-Design from a 390–420 px viewport first. Mobile uses a compact top bar and four
-sticky bottom destinations: Today, Progress, Workouts, and More. Secondary
+Design from a 390–420 px viewport first. Mobile uses a compact top bar and five
+sticky bottom destinations: Dashboard, Today, Workouts, History, and More. Secondary
 destinations live under More so labels never wrap into undersized touch areas.
 
 At 56 rem the application switches to a 232 px sidebar and removes the mobile
@@ -104,6 +108,14 @@ collapse, or progressively disclose it instead.
 - Backup import presents merge as the normal action. Destructive replacement
   requires a second explicit confirmation beside the selected file summary.
 - Forms use visible labels, tokenized focus outlines, and semantic controls.
+- Buttons and bottom navigation have a minimum 44 px touch height. Icon-only
+  controls also provide 44 px width; headers wrap their actions instead of
+  squeezing page titles. Segmented controls wrap when necessary.
+- Loading uses a translated status message, not a bare ellipsis. Failed requests
+  show an alert and retry action, never a misleading empty state. Pending save
+  actions are disabled until completion.
+- Steppers announce the action and field name; modals are named by their title.
+  Toggle and disclosure controls expose pressed and expanded states.
 
 Reuse these primitives before introducing a page-local equivalent. A new
 primitive belongs in `ui.tsx` only after it recurs with the same behavior and
@@ -213,6 +225,9 @@ lightness when changing it and validate the palette before merging.
 
 - Preserve keyboard access, visible focus, semantic labels, and native control
   behavior.
+- The shell provides a skip-to-content link. More remains active on secondary
+  mobile screens and includes account sign-out with the same unsaved-work guard
+  as desktop. The document language follows the selected locale.
 - Respect `prefers-reduced-motion`; motion cannot carry essential meaning.
 - Use concise pt-BR copy by default and provide the equivalent en-US key.
 - Images require useful alternative text when informative and empty alt text

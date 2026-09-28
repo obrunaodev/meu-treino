@@ -28,6 +28,9 @@
     "fact_cardio": "20 min cardio"
   },
   "nav": {
+    "primary": "Navegação principal",
+    "skip_content": "Pular para o conteúdo",
+    "account": "Conta",
     "dashboard": "Dashboard",
     "session": "Treino de Hoje",
     "templates": "Gerenciar Treinos",
@@ -236,6 +239,12 @@
   "logout_pendente": "Você tem {{count}} alteração(ões) ainda não sincronizada(s). Sair agora apaga esse registro deste aparelho, e ele não chegou ao servidor. Sair mesmo assim?",
   "logout": "Sair da conta",
   "common": {
+    "theme_dark": "Escuro",
+    "theme_light": "Claro",
+    "increase": "Aumentar",
+    "decrease": "Diminuir",
+    "load_error": "Não foi possível carregar este conteúdo. Confira sua conexão e tente novamente.",
+    "save_error": "Não foi possível salvar. Suas alterações continuam aqui; tente novamente.",
     "back": "voltar",
     "next": "Continuar",
     "saving": "Salvando…",

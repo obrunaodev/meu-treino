@@ -7,6 +7,7 @@ import { useBootstrapped } from './lib/sync.js'
 import { SyncProvider } from './lib/sync-context.js'
 import { AppShell } from './components/AppShell.js'
 import { ErrorBoundary } from './components/ErrorBoundary.js'
+import { Loading } from './components/ui.js'
 import { Login } from './pages/Login.js'
 import { AuthCallback } from './pages/AuthCallback.js'
 import { Onboarding } from './pages/Onboarding.js'
@@ -61,7 +62,7 @@ function Authed() {
   const needsOnboarding = bootstrapped === true && !program
 
   if (bootstrapped === undefined || (!program && !needsOnboarding)) {
-    return <main className="centered">…</main>
+    return <main className="centered"><Loading /></main>
   }
 
   return (
@@ -103,7 +104,7 @@ function Authed() {
 
 function Routed() {
   const { status } = useAuth()
-  if (status === 'carregando') return <main className="centered">…</main>
+  if (status === 'carregando') return <main className="centered"><Loading /></main>
 
   if (status === 'anonimo') {
     return (

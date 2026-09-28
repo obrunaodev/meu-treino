@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/auth.js'
 import { SyncBar } from './SyncBar.js'
@@ -24,6 +24,7 @@ const GROUPS = [
   ] },
   { key: 'system', links: [
     { to: routes.settings, key: 'settings' },
+    { to: routes.whatsapp, key: 'whatsapp' },
   ] },
 ]
 
@@ -41,6 +42,9 @@ const TABS = [
 export function AppShell() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
+  const { pathname } = useLocation()
+  const inMore = !TABS.slice(0, -1).some((tab) => tab.to === routes.dashboard
+    ? pathname === tab.to : pathname === tab.to || pathname.startsWith(`${tab.to}/`))
   const initial = user?.name?.trim().charAt(0).toUpperCase() ?? '·'
 
   /**
@@ -57,6 +61,7 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      <a className="skip-link" href="#main-content">{t('nav.skip_content')}</a>
       <SyncBar />
 
       <header className="shell__top">
@@ -67,7 +72,7 @@ export function AppShell() {
       </header>
 
       <div className="shell__body">
-        <nav className="shell__side" aria-label={t('app.name')}>
+        <nav className="shell__side" aria-label={t('nav.primary')}>
           <span className="shell__brand">{t('app.name')}</span>
 
           <div className="shell__nav">
@@ -103,14 +108,18 @@ export function AppShell() {
           </div>
         </nav>
 
-        <main className="shell__main">
+        <main id="main-content" className="shell__main" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
 
-      <nav className="shell__tabs" aria-label={t('app.name')}>
-        {TABS.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} end={tab.to === routes.dashboard} className="shell__tab">
+      <nav className="shell__tabs" aria-label={t('nav.primary')}>
+        {TABS.map((tab) => tab.to === routes.more ? (
+          <Link key={tab.to} to={tab.to} aria-current={inMore ? 'page' : undefined}
+            className={`shell__tab${inMore ? ' active' : ''}`}>{t(`nav.${tab.key}`)}</Link>
+        ) : (
+          <NavLink key={tab.to} to={tab.to} end={tab.to === routes.dashboard}
+            className={({ isActive }) => `shell__tab${isActive ? ' active' : ''}`}>
             {t(`nav.${tab.key}`)}
           </NavLink>
         ))}
